@@ -2572,6 +2572,19 @@ body.mundi-open #toast-container { display: none !important; }
 @media (max-width: 560px) { #mundi-root .mu-ngfam-new { grid-template-columns: 80px minmax(0, 1fr); } #mundi-root .mu-ngfam-pic { width: 80px !important; } }
 #mundi-root .mu-ngfam-btns > button, #mundi-root .mu-fields .mu-chip:has(> .mu-ic) { display: inline-flex; gap: 6px; align-items: center; }
 #mundi-root .mu-fields .mu-chip > .mu-ic { width: 13px; height: 13px; }
+/* Image Generation: its options open upward from the picture button next to Send */
+#mundi-root .mu-sdwrap { position: relative; display: inline-flex; }
+#mundi-root .mu-sdmenu { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 30; min-width: 190px; display: grid; gap: 2px; padding: 6px; border-radius: 14px; box-shadow: 0 14px 34px rgba(0, 0, 0, .45); animation: mu-sdup .14s ease-out; }
+#mundi-root .mu-composer-tools .mu-sdmenu button { width: 100% !important; color: var(--hud-fg, #eef3ff) !important; font-weight: 600; justify-content: flex-start !important; text-align: left; width: 100%; height: auto !important; min-height: 34px; padding: 7px 12px !important; border-radius: 9px !important; font-size: 13px; background: transparent !important; border-color: transparent !important; box-shadow: none !important; white-space: nowrap; }
+#mundi-root .mu-composer-tools .mu-sdmenu button:hover, #mundi-root .mu-composer-tools .mu-sdmenu button:focus-visible { background: rgba(255, 255, 255, .1) !important; }
+@keyframes mu-sdup { from { opacity: 0; transform: translateY(6px); } }
+#mundi-root .mh-drawer-me { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; object-position: top; flex: none; }
+#mundi-root .mu-screname { width: min(460px, calc(100% - 32px)) !important; grid-template-rows: auto auto auto !important; }
+#mundi-root .mu-screname p { margin: 0; line-height: 1.5; }
+#mundi-root .mu-composer-tools > .mu-sdwrap > button:not(.is-on) { width: 40px; padding: 8px 0; background: rgba(255, 255, 255, .1) !important; border: 1px solid rgba(255, 255, 255, .16) !important; border-radius: 14px !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2) !important; color: var(--hud-fg) !important; }
+#mundi-root .mu-composer-tools > .mu-sdwrap > button.is-on { width: 40px; padding: 8px 0; border-radius: 14px !important; }
+#mundi-root[data-mobile] .mu-composer-tools > .mu-sdwrap > button { height: 38px; min-width: 38px; padding: 0 12px !important; width: auto; }
+#mundi-root .mh-drawer-mew { display: inline-grid; flex: none; }
 /* ---------- the tour (Stella): the step's element lit, the rest dimmed ---------- */
 #mundi-root .mu-tut { position: fixed; inset: 0; z-index: 200; pointer-events: none; --x: 50vw; --y: 50vh; --w: 0px; --h: 0px; }
 #mundi-root .mu-tut-shade { position: fixed; background: rgba(4, 8, 18, .62); pointer-events: auto; transition: all .25s ease; }

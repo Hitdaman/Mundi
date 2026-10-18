@@ -53,7 +53,9 @@ export const fullPicOf = (m) => {
     const a = speakerOf(m);
     return a ? avatarUrl(a) : '';
 };
-export const smallPicOf = (m) => (m?.is_user ? personaThumb() : (speakerOf(m) ? thumb(speakerOf(m)) : ''));
+// your lines keep the persona they were written as (at Mundi's picture quality)
+const lineFile = (fa) => { const q = fa.match(/[?&]file=([^&]+)/)?.[1]; return q ? decodeURIComponent(q) : /^\/?User Avatars\//i.test(fa) ? decodeURIComponent(fa.replace(/^\/?User Avatars\//i, '')) : ''; };
+export const smallPicOf = (m) => (m?.is_user ? personaThumb(lineFile(String(m.force_avatar ?? '')) || undefined) : (speakerOf(m) ? thumb(speakerOf(m)) : ''));
 export function avatarHtml(m) {
     const shape = U().avatarShape ?? 'rect';
     if (shape === 'none')

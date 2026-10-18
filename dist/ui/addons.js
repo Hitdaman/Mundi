@@ -21,6 +21,13 @@ export const ADDONS = [
         found: () => !!ext().speech_recognition || !!micEl(), ready: () => !!micEl() && micEl().style.display !== 'none',
         off: 'Installed, but no speech provider is chosen: pick one in SillyTavern\'s Extensions → Speech Recognition.',
     },
+    {
+        id: 'sd', name: 'Image Generation', native: true, cfg: 'Image Generation',
+        desc: 'Draws pictures with SillyTavern\'s Image Generation. A picture button next to Send opens its options (the character, their face, you, the whole story, the last message, a background); the picture appears in the chat.',
+        url: 'https://docs.sillytavern.app/extensions/stable-diffusion/',
+        found: () => !!ext().sd, ready: () => !!ext().sd && !!String(ext().sd?.source ?? ''),
+        off: 'Installed, but no image source is chosen: pick one in SillyTavern\'s Extensions → Image Generation.',
+    },
 ];
 const prefs = () => { const s = settings(); s.addons ??= {}; return s.addons; };
 // On when it is installed and ready, unless hidden in Settings.
@@ -75,6 +82,21 @@ export function addonsTab() {
                     <a class="mu-addon-link" href="${esc(a.url)}" target="_blank" rel="noopener">${icon('globe')}<span>${a.native ? 'Documentation' : 'Get it on GitHub'}</span></a></div></article>`;
     }).join('')}</div></section>`;
 }
+/* ---------- image generation: a picture button next to Send, with SillyTavern's own options ---------- */
+const SD = { open: false };
+// the same choices (and order) as SillyTavern's own image button
+const SD_MODES = [['you', 'Yourself'], ['face', 'Your face'], ['me', 'Me'], ['scene', 'The whole story'], ['last', 'The last message'], ['raw_last', 'Raw last message'], ['background', 'Background']];
+export function sdButton() {
+    if (!addonOn('sd'))
+        return '';
+    return `<span class="mu-sdwrap"><button class="${SD.open ? 'is-on' : ''}" data-act="sd-menu" title="Generate a picture" aria-expanded="${SD.open}">${icon('image')}</button>${SD.open
+        ? `<div class="mu-sdmenu mh-glass" role="menu">${SD_MODES.map(([v, l]) => `<button class="mu-ghost" role="menuitem" data-act="sd-gen" data-v="${v}">${l}</button>`).join('')}</div>` : ''}</span>`;
+}
+// a click anywhere else closes the menu
+document.addEventListener('pointerdown', (e) => { if (SD.open && !e.target?.closest?.('.mu-sdwrap')) {
+    SD.open = false;
+    notify();
+} }, true);
 /* ---------- speech recognition: the microphone next to Send ---------- */
 let listening = false, watching = false;
 const isRecording = () => !!micEl()?.classList.contains('fa-microphone-slash');
@@ -141,6 +163,17 @@ export async function speakText(text, voice = '') {
 export const diaryTtsButton = (day) => (addonOn('tts') ? `<button class="mu-ghost mu-tts-diary" data-act="diary-say" data-day="${day}" title="Read it aloud">${icon('speaker')}<span>Read aloud</span></button>` : '');
 export const ttsButton = (i) => (addonOn('tts') ? `<button data-act="addon-say" data-i="${i}" title="Read aloud">${icon('speaker')}</button>` : '');
 Object.assign(ACT, {
+    'sd-menu': () => { SD.open = !SD.open; notify(); },
+    'sd-gen': async (el) => {
+        SD.open = false;
+        notify();
+        try {
+            await ctx().executeSlashCommandsWithOptions(`/sd ${el.dataset.v}`);
+        }
+        catch (e) {
+            toast(String(e?.message ?? e), 'error');
+        }
+    },
     'addon-mic': () => {
         const b = micEl();
         if (!b) {

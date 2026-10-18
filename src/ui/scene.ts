@@ -13,6 +13,7 @@ import {
     editMessage, deleteMessageAt, expressionOf, fetchSprites, saveChat, me, currentCharacter, charOf, characters, bgList, bgThumb, ctx,
     addUserLine, narratorLine, personaName, quiet, lorebooks, chatLore, bindChatLore,
     scenarioOpen, scenarioCast, scenarioTitle, addToScenario, removeFromScenario, setChatBackground, newScenarioChat,
+    persona, personas, personaThumb, usePersona,
 } from '../st/bridge.js';
 import { placeOf } from '../sim/places.js';
 import { presentAt } from '../sim/people.js';
@@ -23,7 +24,7 @@ import { visitStart } from '../sim/visits.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
 import { sceneCard } from './plans.js';
-import { micButton, ttsButton } from './addons.js';
+import { micButton, sdButton, ttsButton } from './addons.js';
 import { isWith } from '../sim/social.js';
 import { sceneText } from '../sim/prompt.js';
 import { aiLangNote } from '../core/i18n.js';
@@ -178,7 +179,7 @@ export function sceneHtml() {
             : `<button class="mu-primary" data-act="send">Send</button>
                        <button data-act="continue" title="The character continues their last line" ${nobody ? 'disabled' : ''}>${icon('forward')}</button>
                        <button data-act="regenerate" title="Regenerate the last answer" ${nobody ? 'disabled' : ''}>${icon('redo')}</button>
-                       <button data-act="impersonate" title="The AI writes your line" ${nobody ? 'disabled' : ''}>${icon('pen')}</button>${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
+                       <button data-act="impersonate" title="The AI writes your line" ${nobody ? 'disabled' : ''}>${icon('pen')}</button>${sdButton()}${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
                 </div>
             </div>
         </section>
@@ -191,7 +192,7 @@ export function sceneHtml() {
 
 // Scenario: a plain chat (one character, or a group made from it), in the scene's look: their sprites, the
 // conversation, SillyTavern's own background. No map, no clock. It is saved as a normal SillyTavern chat.
-const SC = { pick: '' as '' | 'bg' | 'add' | 'lore', q: '', bgs: null as string[] | null };
+const SC = { pick: '' as '' | 'bg' | 'add' | 'lore' | 'persona' | 'persona-rename', q: '', bgs: null as string[] | null, to: '' };
 function scenarioPicker(): string {
     if (!SC.pick) return '';
     const q = SC.q.toLowerCase();
@@ -201,6 +202,21 @@ function scenarioPicker(): string {
         return `<div class="mu-dlg-veil" data-act="sc-pick-close"></div><div class="mu-panel mu-scpick" role="dialog"><header><h3>Background</h3><button class="mu-ibtn mu-ghost" data-act="sc-pick-close" aria-label="Close">${icon('x')}</button></header>
             <input class="mu-search" type="search" data-input="sc-q" data-focus="scq" placeholder="Search" value="${esc(SC.q)}">
             <div class="mu-scpick-grid is-bg" data-keep="scpick">${list.map(f => `<button data-act="sc-bg" data-file="${esc(f)}" title="${esc(f)}"><img src="${esc(bgThumb(f))}" alt="" loading="lazy"><span data-notr>${esc(f.replace(/\.[a-z0-9]+$/i, ''))}</span></button>`).join('') || '<p class="mu-muted">Loading…</p>'}</div></div>`;
+    }
+    // your persona: switch in the middle of the chat (like SillyTavern), and choose whether your earlier lines follow
+    if (SC.pick === 'persona') {
+        const cur = persona();
+        const list = personas().filter(p => !q || p.name.toLowerCase().includes(q)).sort((a, b) => a.name.localeCompare(b.name));
+        return `<div class="mu-dlg-veil" data-act="sc-pick-close"></div><div class="mu-panel mu-scpick" role="dialog"><header><h3>Your persona</h3><button class="mu-ibtn mu-ghost" data-act="sc-pick-close" aria-label="Close">${icon('x')}</button></header>
+            <p class="mu-muted">Who you are in this chat. It stays with this chat (SillyTavern's chat lock).</p>
+            <input class="mu-search" type="search" data-input="sc-q" data-focus="scq" placeholder="Search your personas" value="${esc(SC.q)}">
+            <div class="mu-scpick-grid" data-keep="scpick">${list.map(p => `<button class="${p.file === cur ? 'is-on' : ''}" data-act="sc-persona" data-file="${esc(p.file)}" title="${esc(p.name)}"><img src="${esc(personaThumb(p.file))}" alt="" loading="lazy"><span data-notr>${esc(p.name)}</span></button>`).join('') || '<p class="mu-muted">No personas found.</p>'}</div></div>`;
+    }
+    if (SC.pick === 'persona-rename') {
+        const to = personas().find(p => p.file === SC.to); const old = [...new Set(chat().filter(m => m.is_user && !m.is_system).map(m => String(m.name ?? '')))].filter(n => n && n !== to?.name);
+        return `<div class="mu-dlg-veil" data-act="sc-pick-close"></div><div class="mu-panel mu-scpick mu-screname" role="dialog"><header><h3>Your earlier lines</h3><button class="mu-ibtn mu-ghost" data-act="sc-pick-close" aria-label="Close">${icon('x')}</button></header>
+            <p>Your earlier lines in this chat are written as <b data-notr>${esc(old.join(', ') || personaName())}</b>. Change them to <b data-notr>${esc(to?.name ?? '')}</b>, with the new picture?</p>
+            <div class="mu-row mu-dlg-btns"><button data-act="sc-persona-yes" data-v="0">No, only from now on</button><button class="mu-primary" data-act="sc-persona-yes" data-v="1">Yes, change them</button></div></div>`;
     }
     if (SC.pick === 'lore') {
         const cur = chatLore();
@@ -245,7 +261,7 @@ export function chatHtml() {
             : `<button class="mu-primary" data-act="send">Send</button>
                        <button data-act="continue" title="The character continues their last line">${icon('forward')}</button>
                        <button data-act="regenerate" title="Regenerate the last answer">${icon('redo')}</button>
-                       <button data-act="impersonate" title="The AI writes your line">${icon('pen')}</button>${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
+                       <button data-act="impersonate" title="The AI writes your line">${icon('pen')}</button>${sdButton()}${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
                 </div>
             </div>
         </section>
@@ -254,6 +270,7 @@ export function chatHtml() {
             <nav class="mh-drawer-panel mh-glass"><header><b data-notr>${esc(scenarioTitle())}</b><small>Scenario</small></header>
                 <button data-act="sc-open" data-v="bg">${icon('image')}<span>Background</span></button>
                 <button data-act="sc-open" data-v="add">${icon('users')}<span>Add a character</span></button>
+                <button data-act="sc-open" data-v="persona"><span class="mh-drawer-mew"><img class="mh-drawer-me" src="${esc(personaThumb())}" alt=""></span><span>Your persona<small data-notr>${esc(personaName())}</small></span></button>
                 <button data-act="sc-open" data-v="lore">${icon('book')}<span>Chat lorebook${chatLore() ? `<small data-notr>${esc(chatLore())}</small>` : ''}</span></button>
                 <button data-act="chat-new">${icon('plus')}<span>New chat</span></button>
                 <button data-act="drawer-look" class="${DRAWER.look ? 'is-on' : ''}">${icon('palette')}<span>Look</span></button>
@@ -303,6 +320,15 @@ export function afterScene(_main: HTMLElement) {
 Object.assign(ACT, {
     'sc-open': (el) => { SC.pick = el.dataset.v as any; SC.q = ''; if (SC.pick === 'bg') SC.bgs = null; notify(); },
     'sc-pick-close': () => { SC.pick = ''; notify(); },
+    'sc-persona': (el) => {
+        const file = el.dataset.file!; const to = personas().find(p => p.file === file);
+        if (!to || file === persona()) { SC.pick = ''; notify(); return; }
+        const earlier = chat().some(m => m.is_user && !m.is_system && String(m.name ?? '') !== to.name);
+        SC.to = file;
+        if (earlier) { SC.pick = 'persona-rename'; notify(); return; }
+        void switchPersona(file, false);
+    },
+    'sc-persona-yes': (el) => { void switchPersona(SC.to, el.dataset.v === '1'); },
     'sc-bg': (el) => { setChatBackground(el.dataset.file!); SC.pick = ''; notify(); },
     'sc-add': async (el) => {
         SC.pick = ''; notify();
@@ -408,6 +434,21 @@ export function shapeLine(text: string): string {
 /* ---------- other SillyTavern extensions' buttons (23) ---------- */
 
 // SillyTavern's own extensions menu (the magic wand), with every button other extensions add to it.
+// Switches your persona in this chat; `rename`: your earlier lines take the new name and picture too.
+async function switchPersona(file: string, rename: boolean) {
+    SC.pick = ''; notify();
+    const to = personas().find(p => p.file === file); if (!to) return;
+    try { await usePersona(file); } catch (e: any) { toast(String(e?.message ?? e), 'error'); return; }
+    if (rename) {
+        const pic = `/thumbnail?type=persona&file=${encodeURIComponent(file)}`;
+        let n = 0;
+        for (const m of chat()) if (m.is_user && !m.is_system) { m.name = to.name; m.force_avatar = pic; n++; }
+        saveChat();
+        try { await ctx().reloadCurrentChat?.(); } catch { /* SillyTavern redraws it later */ }
+        toast(`You are ${to.name} now. ${n === 1 ? '1 earlier line was' : `${n} earlier lines were`} changed.`, 'success');
+    } else toast(`You are ${to.name} now.`, 'success');
+    notify();
+}
 export const EXT = { open: false };
 export function extMenuHtml() {
     return EXT.open ? `<div class="mh-extmenu mh-glass"><header><b>SillyTavern extensions</b><button class="mu-ibtn mu-ghost" data-act="ext-menu">${icon('x')}</button></header>${nativeHost('st-extmenu')}</div>` : '';
