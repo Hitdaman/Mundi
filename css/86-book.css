@@ -1,0 +1,174 @@
+/* ---------- the medieval journal: an open book over the game ---------- */
+#mundi-root .mu-bk-wrap {
+    position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; padding: 70px 16px 16px;
+    background: radial-gradient(ellipse at center, rgba(20, 12, 4, .45), rgba(10, 6, 2, .78));
+}
+#mundi-root .mu-bk-wrap.is-opening { animation: mu-bk-fade .25s ease both; animation-delay: var(--open-delay, 0ms); }
+#mundi-root .mu-bk-wrap.is-opening .mu-book { animation: mu-bk-open .35s cubic-bezier(.2, .8, .3, 1) both; animation-delay: var(--open-delay, 0ms); }
+@keyframes mu-bk-fade { from { opacity: 0; } }
+#mundi-root .mu-book {
+    /* ink on paper, whatever the theme */
+    --fg: #3a2817; --muted: #6e5434; --line: rgba(110, 76, 38, .28); --bg: transparent; --bg2: rgba(255, 248, 228, .55); --panel: transparent;
+    position: relative; width: min(1180px, calc(100vw - 32px), calc((100vh - 90px) * 1.3212)); aspect-ratio: 1600 / 1211;
+    background: url("assets/medieval/book.png") center / 100% 100% no-repeat; filter: drop-shadow(0 30px 40px rgba(0, 0, 0, .6));
+    color: var(--fg); font-family: "EB Garamond", Georgia, serif; font-size: clamp(13px, 1.35vw, 16px);
+    perspective: 2200px;
+}
+@keyframes mu-bk-open { from { transform: translateY(24px) scale(.94); opacity: 0; } }
+
+/* the two pages (measured on the picture) */
+#mundi-root .mu-bk-page { position: absolute; top: 13.2%; height: 72.5%; width: 36.6%; overflow: auto; padding: 2% 2.2%; scrollbar-width: thin; scrollbar-color: rgba(110, 76, 38, .4) transparent; }
+#mundi-root .mu-bk-page.is-left { left: 12%; }
+#mundi-root .mu-bk-page.is-right { left: 51.6%; display: block; border-radius: 0; background: none; color: var(--fg); }
+#mundi-root .mu-bk-page.is-right.is-turning { animation: mu-bk-ink .65s ease both; animation-delay: var(--turn-delay, 0ms); }
+@keyframes mu-bk-ink { 0%, 45% { opacity: 0; } 100% { opacity: 1; } }
+
+/* the page turning: a sheet lifting from the right page over the spine (or back) */
+#mundi-root .mu-bk-leaf {
+    position: absolute; top: 11.5%; height: 76%; left: 50.3%; width: 38.5%; transform-origin: left center; pointer-events: none;
+    background: linear-gradient(90deg, #e9d6ad, #f4e6c6 40%, #e2cb9c); box-shadow: 0 0 22px rgba(60, 35, 10, .35); border-radius: 0 6px 6px 0;
+    animation: mu-bk-turn .65s cubic-bezier(.45, .05, .35, 1) both; backface-visibility: visible; z-index: 3;
+}
+#mundi-root .mu-bk-leaf.is-back { animation-name: mu-bk-turnback; }
+@keyframes mu-bk-turn { 0% { transform: rotateY(0); filter: brightness(1); } 50% { filter: brightness(.82); } 100% { transform: rotateY(-180deg); filter: brightness(1); opacity: .2; } }
+@keyframes mu-bk-turnback { 0% { transform: rotateY(-180deg); opacity: .2; } 50% { filter: brightness(.82); } 100% { transform: rotateY(0); opacity: 0; } }
+
+/* left page: who, when, the purse and the contents */
+#mundi-root .mu-bk-title { display: grid; justify-items: center; gap: 2px; text-align: center; padding-bottom: 10px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+#mundi-root .mu-bk-title small { font-family: "Cinzel", serif; letter-spacing: .18em; text-transform: uppercase; font-size: .72em; color: #8b2e1f; }
+#mundi-root .mu-bk-title b { font-family: "Cinzel", serif; font-size: 1.55em; font-weight: 700; line-height: 1.1; }
+#mundi-root .mu-bk-title span { color: var(--muted); font-style: italic; }
+#mundi-root .mu-bk-purse { display: inline-flex; align-items: center; gap: 5px; font-style: normal !important; font-weight: 700; color: #7a5a14 !important; }
+#mundi-root .mu-bk-purse .mu-ic { width: 16px; height: 16px; }
+#mundi-root .mu-bk-h, #mundi-root .mu-bk-front h3 { margin: 6px 0; font-family: "Cinzel", serif; font-size: 1.05em; text-align: center; color: #8b2e1f; letter-spacing: .06em; }
+#mundi-root .mu-bk-toc { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+#mundi-root .mu-bk-toc button, #mundi-root .mu-bk-toc button:hover:not(:disabled) {
+    width: 100%; display: flex; align-items: center; gap: 8px; padding: 5px 4px; background: none !important; border: 0 !important; box-shadow: none !important;
+    color: var(--fg) !important; font: inherit; font-size: 1.08em; text-align: left; border-radius: 4px;
+}
+#mundi-root .mu-bk-toc button:hover:not(:disabled) { background: rgba(139, 46, 31, .08) !important; }
+#mundi-root .mu-bk-toc button .mu-ic { width: 18px; height: 18px; flex: none; color: #7a5230; }
+#mundi-root .mu-bk-toc button > i { flex: 1; align-self: flex-end; margin-bottom: 6px; border-bottom: 2px dotted rgba(110, 76, 38, .45); }
+#mundi-root .mu-bk-toc button.is-here { font-weight: 700; color: #8b2e1f !important; }
+#mundi-root .mu-bk-toc button.is-here .mu-ic { color: #8b2e1f; }
+#mundi-root .mu-bk-toc em, #mundi-root .mu-bk-ribbon em {
+    position: static; display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px;
+    background: radial-gradient(circle at 40% 35%, #c0453a, #7a1d14); color: #f6d98f; font-size: 11px; font-style: normal; font-weight: 700;
+}
+
+/* the ribbons: one per section, painted on the picture; hovering shows its name */
+#mundi-root .mu-bk-ribbons { position: absolute; inset: 0; pointer-events: none; }
+#mundi-root .mu-bk-ribbon, #mundi-root .mu-bk-ribbon:hover:not(:disabled) {
+    pointer-events: auto; position: absolute; left: 89.6%; width: 9.6%; height: 3.7%; padding: 0 0 0 1.2%; justify-content: flex-start; gap: 6px;
+    background: none !important; border: 0 !important; box-shadow: none !important; color: rgba(255, 244, 214, .92) !important;
+    font-family: "Cinzel", serif; font-size: .62em; font-weight: 700; white-space: nowrap; overflow: visible; transition: filter .15s;
+}
+#mundi-root .mu-bk-ribbon .mu-ic { width: 1.5em; height: 1.5em; flex: none; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .5)); }
+#mundi-root .mu-bk-ribbon span { overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 1px rgba(0, 0, 0, .7); }
+#mundi-root .mu-bk-ribbon:hover:not(:disabled) { color: #fff !important; filter: drop-shadow(0 0 5px rgba(255, 220, 140, .9)); }
+#mundi-root .mu-bk-ribbon.is-here { color: #ffe08a !important; filter: drop-shadow(0 0 4px rgba(255, 220, 140, .8)); }
+#mundi-root .mu-bk-ribbon.is-here::before { content: ""; position: absolute; left: -7px; top: 50%; width: 0; height: 0; border: 6px solid transparent; border-right-color: #8b2e1f; transform: translateY(-50%); }
+#mundi-root .mu-bk-ribbon em { position: absolute; right: 18%; top: -30%; }
+
+#mundi-root .mu-bk-close, #mundi-root .mu-bk-close:hover:not(:disabled) {
+    position: absolute; top: 3%; right: 2.5%; width: 38px; height: 38px; padding: 0; border-radius: 50% !important;
+    background: radial-gradient(circle at 40% 35%, #c0453a, #7a1d14) !important; border: 2px solid #4a120c !important; color: #f6d98f !important; box-shadow: 0 3px 8px rgba(0, 0, 0, .5) !important;
+}
+#mundi-root .mu-bk-close .mu-ic { width: 18px; height: 18px; }
+
+/* the sections inside the right page: the phone's views, dressed as ink */
+#mundi-root .mu-book .mu-ph-head { position: static; background: none; border-bottom: 1px solid var(--line); padding: 2px 0 8px; }
+#mundi-root .mu-book .mu-ph-head b { font-family: "Cinzel", serif; font-size: 1.15em; color: #8b2e1f; }
+#mundi-root .mu-book .mu-ph-head .mu-ibtn { background: none; border: 0; box-shadow: none; color: #7a5230; }
+#mundi-root .mu-book .mu-ph-row { padding: 8px 4px; }
+#mundi-root .mu-book .mu-ph-row img, #mundi-root .mu-book .mu-ph-chathead img { border: 2px solid #b48d52; box-shadow: 0 1px 3px rgba(60, 35, 10, .3); }
+#mundi-root .mu-book .mu-ph-body { padding: 10px 2px; }
+#mundi-root .mu-book .mu-ph-card { background: rgba(255, 248, 228, .5); border: 1px solid var(--line); border-radius: 6px; }
+#mundi-root .mu-book .mu-ph-thread { padding: 10px 2px; }
+#mundi-root .mu-book .mu-ph-msg { background: none; border: 0; border-left: 3px solid #b48d52; border-radius: 0; padding: 4px 10px; max-width: 92%; font-size: 1.02em; }
+#mundi-root .mu-book .mu-ph-msg.is-me { background: none; border-left: 0; border-right: 3px solid #8b2e1f; text-align: right; font-style: italic; color: #4a2c18; }
+#mundi-root .mu-book .mu-ph-compose { position: sticky; bottom: 0; background: linear-gradient(180deg, transparent, #efe0bd 30%); border-top: 0; padding: 10px 0 2px; }
+#mundi-root .mu-book .mu-ph-compose input { border-radius: 4px; background: rgba(255, 250, 236, .8); border: 1px solid #b48d52; color: var(--fg); font-family: inherit; font-size: 1em; }
+#mundi-root .mu-book small, #mundi-root .mu-book .mu-muted { color: var(--muted); }
+#mundi-root .mu-book button:not(.mu-bk-ribbon):not(.mu-bk-close):not(.mu-ph-row):not(.mu-ph-chathead):not(.mu-ibtn):not(.is-on) { font-family: inherit; }
+
+/* the first page */
+#mundi-root .mu-bk-front { display: grid; gap: 8px; padding-top: 6px; }
+#mundi-root .mu-bk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+#mundi-root .mu-bk-list li { display: grid; padding-left: 12px; border-left: 3px solid #b48d52; }
+#mundi-root .mu-bk-list span { color: var(--muted); font-style: italic; }
+#mundi-root .mu-bk-flourish { text-align: center; font-size: 2em; color: rgba(139, 46, 31, .55); margin: 10px 0 0; }
+
+/* small screens: one page at a time, the ribbons become a row of tabs */
+@media (max-width: 760px) {
+    #mundi-root .mu-bk-wrap { padding: 0; }
+    #mundi-root .mu-book { position: absolute; inset: 0; width: auto; height: auto; aspect-ratio: auto; background: linear-gradient(180deg, #f6ead0, #e9d5aa); filter: none; display: flex; flex-direction: column; font-size: 15px; }
+    #mundi-root .mu-bk-page { position: static; width: auto; height: auto; flex: 1; padding: 54px 16px 12px; }
+    #mundi-root .mu-bk-page.is-left { display: none; }
+    #mundi-root .mu-book.is-home .mu-bk-page.is-left { display: block; flex: none; padding-bottom: 0; }
+    #mundi-root .mu-book.is-home .mu-bk-page.is-left .mu-bk-h, #mundi-root .mu-book.is-home .mu-bk-toc { display: none; }
+    #mundi-root .mu-book.is-home .mu-bk-page.is-right { padding-top: 0; }
+    #mundi-root .mu-bk-leaf { display: none; }
+    #mundi-root .mu-bk-ribbons { position: static; order: 3; display: flex; overflow-x: auto; gap: 2px; padding: 4px; background: #3a2412; pointer-events: auto; }
+    #mundi-root .mu-bk-ribbon, #mundi-root .mu-bk-ribbon:hover:not(:disabled) { position: relative; top: auto !important; left: auto; width: auto; height: 44px; flex: 1 0 auto; padding: 0 10px; justify-content: center; transform: none; }
+    #mundi-root .mu-bk-ribbon span { display: none; }
+    #mundi-root .mu-bk-ribbon.is-here { background: #8b2e1f !important; border-radius: 6px; }
+    #mundi-root .mu-bk-ribbon.is-here::before { display: none; }
+    #mundi-root .mu-bk-ribbon em { right: 2px; top: 2px; }
+    #mundi-root .mu-bk-close { top: 10px; right: 12px; }
+}
+
+/* wooden buttons keep their gold letters on the page */
+#mundi-root .mu-book .mu-bk-page.is-right button:not(.mu-ibtn):not(.mu-ph-row):not(.mu-ph-chathead):not(.mu-chip):not(.mu-ch-like):not(.mu-ch-post) { color: #f6d98f; text-shadow: 0 1px 0 rgba(0, 0, 0, .45); }
+#mundi-root .mu-book h4 { color: #8b2e1f; font-family: "Cinzel", serif; letter-spacing: .05em; }
+#mundi-root .mu-bk-page { min-height: 0; }
+
+/* ribbons show their icon; the name slides out on a parchment tag */
+#mundi-root .mu-bk-ribbon span {
+    position: absolute; left: 100%; top: 50%; transform: translate(-6px, -50%); opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s;
+    padding: 3px 9px; border-radius: 4px; background: #f4e6c6; color: #3a2817; border: 1px solid #b48d52; box-shadow: 0 3px 8px rgba(0, 0, 0, .4); text-shadow: none; font-size: 1.15em;
+}
+#mundi-root .mu-bk-ribbon:hover span, #mundi-root .mu-bk-ribbon:focus-visible span { opacity: 1; transform: translate(4px, -50%); }
+#mundi-root .mu-bk-ribbon .mu-ic { width: 1.9em; height: 1.9em; }
+@media (max-width: 760px) { #mundi-root .mu-bk-ribbon span { display: none; } }
+
+/* fields and choices written on the page */
+#mundi-root .mu-book textarea, #mundi-root .mu-book input[type="text"] { background: rgba(255, 250, 236, .85) !important; color: #3a2817 !important; border: 1px solid #b48d52 !important; font-family: inherit; }
+#mundi-root .mu-book textarea::placeholder, #mundi-root .mu-book input::placeholder { color: #9a8160; }
+#mundi-root .mu-book .mu-field > span { color: var(--muted); font-weight: 600; }
+#mundi-root .mu-book .mu-chip, #mundi-root .mu-book .mu-chip:hover:not(:disabled) {
+    background: rgba(255, 248, 228, .7) !important; color: #3a2817 !important; border: 1px solid #b48d52 !important; box-shadow: none !important; text-shadow: none !important; border-radius: 999px;
+}
+#mundi-root .mu-book .mu-chip.is-on, #mundi-root .mu-book .mu-chip.is-on:hover:not(:disabled) { background: linear-gradient(180deg, #a03a2a, #7a2418) !important; color: #f6d98f !important; border-color: #4a120c !important; }
+#mundi-root .mu-book .mu-bk-page.is-right .mu-ch-refresh, #mundi-root .mu-book .mu-bk-page.is-right .mu-ch-refresh:hover:not(:disabled) {
+    background: none !important; border: 1px dashed #b48d52 !important; box-shadow: none !important; color: #6a4222 !important; text-shadow: none;
+}
+#mundi-root .mu-book .mu-sp-card { background: rgba(255, 248, 228, .6); border: 1px solid var(--line); }
+#mundi-root .mu-book .mu-sp-info, #mundi-root .mu-book .mu-sp-info h3 { color: var(--fg); }
+
+/* the notice board: slips of parchment pinned with a red pin */
+#mundi-root .mu-bd-board { display: grid; gap: 14px; padding: 12px 2px 6px; }
+#mundi-root .mu-bd-note {
+    position: relative; display: grid; gap: 6px; padding: 16px 14px 12px; background: #fbf3df; border: 1px solid #d8c29a;
+    box-shadow: 0 3px 6px rgba(60, 35, 10, .22); transform: rotate(-.6deg);
+}
+#mundi-root .mu-bd-note:nth-child(even) { transform: rotate(.7deg); }
+#mundi-root .mu-bd-note::before { content: ""; position: absolute; top: -6px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #e0635a, #8b1e14); box-shadow: 0 2px 2px rgba(0, 0, 0, .35); }
+#mundi-root .mu-bd-note header { display: flex; align-items: center; gap: 8px; }
+#mundi-root .mu-bd-note header img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid #b48d52; }
+#mundi-root .mu-bd-note header b { font-family: "Cinzel", serif; font-size: .95em; }
+#mundi-root .mu-bd-note header small { margin-left: auto; }
+#mundi-root .mu-bd-note p { margin: 0; font-size: 1.05em; font-style: italic; line-height: 1.35; }
+#mundi-root .mu-bd-note .mu-ch-img { width: 100%; border-radius: 3px; }
+#mundi-root .mu-book .mu-bd-write, #mundi-root .mu-book .mu-bd-write:hover:not(:disabled) {
+    justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: .9em;
+}
+#mundi-root .mu-bd-write .mu-ic { width: 14px; height: 14px; }
+#mundi-root .mu-bd-mine { justify-self: end; font-style: italic; }
+
+/* the matchmaker's news: a sealed note, not the modern app's pink screen */
+#mundi-root .mu-book .mu-sp-match { background: none; color: var(--fg); padding: 22px 6px; gap: 12px; }
+#mundi-root .mu-book .mu-sp-match h2 { color: #8b2e1f; font-family: "Cinzel", serif; font-size: 1.45em; line-height: 1.2; margin: 0; }
+#mundi-root .mu-book .mu-sp-match h2::after { content: "❦"; display: block; margin-top: 6px; font-size: .8em; color: rgba(139, 46, 31, .55); }
+#mundi-root .mu-book .mu-sp-match p { font-size: 1.1em; font-style: italic; margin: 0; }
+#mundi-root .mu-book .mu-sp-pair img { border: 3px solid #b48d52; box-shadow: 0 3px 8px rgba(60, 35, 10, .35); }

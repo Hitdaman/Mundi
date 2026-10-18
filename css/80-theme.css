@@ -1,0 +1,159 @@
+/* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
+   Colors come from these variables; corners are moderately rounded. */
+#mundi-root {
+    --r: 12px; --rb: 9px; --ri: 9px;
+    --b1: #26324c; --b2: #1c263b; --bb: #34445f; --bs: #0a0f1c; --bh: #233452; --pe: rgba(255, 255, 255, .06); --in: #111a2b;
+    --mb: rgba(23, 31, 49, .92); --h4: #7fb4ea; --veil: rgba(4, 8, 18, .6); --brand: var(--a1); --brandsh: rgba(0, 0, 0, .5);
+    --bg: #0f1726; --bg2: #18223a; --panel: rgba(20, 29, 48, .97); --line: #2b3a59; --fg: #eaf2ff; --muted: #9db0cb;
+    --accent: var(--a2); --accent2: #43b51b; --good: #4cc527; --bad: #f0545c; --warn: #f2a52a; --shadow: 0 8px 22px rgba(0, 0, 0, .45);
+    font-family: var(--mu-font, "Nunito", "Segoe UI", system-ui, sans-serif);
+    text-shadow: none;   /* SillyTavern's theme gives the page a blurred text shadow; Mundi does not use it */
+    background: linear-gradient(180deg, #0d1424 0%, #111b2e 60%, #142038 100%);
+}
+#mundi-root [class], #mundi-root p, #mundi-root span, #mundi-root b, #mundi-root small, #mundi-root label, #mundi-root h1, #mundi-root h2, #mundi-root h3, #mundi-root h4, #mundi-root li { text-shadow: none; }
+#mundi-root .mu-chip, #mundi-root .mu-switch { border-radius: var(--rb); }
+/* Light theme, The Sims 4 style: white rounded panels, sky-blue background, blue pill buttons, green accents. */
+#mundi-root h1, #mundi-root h2, #mundi-root h3 { font-weight: 800; letter-spacing: -.01em; }
+#mundi-root h4 { color: var(--h4); }
+
+/* buttons: white pills with a blue edge; primary = glossy blue */
+#mundi-root button, #mundi-root .mu-file {
+    border-radius: var(--rb); background: linear-gradient(180deg, var(--b1), var(--b2)); border: 1.5px solid var(--bb); color: var(--fg); font-weight: 700;
+    box-shadow: 0 2px 0 var(--bs), 0 3px 8px rgba(0, 0, 0, .10);
+}
+#mundi-root button:hover:not(:disabled):not([aria-disabled="true"]) { border-color: var(--accent); background: linear-gradient(180deg, var(--b1), var(--bh)); }
+#mundi-root button:active:not(:disabled) { box-shadow: 0 1px 0 var(--bs); }
+#mundi-root .mu-primary {
+    background: linear-gradient(180deg, var(--a1) 0%, var(--a2) 55%, var(--a3) 100%); border-color: var(--a4); color: #fff;
+    text-shadow: none; box-shadow: 0 2px 0 var(--a4), 0 4px 10px color-mix(in srgb, var(--a2) 35%, transparent);
+}
+#mundi-root .mu-primary:hover:not(:disabled) { background: linear-gradient(180deg, var(--a0) 0%, var(--a2) 55%, var(--a3) 100%); filter: none; }
+#mundi-root .mu-danger { background: linear-gradient(180deg, #ff7a7f, #e0464e); border-color: #b9343b; color: #fff; box-shadow: 0 2px 0 #9c2a30; }
+#mundi-root button.is-on, #mundi-root .mu-chip.is-on {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent2) 72%, #fff), var(--accent2)); border-color: color-mix(in srgb, var(--accent2) 72%, #000); color: #fff; text-shadow: none; box-shadow: 0 2px 0 color-mix(in srgb, var(--accent2) 62%, #000);
+}
+#mundi-root .mu-ghost { background: transparent; box-shadow: none; border-color: transparent; }
+#mundi-root .mu-ghost:hover:not(:disabled) { background: var(--bh); }
+#mundi-root .mu-ibtn { border-radius: var(--rb); }
+
+/* panels and headers */
+#mundi-root .mu-panel { border: 2px solid var(--pe); box-shadow: 0 0 0 1px var(--line), var(--shadow); }
+#mundi-root .mu-subhead { background: linear-gradient(180deg, var(--a1), var(--a3)); border-bottom: 3px solid var(--accent2); color: #fff; }
+#mundi-root .mu-subhead h2 { color: #fff; }
+#mundi-root .mu-subhead > button, #mundi-root .mu-subhead .mu-switch { background: rgba(255, 255, 255, .18); border-color: rgba(255, 255, 255, .55); color: #fff; box-shadow: none; }
+#mundi-root .mu-subhead .mu-switch.is-on { background: rgba(255, 255, 255, .28); }
+#mundi-root .mu-switch i { background: rgba(0, 40, 90, .25); }
+#mundi-root .mu-switch.is-on i { background: var(--accent2); }
+#mundi-root .mu-switch.is-on i::after { background: #fff; }
+#mundi-root .mu-steps li { border-color: rgba(255, 255, 255, .6); color: #e7f2ff; }
+#mundi-root .mu-steps li.is-on { background: #fff; color: var(--a3); }
+
+/* inputs */
+#mundi-root input:not([type]), #mundi-root input[type="text"], #mundi-root input[type="search"],
+#mundi-root input[type="number"], #mundi-root select, #mundi-root textarea {
+    background: var(--in); border: 1.5px solid var(--line); border-radius: var(--ri); color: var(--fg);
+}
+#mundi-root input:focus, #mundi-root select:focus, #mundi-root textarea:focus { border-color: var(--a2); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--a2) 18%, transparent); }
+#mundi-root .mu-brand h1 { color: var(--brand); text-shadow: 0 2px 0 var(--brandsh); }
+#mundi-root .mu-brand h1::after { background: linear-gradient(90deg, var(--accent2), var(--a2)); }
+#mundi-root .mu-menu-btn { border-radius: var(--r); background: var(--mb); }
+#mundi-root .mu-menu-btn.is-primary { box-shadow: inset 5px 0 0 var(--accent2), 0 2px 0 var(--bs); border-color: var(--accent2); }
+#mundi-root .mu-menu-btn small { color: var(--muted); font-weight: 600; }
+
+/* library and lists */
+#mundi-root .mu-lib-item { border-radius: var(--rb); box-shadow: none; background: transparent; border-color: transparent; }
+#mundi-root .mu-lib-item.is-on { background: var(--bh); border-color: var(--accent); color: var(--fg); text-shadow: none; }
+#mundi-root .mu-lib-item.is-picked { background: color-mix(in srgb, var(--accent2) 16%, transparent); border-color: var(--accent2); }
+#mundi-root .mu-lib-list.is-grid .mu-lib-item { background: var(--bg2); border: 1.5px solid var(--line); box-shadow: 0 2px 0 var(--bs); }
+#mundi-root .mu-lib-tabs button.is-on, #mundi-root .mu-tabs button.is-on {
+    background: linear-gradient(180deg, var(--a1), var(--a2)); border-color: var(--a4); color: #fff; box-shadow: 0 2px 0 var(--a4);
+}
+#mundi-root .mu-lib-bulk { background: var(--bh); }
+#mundi-root .mu-tag { color: var(--fg); }
+#mundi-root .mu-dlg-veil, #mundi-root .mu-crop-veil { background: var(--veil); }
+
+/* game: HUD, top bar, side cards, dialogue */
+#mundi-root .mu-hud, #mundi-root .mu-top, #mundi-root .mu-pop, #mundi-root .mu-zoom {
+    background: var(--panel); border: 2px solid var(--pe); box-shadow: 0 0 0 1px var(--line), var(--shadow); border-radius: var(--r);
+}
+#mundi-root .mu-tools button { border-radius: var(--rb); }
+#mundi-root .mu-clock b { color: var(--accent); }
+#mundi-root .mu-toast { background: var(--bg2); border: 2px solid var(--pe); box-shadow: 0 0 0 1px var(--line), var(--shadow); border-left: 6px solid var(--accent); border-radius: var(--r); }
+#mundi-root .mu-toast.is-success { border-left-color: var(--accent2); }
+#mundi-root .mu-subhead > button:hover:not(:disabled), #mundi-root .mu-subhead .mu-switch:hover { background: rgba(255, 255, 255, .32); border-color: #fff; }
+/* map pins keep their own look */
+#mundi-root .mu-pin, #mundi-root .mu-pin:hover:not(:disabled), #mundi-root .mu-pin:active:not(:disabled) {
+    background: none; border: 0; box-shadow: none; border-radius: 0; text-shadow: none; padding: 0;
+}
+#mundi-root .mu-pin:active:not(:disabled) { transform: translate(-50%, -50%) scale(var(--ik, 1)); }
+/* active items keep their color under the mouse */
+#mundi-root .mu-tabs button.is-on:hover:not(:disabled), #mundi-root .mu-lib-tabs button.is-on:hover:not(:disabled) { background: linear-gradient(180deg, var(--a0), var(--a2)); color: #fff; border-color: var(--a4); }
+#mundi-root button.is-on:hover:not(:disabled):not([aria-disabled="true"]), #mundi-root .mu-chip.is-on:hover:not(:disabled) { background: linear-gradient(180deg, color-mix(in srgb, var(--accent2) 62%, #fff), color-mix(in srgb, var(--accent2) 88%, #fff)); color: #fff; border-color: color-mix(in srgb, var(--accent2) 72%, #000); }
+#mundi-root .mu-tabs button.is-on, #mundi-root .mu-lib-tabs button.is-on { color: #fff; }
+#mundi-root .mu-switch.is-on, #mundi-root .mu-switch.is-on:hover:not(:disabled) { background: rgba(255, 255, 255, .25); color: #fff; border-color: rgba(255, 255, 255, .7); }
+#mundi-root .mu-tabs button.is-on:hover:not(:disabled):not([aria-disabled="true"]), #mundi-root .mu-lib-tabs button.is-on:hover:not(:disabled):not([aria-disabled="true"]) { background: linear-gradient(180deg, var(--a0), var(--a2)); border-color: var(--a4); }
+
+/* Theme color: only the main color changes (buttons, header, tabs, highlights). */
+#mundi-root { --a0: #66bbff; --a1: #4fb0ff; --a2: #1e88e5; --a3: #1a72c8; --a4: #12599c; --aon: #fff; --accent: var(--a2); }
+#mundi-root[data-accent="green"] { --a0: #7fe06a; --a1: #5fcf45; --a2: #36a81c; --a3: #2b8c14; --a4: #1f6b0d; }
+#mundi-root[data-accent="red"] { --a0: #ff8e8e; --a1: #ff6b6b; --a2: #e23b41; --a3: #c22a31; --a4: #941d23; }
+#mundi-root[data-accent="purple"] { --a0: #c3a4ff; --a1: #a57cff; --a2: #7c4ddb; --a3: #653bbd; --a4: #4b2a91; }
+#mundi-root[data-accent="pink"] { --a0: #ff9fd0; --a1: #ff7abd; --a2: #e7489a; --a3: #c8327f; --a4: #98235f; }
+#mundi-root[data-accent="yellow"] { --a0: #ffe07a; --a1: #ffd04d; --a2: #f0ad13; --a3: #d18f05; --a4: #9c6a00; --aon: #3a2800; }
+#mundi-root .mu-primary, #mundi-root .mu-subhead, #mundi-root .mu-subhead h2, #mundi-root .mu-tabs button.is-on, #mundi-root .mu-lib-tabs button.is-on { color: var(--aon); }
+#mundi-root .mu-subhead > button, #mundi-root .mu-subhead .mu-switch { color: var(--aon); }
+#mundi-root .mu-switch.is-on, #mundi-root .mu-switch.is-on:hover:not(:disabled) { color: var(--aon); }
+/* map pins: no button background on hover */
+#mundi-root .mu-pin, #mundi-root .mu-pin:hover, #mundi-root .mu-pin:focus, #mundi-root .mu-pin:active { background: none !important; border: 0 !important; box-shadow: none !important; }
+#mundi-root .mu-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+#mundi-root .mu-swatch, #mundi-root .mu-swatch:hover:not(:disabled) { width: 36px; height: 36px; padding: 0; border-radius: 50%; background: var(--c); border: 3px solid var(--bg2); box-shadow: 0 0 0 1px var(--line); }
+#mundi-root .mu-swatch.is-sel { box-shadow: 0 0 0 3px var(--c); }
+/* the "things to do" panel under the HUD */
+#mundi-root .mu-dock { position: absolute; z-index: 21; top: 84px; bottom: calc(min(44vh, 440px) + 24px); margin: auto 0; height: fit-content; right: 12px; left: auto; width: 280px; max-height: calc(100% - min(44vh, 440px) - 108px); display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+    background: var(--panel); border: 2px solid var(--pe); box-shadow: 0 0 0 1px var(--line), var(--shadow); border-radius: var(--r); }
+#mundi-root .mu-dock-head, #mundi-root .mu-dock-head:hover:not(:disabled) { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; justify-items: start; gap: 0 8px; padding: 10px 12px; border: 0; border-radius: 0; background: none; box-shadow: none; text-align: left; }
+#mundi-root .mu-dock-head b { font-size: 14px; }
+#mundi-root .mu-dock-head small { grid-row: 2; color: var(--muted); font-weight: 600; }
+#mundi-root .mu-dock-head .mu-ic { grid-row: 1 / 3; grid-column: 2; align-self: center; }
+#mundi-root .mu-dock-list { overflow: auto; display: grid; gap: 6px; padding: 0 10px 10px; align-content: start; }
+#mundi-root .mu-dock-act { display: grid; grid-template-columns: 28px 1fr; grid-template-rows: auto auto; justify-items: start; column-gap: 8px; padding: 7px 10px; text-align: left; }
+#mundi-root .mu-dock-act i { grid-row: span 2; align-self: center; font-style: normal; font-size: 18px; display: grid; place-items: center; }
+#mundi-root .mu-dock-act b { font-size: 13px; }
+#mundi-root .mu-dock-act small { font-size: 11px; color: var(--muted); }
+#mundi-root .mu-dock-act.is-work { border-color: var(--accent); }
+#mundi-root.hud-autohide .mu-dock { opacity: .15; transition: opacity .25s; }
+#mundi-root.hud-autohide .mu-dock:hover, #mundi-root.hud-autohide .mu-dock:focus-within { opacity: 1; }
+@media (max-width: 760px) { #mundi-root .mu-dock { top: auto; bottom: 64px; margin: 0; width: calc(100% - 16px); left: 8px; right: auto; max-height: 38vh; } #mundi-root .mu-dock:not(.is-open) { width: auto; } }
+
+/* Mundi's own form controls: not SillyTavern's styling (its sliders, checkboxes and text shadows) */
+#mundi-root, #mundi-root *:not(.mu-native *):not(.mu-native) { text-shadow: none; }
+#mundi-root input[type="range"]:not(.mu-native *) { -webkit-appearance: auto; appearance: auto; background: none; height: auto; border: 0; box-shadow: none; accent-color: var(--accent); width: 100%; margin: 4px 0; }
+#mundi-root input[type="checkbox"]:not(.mu-native *) { -webkit-appearance: auto; appearance: auto; background: none; border: 0; box-shadow: none; accent-color: var(--accent); width: 18px; height: 18px; }
+#mundi-root select:not(.mu-native *) option { color: var(--fg); background: var(--bg2); }
+#mundi-root output, #mundi-root .mu-field.slider output { color: var(--muted); }
+/* secondary text: readable in both themes (near-black in light, near-white in dark) */
+#mundi-root { --muted: #c9d6ea; }
+/* inside a highlighted (green/blue) item, all its text follows the item's text color */
+#mundi-root .is-on small, #mundi-root .is-on p, #mundi-root .is-on .mu-muted, #mundi-root .is-on span,
+#mundi-root .mu-primary small, #mundi-root .mu-primary span { color: inherit !important; opacity: .92; }
+#mundi-root .mu-worldcard.is-on, #mundi-root .mu-origin.is-on, #mundi-root .mu-style.is-on { color: #fff; }
+#mundi-root .mu-style.is-soon { opacity: 1; }
+/* new game: ready or new character */
+#mundi-root .mu-heropick { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; max-width: 760px; }
+#mundi-root .mu-herocard { flex-direction: column; align-items: flex-start; gap: 8px; padding: 22px; text-align: left; min-height: 170px; }
+#mundi-root .mu-herocard i { width: 52px; height: 52px; border-radius: var(--r); display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+#mundi-root .mu-herocard i .mu-ic { width: 28px; height: 28px; }
+#mundi-root .mu-herocard b { font-size: 18px; }
+#mundi-root .mu-herocard p { color: var(--muted); font-weight: 600; font-size: 13px; }
+#mundi-root .mu-review-list { margin: 0; padding-left: 20px; }
+#mundi-root .mu-persona-desc { white-space: pre-wrap; max-width: 760px; }
+
+/* picked items in the Library: an accent border and a filled check, easy to see in both themes */
+#mundi-root .mu-lib-item.is-picked, #mundi-root .mu-lib-list.is-grid .mu-lib-item.is-picked { border-color: var(--accent) !important; box-shadow: 0 0 0 2px var(--accent) !important; background: color-mix(in srgb, var(--accent) 14%, var(--bg2)) !important; }
+#mundi-root .mu-lib-item.is-picked .mu-pick { background: var(--accent) !important; border-color: #fff !important; color: #fff; }
+#mundi-root .mu-lib-item.is-picked .mu-pick .mu-ic { stroke: #fff; }
+
+/* SillyTavern's theme draws its own tick inside checkboxes; with the browser's own tick that made two */
+#mundi-root input[type="checkbox"]:not(.mu-native *)::before, #mundi-root input[type="checkbox"]:not(.mu-native *)::after { content: none !important; display: none !important; }
+/* pictures keep their quality when zoomed or scaled */
+#mundi-root img, #mundi-root .mu-sprite, #mundi-root .mu-worldart { image-rendering: high-quality; }

@@ -1,0 +1,50 @@
+import { payOf, priceOf } from './bills.js';
+import { addStatus, money } from './needs.js';
+import { book } from './ledger.js';
+import { traitsOf } from './work.js';
+import { note } from './facts.js';
+// Each trait the action likes gives +2; very low energy or mood gives −2 each.
+export function bonusFor(g, a) {
+    const mine = traitsOf(g);
+    let bonus = (a.roll?.traits ?? []).filter(t => mine.includes(t)).length * 2;
+    if ((g.player.stats.energy ?? 100) <= 20)
+        bonus -= 2;
+    if ((g.player.stats.mood ?? 100) <= 20)
+        bonus -= 2;
+    return bonus;
+}
+// The chance of success shown before trying (a natural 1 always fails, a natural 20 always works).
+export function chanceOf(g, a) {
+    if (!a.roll)
+        return 100;
+    const b = bonusFor(g, a);
+    let ok = 0;
+    for (let d = 1; d <= 20; d++)
+        if (d === 20 || (d > 1 && d + b >= a.roll.dc))
+            ok++;
+    return ok * 5;
+}
+export function rollAction(g, w, a, rnd = Math.random) {
+    const r = a.roll;
+    if (!r)
+        return null;
+    const d20 = 1 + Math.floor(rnd() * 20);
+    const bonus = bonusFor(g, a);
+    const total = d20 + bonus;
+    const grade = d20 === 1 ? 'critical-fail' : d20 === 20 ? 'critical-success' : total >= r.dc ? 'success' : 'fail';
+    const ok = grade === 'success' || grade === 'critical-success';
+    const out = ok ? r.success : r.fail;
+    const mult = grade === 'critical-success' || grade === 'critical-fail' ? 2 : 1;
+    const raw = Math.round((out.money ?? 0) * (grade === 'critical-success' ? 2 : 1));
+    const cash = raw > 0 ? payOf(g, raw) : -priceOf(g, -raw); // the difficulty
+    if (cash) {
+        g.player.money = Math.max(0, g.player.money + cash);
+        book(g, a.name, cash);
+    }
+    for (const [id, v] of Object.entries(out.effects ?? {}))
+        addStatus(g, w, id, v * ((v < 0 && grade === 'critical-fail') || (v > 0 && grade === 'critical-success') ? mult : 1));
+    const text = `${out.text}${cash ? ` (${cash > 0 ? '+' : '−'}${money(w, Math.abs(cash))})` : ''}`;
+    note(g, ok ? '{u} tried to {0} — it worked. {1}' : '{u} tried to {0} — it did not work. {1}', [a.label.toLowerCase(), out.text], [], g.player.loc, 'skill');
+    return { d20, bonus, total, dc: r.dc, grade, text };
+}
+export const gradeName = (gr) => ({ 'critical-fail': 'Critical failure', fail: 'Failure', success: 'Success', 'critical-success': 'Critical success' })[gr];

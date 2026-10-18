@@ -1,0 +1,216 @@
+/* ==========================================================================
+   Phones, upright (#mundi-root[data-mobile], set in app.ts).
+   The game HUD stacks in rows at the top, the dialogue box fills the bottom, and the panels become full-screen sheets.
+   Sizes here are before the phone scale (Settings → Overall scale on this phone, 85% by default).
+   ========================================================================== */
+#mundi-root[data-mobile] { --m-gap: 8px; --m-dlg: min(80%, calc(47% * var(--mu-dlg-h, 1))); }   /* Chat look → Dialogue box height */
+#mundi-root[data-mobile] #mundi-main { top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px); left: env(safe-area-inset-left, 0px); right: env(safe-area-inset-right, 0px); }
+#mundi-root[data-mobile] button, #mundi-root[data-mobile] [data-act] { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#mundi-root[data-mobile] input, #mundi-root[data-mobile] textarea, #mundi-root[data-mobile] select { font-size: max(16px, 1em); }   /* no zoom-in on focus (iOS) */
+
+/* ---------- row 1: you (left), Work · Map · menu (right) ---------- */
+#mundi-root[data-mobile] .mh-persona { top: var(--m-gap); left: var(--m-gap); right: auto; width: calc(100% - 2 * var(--m-gap) - 108px); max-width: none;
+    grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 7px 10px 7px 7px; border-radius: 20px; }
+#mundi-root[data-mobile] .mh-persona:has(~ .mh-corner .mh-mapbtn + .mh-mapbtn) { width: calc(100% - 2 * var(--m-gap) - 160px); }
+#mundi-root[data-mobile] .mh-face { width: 52px; height: 62px; border-radius: 14px; }
+#mundi-root[data-mobile] .mh-face-swap { width: 20px; height: 20px; right: 3px; bottom: 3px; opacity: 1; }
+#mundi-root[data-mobile] .mh-face-swap .mu-ic { width: 12px !important; height: 12px !important; }
+#mundi-root[data-mobile] .mh-needs { gap: 4px; }
+#mundi-root[data-mobile] .mh-who { font-size: 14px; gap: 6px; }
+#mundi-root[data-mobile] .mh-who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+#mundi-root[data-mobile] .mh-who .mu-cash { flex: none; font-size: 12px; padding: 1px 7px; }
+#mundi-root[data-mobile] .mh-bar { grid-template-columns: 16px minmax(0, 1fr) !important; gap: 6px; }
+#mundi-root[data-mobile] .mh-bar-name { display: none; }
+#mundi-root[data-mobile] .mh-bar-ic .mu-ic { width: 14px; height: 14px; }
+#mundi-root[data-mobile] .mh-bar-track { height: 7px; }
+#mundi-root[data-mobile] .mh-rings { flex-wrap: nowrap; gap: 8px; margin: 0; }
+#mundi-root[data-mobile] .mh-ring small { display: none; }
+#mundi-root[data-mobile] .mh-ring-ic { width: 24px; height: 24px; }
+#mundi-root[data-mobile] .mh-ring-ic::before { inset: -2px; }
+#mundi-root[data-mobile] .mh-ring-ic .mu-ic { width: 13px; height: 13px; }
+/* the need's name and word, under a tapped ring or bar */
+#mundi-root[data-mobile] .mh-bar::after, #mundi-root[data-mobile] .mh-ring::after { z-index: 5; }
+
+#mundi-root[data-mobile] .mh-corner { top: var(--m-gap); right: var(--m-gap); gap: 6px; }
+#mundi-root[data-mobile] .mh-corner .mh-menu, #mundi-root[data-mobile] .mh-corner .mh-mapbtn { width: 48px; height: 48px !important; padding: 0 !important; border-radius: 16px !important; justify-content: center; }
+#mundi-root[data-mobile] .mh-corner .mh-mapbtn span { display: none; }
+#mundi-root[data-mobile] .mh-corner .mh-mapbtn .mu-ic { width: 22px; height: 22px; }
+#mundi-root[data-mobile] .mh-corner .mh-menu .mu-ic { width: 24px; height: 24px; }
+#mundi-root[data-mobile] .mh-corner .mh-menu-pop { top: 56px; min-width: 240px; }
+#mundi-root[data-mobile] .mh-corner .mh-lookpop { position: fixed; inset: 0; top: 0 !important; right: 0; width: auto !important; max-width: none !important; max-height: none !important; height: 100%; border-radius: 0 !important; z-index: 60; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+#mundi-root[data-mobile] .mh-corner .mh-lookpop > header { padding: 14px 14px 10px; }
+
+/* your household: small faces under your card */
+#mundi-root[data-mobile] .mh-house { top: calc(var(--m-gap) + 84px); left: var(--m-gap); padding: 3px 8px 3px 6px; gap: 4px; }
+#mundi-root[data-mobile] .mh-house-p { width: 28px; height: 28px; }
+#mundi-root[data-mobile] .mh-house-ic .mu-ic { width: 14px; height: 14px; }
+#mundi-root[data-mobile] .mh-house-pop { min-width: 0; width: min(280px, calc(100vw - 32px)); }
+
+/* ---------- row 2: the clock, one line across ---------- */
+#mundi-root[data-mobile] .mh-clock.is-bar { top: calc(var(--m-gap) + 84px); bottom: auto !important; left: var(--m-gap) !important; right: var(--m-gap); transform: none !important;
+    max-width: none; width: auto; min-width: 0; justify-content: space-between; gap: 10px; padding: 5px 12px !important; border-radius: 16px; }
+#mundi-root[data-mobile]:has(.mh-house) .mh-clock.is-bar { left: auto !important; gap: 8px; }
+#mundi-root[data-mobile]:has(.mh-house) .mh-clock.is-bar .mh-bar-place b { max-width: 110px; }
+#mundi-root[data-mobile] .mh-clock.is-bar .mh-time b { font-size: 20px !important; }
+#mundi-root[data-mobile] .mh-clock.is-bar .mh-bar-day { display: none; }
+#mundi-root[data-mobile] .mh-clock.is-bar .mh-bar-place { min-width: 0; font-size: 13px; }
+#mundi-root[data-mobile] .mh-clock.is-bar .mh-bar-place b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+#mundi-root[data-mobile] .mh-clock.is-bar .mh-bar-sky { flex-direction: row; align-items: center; gap: 4px; }
+#mundi-root[data-mobile] .mh-clock.is-bar .mh-season { display: none; }
+#mundi-root[data-mobile] .mh-clock.is-bar .mh-weather { font-size: 18px; }
+/* on the map: the clock card, small, under your card on the left */
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) { top: calc(var(--m-gap) + 84px); bottom: auto; left: var(--m-gap); transform: none; width: 168px; padding: 8px 12px 0; border-radius: 18px; }
+#mundi-root[data-mobile]:has(.mh-house) .mh-clock:not(.is-bar) { top: calc(var(--m-gap) + 124px); }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-time b { font-size: 24px; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-clock-strip { margin-top: 4px; padding: 4px 12px; font-size: 10px; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-weekday { font-size: 13px; }
+
+/* ---------- row 3: who is here (left), Things to do (right) ---------- */
+#mundi-root[data-mobile] .mh-here { top: calc(var(--m-gap) + var(--m-row3, 132px)) !important; left: var(--m-gap); right: auto; transform: none; max-width: calc(100% - 2 * var(--m-gap) - 150px);
+    padding: 4px 8px 4px 10px; gap: 5px; overflow-x: auto; overflow-y: visible; scrollbar-width: none; }
+#mundi-root[data-mobile] .mh-here::-webkit-scrollbar { display: none; }
+#mundi-root[data-mobile] .mh-here > small { font-size: 10px; letter-spacing: 1px; margin-right: 2px; }
+#mundi-root[data-mobile] .mh-here-p img { width: 34px; height: 34px; }
+#mundi-root[data-mobile] .mh-here-p b { display: none; }
+#mundi-root[data-mobile] .mh-people { top: calc(var(--m-gap) + var(--m-row3, 132px)); left: var(--m-gap); right: auto; bottom: auto; width: auto; max-width: calc(100% - 2 * var(--m-gap)); grid-auto-flow: column; padding: 6px; gap: 6px; overflow-x: auto; }
+#mundi-root[data-mobile] .mh-here ~ .mh-people { display: none; }   /* in a place, "Here" already shows them */
+
+#mundi-root[data-mobile] .mh-acts { top: calc(var(--m-gap) + var(--m-row3, 132px)); right: var(--m-gap); left: var(--m-gap); width: auto; max-height: calc(100% - var(--m-dlg) - var(--m-gap) * 2 - var(--m-row3, 132px)); pointer-events: none; }
+#mundi-root[data-mobile] .mh-acts > * { pointer-events: auto; }
+#mundi-root[data-mobile] .mh-acts-head { height: 42px; padding: 0 14px !important; font-size: 12px; }
+#mundi-root[data-mobile] .mh-acts-head em { font-style: normal; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; display: grid; place-items: center; font-size: 11px; background: var(--accent); color: var(--aon, #fff); }
+#mundi-root[data-mobile] .mh-acts-list { margin-top: 6px; padding: 8px; gap: 6px; border-radius: 20px; background: rgba(12, 16, 26, .72); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 18px 40px rgba(0, 0, 0, .45);
+    grid-template-columns: repeat(2, minmax(0, 1fr)); overscroll-behavior: contain; }
+#mundi-root[data-mobile] .mh-act { padding: 8px 10px !important; grid-template-columns: 30px minmax(0, 1fr) !important; column-gap: 8px !important; min-height: 56px; border-radius: 14px !important; }
+#mundi-root[data-mobile] .mh-act > i { width: 30px !important; height: 30px !important; font-size: 17px !important; }
+#mundi-root[data-mobile] .mh-act > i .mu-ic { width: 16px; height: 16px; }
+#mundi-root[data-mobile] .mh-act > b { font-size: 13px !important; line-height: 1.2; }
+#mundi-root[data-mobile] .mh-act > small { font-size: 11px !important; line-height: 1.25; }
+
+/* the event (date, party…): a small card under the people */
+#mundi-root[data-mobile] .mh-event { top: calc(var(--m-gap) + var(--m-row3, 132px) + 52px) !important; left: var(--m-gap) !important; right: auto !important; max-width: min(260px, calc(100% - 2 * var(--m-gap))); padding: 8px 10px; }
+#mundi-root[data-mobile] .mh-event-btns { grid-auto-flow: column; justify-content: start; }
+#mundi-root[data-mobile] .mh-event-btns button { padding: 5px 9px; font-size: 12px; }
+
+/* ---------- the dialogue box: the bottom of the screen ---------- */
+#mundi-root[data-mobile] .mu-dialog { left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important; transform: none !important; width: 100% !important; max-width: none !important;
+    height: var(--m-dlg) !important; max-height: none !important; border-radius: 22px 22px 0 0 !important; border-bottom: 0 !important; }
+#mundi-root[data-mobile] .mu-log { padding-bottom: 4px; }
+#mundi-root[data-mobile] .mu-composer { padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) !important; gap: 6px !important; grid-template-columns: 1fr !important; }
+#mundi-root[data-mobile] .mu-composer .mh-modes { gap: 4px; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+#mundi-root[data-mobile] .mu-composer .mh-modes button { padding: 4px 9px !important; font-size: 12px; flex: none; }
+#mundi-root[data-mobile] .mu-composer textarea { min-height: 42px !important; height: 42px; max-height: 120px; padding: 9px 12px !important; }
+#mundi-root[data-mobile] .mu-composer-tools { gap: 6px !important; justify-content: flex-end; flex-wrap: nowrap; }
+#mundi-root[data-mobile] .mu-composer-tools > button { height: 38px; min-width: 38px; padding: 0 12px !important; }
+#mundi-root[data-mobile] .mu-sidepic { display: none !important; }
+#mundi-root[data-mobile] .mu-sprites { bottom: calc(var(--m-dlg) - 14px) !important; top: calc(var(--m-gap) + 180px * var(--mu-hud, 1)) !important; padding: 0 2%; }
+#mundi-root[data-mobile] .mu-sprite { height: 100% !important; transform: none; }
+#mundi-root[data-mobile] .mu-sprite .is-avatar { margin-bottom: 0 !important; height: 78% !important; max-height: 78% !important; }
+
+/* ---------- the phone: a round button over the dialogue box; open, it fills the screen ---------- */
+#mundi-root[data-mobile] .mh-peek { right: 12px; bottom: calc(var(--m-dlg) + 10px); width: 50px; height: 50px; padding: 0; border-radius: 17px !important; transform: none !important;
+    background: linear-gradient(160deg, #3a4254, #12161f) !important; box-shadow: 0 0 0 1.5px #5b667c, 0 8px 20px rgba(0, 0, 0, .45) !important; display: grid; place-items: center; }
+#mundi-root[data-mobile] .mh-peek:hover { transform: none !important; }
+#mundi-root[data-mobile] .mh-peek-notch, #mundi-root[data-mobile] .mh-peek-screen { display: none; }
+#mundi-root[data-mobile] .mh-peek-ic { display: grid; color: #dfe8ff; }
+#mundi-root[data-mobile] .mh-peek-ic .mu-ic { width: 24px; height: 24px; }
+#mundi-root[data-mobile] .mh-bookbtn { right: 12px; bottom: calc(var(--m-dlg) + 10px); top: auto; }
+#mundi-root .mh-peek-ic { display: none; }
+#mundi-root[data-mobile] .mu-phone { position: absolute; inset: 0 !important; width: auto !important; height: auto !important; max-height: none !important; transform: none !important; border-radius: 0 !important; padding: 0 !important; z-index: 70; box-shadow: none !important; }
+#mundi-root[data-mobile] .mu-ph-screen { border-radius: 0 !important; }
+#mundi-root[data-mobile] .mu-ph-status { padding: calc(10px + env(safe-area-inset-top)) 16px 6px !important; }
+
+/* ---------- cards and pop-ups ---------- */
+#mundi-root[data-mobile] .mu-pcard { top: auto !important; bottom: calc(var(--m-dlg) + 8px) !important; left: var(--m-gap) !important; right: var(--m-gap) !important; transform: none !important; width: auto !important; max-height: calc(100% - var(--m-dlg) - 24px); overflow: auto; }
+#mundi-root[data-mobile] #mundi-toasts { top: var(--m-gap) !important; width: calc(100% - 24px) !important; }
+#mundi-root[data-mobile] .mu-recap-veil { padding: 0 !important; }
+#mundi-root[data-mobile] .mu-recap { width: 100% !important; max-width: none !important; max-height: 100% !important; height: auto; border-radius: 22px 22px 0 0 !important; align-self: end; }
+#mundi-root[data-mobile] .mu-help { height: 100% !important; aspect-ratio: auto !important; border-radius: 0 !important; }
+#mundi-root[data-mobile] .mu-help-body { grid-template-columns: 1fr !important; grid-template-rows: auto minmax(0, 1fr) !important; }
+#mundi-root[data-mobile] .mu-help-nav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; scrollbar-width: none; }
+#mundi-root[data-mobile] .mu-help-nav button span { white-space: nowrap; }
+#mundi-root[data-mobile] .mu-course-grid { grid-template-columns: 1fr !important; }
+
+/* ---------- the map ---------- */
+#mundi-root[data-mobile] .mu-zoom { left: auto !important; right: var(--m-gap) !important; top: auto !important; bottom: calc(var(--m-gap) + 70px) !important; flex-direction: column; }
+#mundi-root[data-mobile] .mu-zoom > button { width: 40px; height: 40px; }
+#mundi-root[data-mobile] .mu-pop, #mundi-root[data-mobile] .mu-pop.is-here { position: absolute; left: var(--m-gap) !important; right: var(--m-gap) !important; top: auto !important; bottom: var(--m-gap) !important; width: auto !important; max-height: 60%; transform: none !important; border-radius: 22px; }
+#mundi-root[data-mobile]:not(:has(.mu-dialog)) .mh-peek, #mundi-root[data-mobile]:not(:has(.mu-dialog)) .mh-bookbtn { bottom: calc(var(--m-gap) + 4px); }
+
+/* ---------- menus and wizards ---------- */
+
+#mundi-root[data-mobile] .mu-heropick { grid-template-columns: 1fr !important; }
+#mundi-root[data-mobile] .mu-heropick.is-modes .mu-herocard { min-height: 0; }
+
+/* tabs (Settings, This world…): one row you scroll sideways, with the whole names */
+#mundi-root[data-mobile] .mu-tabs { display: flex !important; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; padding-bottom: 2px; }
+#mundi-root[data-mobile] .mu-tabs::-webkit-scrollbar { display: none; }
+#mundi-root[data-mobile] .mu-tabs > button { flex: none; overflow: visible; text-overflow: clip; display: inline-flex; align-items: center; }
+#mundi-root[data-mobile] .mu-tabs > .mu-tabs-group { flex: none; align-self: center; margin: 0 2px 0 8px; }
+
+/* touch screens have no mouse-over: the buttons of a line show on the newest line, and on a line you tap */
+@media (hover: none) {
+    #mundi-root .mu-line { cursor: pointer; }
+    #mundi-root .mu-line:last-child .mu-line-tools { opacity: 1; }
+    #mundi-root .mu-line-tools button { min-height: 30px; min-width: 30px; }
+    #mundi-root .mh-face-swap { opacity: 1; }
+    #mundi-root .mu-sidepic-x, #mundi-root .mu-toast-x { opacity: .8; }
+    #mundi-root .mh-peek:hover { transform: none; }
+    #mundi-root .mu-sprite .mu-zoomable:hover img { transform: none; }
+}
+
+/* ==========================================================================
+   Phones sideways (data-mobile="land"): the same HUD on the left half, the dialogue box as a column on the right.
+   ========================================================================== */
+#mundi-root[data-mobile="land"] { --m-half: calc(50% + var(--m-gap)); }
+#mundi-root[data-mobile="land"] .mu-dialog { left: auto !important; width: 50% !important; height: 100% !important; top: 0 !important; border-radius: 22px 0 0 22px !important; border-right: 0 !important; }
+#mundi-root[data-mobile="land"] .mh-persona { width: calc(50% - 2 * var(--m-gap) - 108px); }
+#mundi-root[data-mobile="land"] .mh-persona:has(~ .mh-corner .mh-mapbtn + .mh-mapbtn) { width: calc(50% - 2 * var(--m-gap) - 160px); }
+#mundi-root[data-mobile="land"] .mh-corner { right: var(--m-half); }
+#mundi-root[data-mobile="land"] .mh-clock.is-bar { right: var(--m-half); }
+#mundi-root[data-mobile="land"] .mh-acts { right: var(--m-half); max-height: calc(100% - var(--m-gap) * 2 - var(--m-row3, 132px)); }
+#mundi-root[data-mobile="land"] .mh-here { max-width: calc(50% - 2 * var(--m-gap) - 150px); }
+#mundi-root[data-mobile="land"] .mh-people { max-width: calc(50% - 2 * var(--m-gap)); }
+#mundi-root[data-mobile="land"] .mu-sprites { right: 50% !important; left: 0 !important; bottom: 0 !important; width: auto !important; }
+#mundi-root[data-mobile="land"] .mh-peek, #mundi-root[data-mobile="land"] .mh-bookbtn { right: var(--m-half); bottom: calc(var(--m-gap) + 4px); }
+#mundi-root[data-mobile="land"] .mu-pcard { right: var(--m-half) !important; bottom: var(--m-gap) !important; max-height: calc(100% - var(--m-row3, 132px) - 24px); }
+#mundi-root[data-mobile="land"] #mundi-toasts { left: 25% !important; width: calc(50% - 24px) !important; }
+#mundi-root[data-mobile="land"] .mu-recap { max-width: 640px !important; border-radius: 22px !important; align-self: center; }
+#mundi-root[data-mobile="land"] .mu-pop, #mundi-root[data-mobile="land"] .mu-pop.is-here { left: auto !important; width: min(380px, 50%) !important; max-height: calc(100% - 16px); }
+
+/* the game HUD on a phone has its own size (Settings → Game HUD size), on top of the overall scale: smaller by default,
+   so the scene and the dialogue box get the room. Offsets inside it scale with it, so the rows stay stacked. */
+#mundi-root[data-mobile] :is(.mh-persona, .mh-corner, .mh-house, .mh-clock, .mh-here, .mh-people, .mh-acts, .mh-event, .mh-peek, .mh-bookbtn) { zoom: var(--mu-hud, 1); }
+#mundi-root[data-mobile] .mh-corner .mh-lookpop { zoom: calc(1 / var(--mu-hud, 1)); display: block; overflow: auto; padding-top: 0; }
+#mundi-root[data-mobile] .mh-corner .mh-lookpop > header { position: sticky; top: 0; z-index: 3; margin: 0 -14px; padding: calc(14px + env(safe-area-inset-top)) 14px 10px; background: rgba(14, 18, 28, .92); border-bottom: 1px solid rgba(255, 255, 255, .08); }
+/* sideways, the phone is a column over the dialogue box (the right half), not the whole screen */
+#mundi-root[data-mobile="land"] .mu-phone { left: 50% !important; box-shadow: -12px 0 40px rgba(0, 0, 0, .5) !important; }
+
+/* ---------- row 1 on a phone: you · the clock card · the buttons (the clock is a card in a place too, not a bar) ---------- */
+#mundi-root[data-mobile] { --m-btns: 108px; --m-clk: 132px; }
+#mundi-root[data-mobile]:has(.mh-corner .mh-mapbtn + .mh-mapbtn) { --m-btns: 160px; }
+#mundi-root[data-mobile] .mh-persona, #mundi-root[data-mobile] .mh-persona:has(~ .mh-corner .mh-mapbtn + .mh-mapbtn) { width: calc(100% - 3 * var(--m-gap) - var(--m-btns) - var(--m-clk)); }
+#mundi-root[data-mobile="land"] .mh-persona, #mundi-root[data-mobile="land"] .mh-persona:has(~ .mh-corner .mh-mapbtn + .mh-mapbtn) { width: calc(50% - 3 * var(--m-gap) - var(--m-btns) - var(--m-clk)); }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar), #mundi-root[data-mobile]:has(.mh-house) .mh-clock:not(.is-bar) {
+    top: var(--m-gap) !important; bottom: auto !important; left: auto !important; right: calc(var(--m-gap) + var(--m-btns)) !important; transform: none !important;
+    width: var(--m-clk) !important; min-width: 0; height: 76px; padding: 6px 10px 0 !important; border-radius: 20px; display: grid; grid-template-rows: auto auto 1fr; overflow: hidden; }
+#mundi-root[data-mobile="land"] .mh-clock:not(.is-bar) { right: calc(var(--m-half) + var(--m-btns)) !important; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-clock-top { gap: 4px; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-time b { font-size: 22px; line-height: 1.05; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-weather { font-size: 20px; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-clock-row { gap: 4px; margin: 0; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-weekday { font-size: 11px; letter-spacing: .5px; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-season { display: inline; font-size: 10px; white-space: nowrap; }
+#mundi-root[data-mobile] .mh-clock:not(.is-bar) .mh-clock-strip { margin: 3px -10px 0; padding: 3px 10px; font-size: 9px; align-self: end; }
+/* where you are: a small pill on the right, under the clock and the buttons (your household is on the left) */
+#mundi-root[data-mobile] .mh-where { position: absolute; top: calc(var(--m-gap) + 84px) !important; left: auto; right: var(--m-gap); bottom: auto; transform: none; zoom: var(--mu-hud, 1);
+    max-width: 58%; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; font-size: 12px; white-space: nowrap; }
+#mundi-root[data-mobile] .mh-where span { overflow: hidden; text-overflow: ellipsis; }
+#mundi-root[data-mobile] .mh-where .mu-ic { width: 13px; height: 13px; flex: none; }
+#mundi-root[data-mobile="land"] .mh-where { right: var(--m-half); max-width: 28%; }
+#mundi-root[data-mobile] .mu-tabs:has(> .mu-tabs-st) { flex-wrap: wrap; overflow: visible; row-gap: 8px; }
+#mundi-root[data-mobile] .mu-tabs-st { display: flex; flex: 1 0 100%; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .08); }
+#mundi-root[data-mobile] .mu-tabs-st::-webkit-scrollbar { display: none; }
+#mundi-root[data-mobile] .mu-tabs-st > button { flex: none; }
+#mundi-root[data-mobile] .mu-tabs-st > .mu-tabs-group { flex: none; margin: 0 4px 0 2px; }
+#mundi-root[data-mobile] .mu-settings-layout { grid-template-rows: max-content minmax(0, 1fr) !important; align-content: start; }

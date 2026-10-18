@@ -1,0 +1,76 @@
+/* Main menu, load list, settings, new game wizard */
+#mundi-root .mu-menu { position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+#mundi-root .mu-menu-bg { position: absolute; inset: -20px; background-size: cover; background-position: center; filter: blur(3px) saturate(1.1); transform: scale(1.04); }
+#mundi-root .mu-menu-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8, 12, 22, .94) 0%, rgba(8, 12, 22, .78) 42%, rgba(8, 12, 22, .25) 100%); }
+#mundi-root .mu-brand { position: relative; padding: 48px 56px 8px; }
+#mundi-root .mu-brand h1 { font-size: clamp(44px, 7vw, 76px); font-weight: 800; letter-spacing: -.02em; }
+#mundi-root .mu-brand h1::after { content: ""; display: block; width: 64px; height: 5px; margin-top: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+#mundi-root .mu-brand p { color: var(--muted); margin-top: 10px; font-size: 15px; }
+#mundi-root .mu-menu-body { position: relative; overflow: auto; padding: 18px 56px; min-height: 0; }
+#mundi-root .mu-menu-main { display: grid; gap: 10px; width: min(380px, 100%); }
+#mundi-root .mu-menu-btn { justify-content: flex-start; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 18px; background: color-mix(in srgb, var(--bg2) 82%, transparent); text-align: left; }
+#mundi-root .mu-menu-btn b { font-size: 16px; }
+#mundi-root .mu-menu-btn.is-primary { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+#mundi-root .mu-menu-btn.is-quiet { background: transparent; }
+#mundi-root .mu-menu-corner { position: absolute; top: 18px; right: 18px; display: flex; gap: 8px; align-items: center; }
+#mundi-root .mu-lang { position: relative; display: flex; align-items: center; }
+#mundi-root .mu-lang span { position: absolute; left: 10px; pointer-events: none; }
+#mundi-root .mu-lang select { width: auto; background: var(--panel); }
+#mundi-root .mu-menu-foot { position: relative; padding: 12px 56px 16px; color: var(--muted); font-size: 12px; }
+#mundi-root .mu-menu-body .mu-subhead { position: relative; background: transparent; border: 0; padding: 0 0 12px; backdrop-filter: none; }
+#mundi-root .mu-saves { width: min(720px, 100%); padding: 10px 14px; display: grid; gap: 10px; }
+#mundi-root .mu-saves ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+#mundi-root .mu-save { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; flex-wrap: wrap; }
+#mundi-root .mu-save.is-current { border-color: var(--accent); }
+#mundi-root .mu-save-txt { display: grid; min-width: 0; }
+#mundi-root .mu-save-txt small { overflow-wrap: anywhere; }
+
+#mundi-root .mu-settings, #mundi-root .mu-wizard { position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr auto; background: var(--bg); }
+#mundi-root .mu-settings { grid-template-rows: auto 1fr; }
+#mundi-root .mu-settings-layout { display: grid; grid-template-columns: 200px 1fr; gap: 18px; padding: 18px; min-height: 0; max-width: 980px; width: 100%; margin: 0 auto; }
+#mundi-root .mu-tabs { display: grid; gap: 6px; align-content: start; }
+#mundi-root .mu-tabs button { justify-content: flex-start; }
+#mundi-root .mu-settings-body { padding: 18px; overflow: auto; display: grid; gap: 22px; align-content: start; }
+#mundi-root .mu-settings-body section { display: grid; gap: 12px; }
+
+#mundi-root .mu-steps { display: flex; gap: 6px; list-style: none; margin: 0 0 0 auto; padding: 0; flex-wrap: wrap; }
+#mundi-root .mu-steps li { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 600; }
+#mundi-root .mu-steps li.is-on { border-color: var(--accent); color: var(--fg); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+#mundi-root .mu-steps li.is-done { color: var(--fg); }
+#mundi-root .mu-wizard-body { overflow: auto; padding: 22px; display: grid; gap: 16px; align-content: start; max-width: 1080px; width: 100%; margin: 0 auto; }
+#mundi-root .mu-wizard-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 22px; border-top: 1px solid var(--line); background: var(--panel); }
+#mundi-root .mu-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+#mundi-root .mu-cards.small { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+#mundi-root .mu-worldcard, #mundi-root .mu-origin { flex-direction: column; align-items: flex-start; justify-content: flex-start; text-align: left; gap: 4px; padding: 0 0 14px; overflow: hidden; }
+#mundi-root .mu-origin { padding: 12px 14px; }
+#mundi-root .mu-worldcard > :not(.mu-worldart) { padding: 0 14px; }
+#mundi-root .mu-worldart { display: block; width: 100%; aspect-ratio: 16 / 9; background-size: cover; background-position: center; margin-bottom: 8px; }
+#mundi-root .mu-worldcard b, #mundi-root .mu-origin b { font-size: 16px; }
+#mundi-root .mu-worldcard p, #mundi-root .mu-origin p { color: var(--muted); font-size: 13px; }
+#mundi-root .mu-worldcard.is-soon { border: 1px dashed var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 4px; align-content: center; opacity: .7; }
+#mundi-root .mu-worldcard.is-on, #mundi-root .mu-origin.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+#mundi-root .mu-examples { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); }
+#mundi-root .mu-search { max-width: 360px; }
+#mundi-root .mu-castgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+#mundi-root .mu-castcard { position: relative; flex-direction: column; padding: 8px; gap: 6px; }
+#mundi-root .mu-castcard img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 8px; }
+#mundi-root .mu-castcard span { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+#mundi-root .mu-castcard i { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 50%; display: none; place-items: center; background: var(--accent); color: #04211f; font-style: normal; font-weight: 800; }
+#mundi-root .mu-castcard.is-on { border-color: var(--accent); }
+#mundi-root .mu-castcard.is-on i { display: grid; }
+
+#mundi-root .mu-creator { display: grid; grid-template-columns: 220px 1fr; gap: 22px; }
+#mundi-root .mu-creator > section { display: grid; gap: 12px; align-content: start; }
+#mundi-root .mu-creator .mu-origins, #mundi-root .mu-creator .mu-attrs, #mundi-root .mu-creator .mu-bio { grid-column: 1 / -1; }
+#mundi-root .mu-portrait { justify-items: center; text-align: center; }
+#mundi-root .mu-portrait-img { width: 200px; height: 200px; border-radius: 20px; background: linear-gradient(135deg, #22d3ee, #4f46e5); background-size: cover; background-position: center; display: grid; place-items: center; box-shadow: var(--shadow); }
+#mundi-root .mu-portrait-img span { font-size: 64px; font-weight: 800; color: rgba(255, 255, 255, .92); }
+#mundi-root .mu-file input { display: none; }
+#mundi-root .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+#mundi-root .mu-chip { padding: 5px 12px; border-radius: 999px; font-size: 13px; }
+#mundi-root .mu-attr { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+#mundi-root .mu-attr > div:first-child { display: grid; }
+#mundi-root .mu-stepper { display: flex; align-items: center; gap: 10px; }
+#mundi-root .mu-stepper button { width: 34px; height: 34px; padding: 0; font-size: 18px; }
+#mundi-root .mu-stepper em { font-style: normal; font-weight: 800; font-size: 18px; min-width: 18px; text-align: center; font-variant-numeric: tabular-nums; }
+#mundi-root .mu-review { padding: 18px; display: grid; gap: 10px; max-width: 640px; }

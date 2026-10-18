@@ -1,0 +1,4 @@
+/* Pressing a button: a quick pulse of light, never a move (a button that moves away from the pointer
+   can make the click land outside it, like on the gallery's arrows). */
+@keyframes mu-press { 0% { filter: brightness(1); } 35% { filter: brightness(1.32); } 100% { filter: brightness(1); } }
+#mundi-root button:active:not(:disabled):not([aria-disabled="true"]) { animation: mu-press .28s ease-out; }

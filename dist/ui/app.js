@@ -1,0 +1,403 @@
+import { drawThumbs } from './thumbs.js';
+import { rainAmbience } from './sfx.js';
+import { tutorialHtml, placeTutorial, tutorialTick } from './tutorial.js';
+import { coursesHtml } from './courses.js';
+import { weatherOf } from '../sim/weather.js';
+import { ttsNoise } from './addons.js';
+import { helpHtml } from './help.js';
+import { onComposerInput, onComposerKey, closeMention } from './mention.js';
+import { morph } from './morph.js';
+import { applyColors, setLookApplier } from './chatlook.js';
+// The shell: mounts Mundi's full-screen layer over SillyTavern, draws the current screen, dispatches clicks and
+// inputs, and runs the game clock.
+import { FONTS } from './settings.js';
+import { needWord } from '../sim/life.js';
+import { state, notify, onRender, ROOT_ID, game, saveGame, UI, toast, settings, clockMode, deviceMode, uiZoom } from '../core/store.js';
+import { getWorld } from '../core/world.js';
+import { installTranslator } from '../core/tr.js';
+import { ACT, INPUT } from './reg.js';
+import { menuHtml } from './menu.js';
+import { settingsHtml } from './settings.js';
+import { newGameHtml } from './newgame.js';
+import { mapHtml, applyMapView, mapInput } from './map.js';
+import { sceneHtml, afterScene, chatHtml } from './scene.js';
+import { worldCfgHtml } from './worldcfg.js';
+import { styleOf } from '../core/world.js';
+import { skinOf } from './skins.js';
+import { creatorHtml, CW } from './creator.js';
+const creatorWorld = () => CW.w ?? (CW.start ? getWorld(CW.start.base) ?? null : null);
+import { hudHtml, clock12, ampm } from './hud.js';
+import { libraryHtml, libraryEscape } from './library.js';
+import { galleryHtml, closeLightbox } from './gallery.js';
+import { refreshList, chat } from '../st/bridge.js';
+import { runPlans, PL } from './plans.js';
+import { syncNative, releaseNative, guardBackgrounds } from './native.js';
+import { phoneHtml, P as phone, feedTick } from './phone.js';
+import { advance, period, weekday } from '../sim/time.js';
+import { presentAt, residents, whereNow } from '../sim/people.js';
+import { syncScene } from '../sim/game.js';
+import { refreshPrompt } from '../sim/prompt.js';
+const root = () => document.getElementById(ROOT_ID);
+const PALETTES = {
+    blue: ['#66bbff', '#4fb0ff', '#1e88e5', '#1a72c8', '#12599c', '#fff'], green: ['#7fe06a', '#5fcf45', '#36a81c', '#2b8c14', '#1f6b0d', '#fff'],
+    red: ['#ff8e8e', '#ff6b6b', '#e23b41', '#c22a31', '#941d23', '#fff'], purple: ['#c3a4ff', '#a57cff', '#7c4ddb', '#653bbd', '#4b2a91', '#fff'],
+    pink: ['#ff9fd0', '#ff7abd', '#e7489a', '#c8327f', '#98235f', '#fff'], yellow: ['#ffe07a', '#ffd04d', '#f0ad13', '#d18f05', '#9c6a00', '#3a2800'],
+};
+export function applyUi() {
+    const r = root();
+    if (!r)
+        return;
+    const u = UI();
+    r.dataset.theme = 'dark'; // Mundi has one look: dark
+    r.dataset.accent = u.accent || 'blue';
+    r.dataset.layout = u.layout || 'vn';
+    r.dataset.vn = 'box'; // the visual novel shows its conversation in a box (the old no-box and subtitle styles are gone)
+    r.classList.remove('hud-autohide');
+    const dev = deviceMode();
+    if (dev)
+        r.dataset.mobile = dev;
+    else
+        delete r.dataset.mobile;
+    const sc = dev === 'port' ? (u.scalePhone ?? 85) : dev === 'land' ? (u.scaleLand ?? 80) : (u.scale || 100);
+    r.style.setProperty('--mu-scale', String(sc / 100));
+    const hud = dev === 'port' ? (u.hudPhone ?? 85) : dev === 'land' ? (u.hudLand ?? 80) : 100;
+    r.style.setProperty('--mu-hud', String(hud / 100));
+    r.style.setProperty('--mu-scene-text', String((u.sceneText || 100) / 100));
+    r.style.setProperty('--mu-dialog-blur', `${u.dialogBlur ?? 12}px`);
+    r.style.setProperty('--mu-dlg-w', String((u.dialogW ?? 100) / 100));
+    r.style.setProperty('--mu-dlg-h', String((u.dialogH ?? 100) / 100));
+    r.dataset.swap = u.chatSwap && u.layout === 'cards' ? '1' : ''; // swapping sides is a Cards option
+    r.dataset.avshape = u.avatarShape || 'rect';
+    r.dataset.imglayout = u.imgLayout || 'left';
+    applyColors(r);
+    r.dataset.dialogpos = u.dialogPos || 'center';
+    r.style.setProperty('--mu-sprite-size', String((u.spriteSize ?? 100) / 100));
+    r.style.setProperty('--mu-sprite-w', String((u.spriteW ?? 100) / 100));
+    r.style.setProperty('--mu-sprite-y', `${u.spriteY ?? 0}vh`);
+    r.classList.toggle('card-mode', u.cardMode !== false);
+    const font = FONTS.find(f => f[0] === (u.font || 'default'));
+    if (font && font[2])
+        r.style.setProperty('--mu-font', font[2]);
+    else
+        r.style.removeProperty('--mu-font');
+    // a theme color you chose wins over the skin's own colors (the skin decides only while you have not chosen)
+    const pal = u.accentLocked ? PALETTES[u.accent || 'blue'] : null;
+    for (const [i, k] of ['--a0', '--a1', '--a2', '--a3', '--a4', '--aon'].entries()) {
+        if (pal)
+            r.style.setProperty(k, pal[i]);
+        else
+            r.style.removeProperty(k);
+    }
+    if (pal)
+        r.style.setProperty('--accent', pal[2]);
+    else
+        r.style.removeProperty('--accent');
+    if (u.secondary)
+        r.style.setProperty('--accent2', u.secondary);
+    else
+        r.style.removeProperty('--accent2');
+}
+setLookApplier(() => applyUi());
+// turning the phone or resizing the window can switch between the phone and computer layouts
+for (const q of ['(max-width: 760px)', '(pointer: coarse) and (max-height: 520px)'])
+    globalThis.matchMedia?.(q).addEventListener?.('change', () => { applyUi(); notify(); });
+const inGame = () => !!game() && (state.view === 'map' || state.view === 'scene');
+function body() {
+    switch (state.view) {
+        case 'settings': return settingsHtml();
+        case 'newgame': return newGameHtml();
+        case 'library': return libraryHtml();
+        case 'gallery': return galleryHtml();
+        case 'map': return game() ? mapHtml() : menuHtml();
+        case 'scene': return game() ? sceneHtml() : menuHtml();
+        case 'chat': return chatHtml() || menuHtml();
+        case 'worldcfg': return game() ? worldCfgHtml() : menuHtml();
+        case 'creator': return creatorHtml() || menuHtml();
+        default: return menuHtml();
+    }
+}
+export function render() {
+    const r = root();
+    if (!r || !state.open)
+        return;
+    const main = r.querySelector('#mundi-main');
+    // keeps focus, caret and scroll positions, since drawing recreates the elements
+    const a = document.activeElement;
+    const focusKey = a?.dataset?.focus;
+    const caret = focusKey ? [a.selectionStart, a.selectionEnd] : null;
+    const keep = {};
+    main.querySelectorAll('[data-keep]').forEach(el => { keep[el.dataset.keep] = { top: el.scrollTop, h: el.scrollHeight, atEnd: el.scrollHeight - el.scrollTop - el.clientHeight < 40 }; });
+    // only what changed is redrawn (morph), so nothing else on screen "resets"
+    morph(main, `${body()}${inGame() ? hudHtml() + phoneHtml() + helpHtml() + coursesHtml() : ''}${tutorialHtml()}${state.busy ? `<div class="mu-busy"><i></i><span>${state.busy}…</span></div>` : ''}`);
+    {
+        const g = game();
+        rainAmbience(!!g && inGame() && (state.view === 'map' || state.view === 'scene') && weatherOf(g).rain);
+    } // rain you can hear
+    r.dataset.view = state.view;
+    // the style of the world on screen (the medieval look, the modern one…)
+    const g = game();
+    const shown = state.view === 'creator' ? creatorWorld() : state.view === 'newgame' && state.wizard ? getWorld(state.wizard.world) : (inGame() || state.view === 'worldcfg') && g ? getWorld(g.world) : null;
+    r.dataset.style = styleOf(shown);
+    r.dataset.skin = skinOf(shown);
+    placeTutorial(main);
+    tutorialTick();
+    // the picture by the side (a click on a name) fits in the room left of the dialogue box
+    {
+        const side = main.querySelector('.mu-sidepic'), dlg = main.querySelector('.mu-dialog');
+        if (side) {
+            const room = dlg ? (dlg.getBoundingClientRect().left - main.getBoundingClientRect().left) / uiZoom() - 10 : 0;
+            if (room > 160)
+                main.style.setProperty('--side-w', `${Math.round(room)}px`);
+            else
+                main.style.removeProperty('--side-w');
+        }
+    }
+    main.querySelectorAll('[data-keep]').forEach(el => {
+        const k = el.dataset.keep;
+        const was = keep[k];
+        // the conversation follows new lines, unless you scrolled up to read
+        if (el.dataset.bottom !== undefined && (!was || was.atEnd || (el.scrollHeight !== was.h && was.atEnd)))
+            el.scrollTop = el.scrollHeight;
+        else if (was && el.scrollTop !== was.top)
+            el.scrollTop = was.top;
+    });
+    if (focusKey) {
+        const el = main.querySelector(`[data-focus="${focusKey}"]`);
+        if (el) {
+            el.focus();
+            try {
+                el.setSelectionRange(caret[0], caret[1]);
+            }
+            catch { /* not a text field */ }
+        }
+    }
+    syncNative(main);
+    drawThumbs(main);
+    if (state.view === 'map')
+        applyMapView();
+    if (state.view === 'scene' || state.view === 'chat')
+        afterScene(main);
+}
+// The clock and HUD text, every game minute, without redrawing the screen.
+function lightUpdate() {
+    const r = root();
+    const g = game();
+    const w = g && getWorld(g.world);
+    if (!r || !g || !w)
+        return;
+    const set = (sel, text) => { const el = r.querySelector(sel); if (el && el.textContent !== text)
+        el.textContent = text; };
+    set('[data-clock]', clock12(g.minutes));
+    set('[data-ampm]', ampm(g.minutes));
+    set('[data-weekday]', weekday(g.day));
+    set('[data-period]', period(w, g.minutes).name);
+    r.querySelectorAll('[data-stat]').forEach(el => {
+        const v = Math.round(g.player.stats[el.dataset.stat] ?? 0);
+        el.style.setProperty('--v', String(v));
+        const d = w.statuses.find(x => x.id === el.dataset.stat);
+        if (d)
+            el.dataset.word = needWord(d, v);
+        el.classList.toggle('is-low', v <= 20);
+    });
+}
+/* ---------- open and close ---------- */
+export function openApp() {
+    const r = root();
+    if (!r)
+        return;
+    state.open = true;
+    r.hidden = false;
+    document.body.classList.add('mundi-open');
+    hookSillyTavernToasts();
+    applyUi();
+    // opening always starts at the main menu; "Continue" goes back to the game
+    state.view = 'menu';
+    notify();
+}
+export function closeApp() {
+    const r = root();
+    state.open = false;
+    rainAmbience(false);
+    releaseNative();
+    refreshList();
+    if (r)
+        r.hidden = true;
+    document.body.classList.remove('mundi-open');
+}
+Object.assign(ACT, {
+    exit: () => closeApp(),
+    'to-menu': () => { state.view = 'menu'; state.menuTab = 'main'; state.sel = null; notify(); },
+    'to-map': () => { if (state.generating) {
+        toast('Wait until they finish speaking.', 'info');
+        return;
+    } state.view = 'map'; notify(); },
+    'to-scene': () => { state.view = 'scene'; notify(); },
+});
+/* ---------- input ---------- */
+function attach(r) {
+    r.addEventListener('click', (e) => {
+        if (mapInput.click(e))
+            return;
+        const el = e.target.closest('[data-act]');
+        if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true')
+            return;
+        const fn = ACT[el.dataset.act];
+        if (fn)
+            Promise.resolve(fn(el, e)).catch(err => { console.error('[Mundi]', err); toast(String(err?.message ?? err), 'error'); });
+    });
+    const onInput = (e) => {
+        const el = e.target;
+        if (e.type === 'input' && el.tagName === 'SELECT')
+            return; // a list fires "input" and "change": handled once, on "change"
+        if (el.dataset?.focus === 'composer') {
+            state.composer = el.value;
+            onComposerInput(el);
+        }
+        const name = el.dataset?.input;
+        if (name)
+            INPUT[name]?.(el, e);
+    };
+    r.addEventListener('input', onInput);
+    r.addEventListener('focusout', (e) => { if (e.target.dataset?.focus === 'composer')
+        setTimeout(closeMention, 150); });
+    r.addEventListener('change', (e) => { if (e.target.matches('select, input[type=checkbox], input[type=file]'))
+        onInput(e); });
+    r.addEventListener('keydown', (e) => {
+        const t = e.target;
+        if (t.dataset?.focus === 'composer' && onComposerKey(t, e)) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        if (t.dataset?.focus === 'composer' && e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+            e.preventDefault();
+            ACT.send?.(t, e);
+        }
+        if (t.dataset?.focus === 'ph-draft' && e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            ACT[phone.app === 'social' ? 'ph-chirp' : phone.app === 'post' ? 'ph-reply' : 'ph-send']?.(t, e);
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (!state.open || e.target.closest?.('textarea, input, select'))
+            return;
+        if (state.view === 'gallery' && state.gal.photo !== null && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+            r.querySelector(`.mu-lb-nav.${e.key === 'ArrowLeft' ? 'is-prev' : 'is-next'}:not(:disabled)`)?.click();
+            return;
+        }
+        if (e.key !== 'Escape')
+            return;
+        if (state.view === 'gallery' && closeLightbox())
+            return;
+        if (phone.open && inGame()) {
+            phone.open = false;
+            notify();
+            return;
+        }
+        if (PL.card) {
+            PL.card = '';
+            notify();
+            return;
+        }
+        if (state.view === 'worldcfg') {
+            state.view = 'map';
+            notify();
+            return;
+        }
+        if (state.modal)
+            state.modal = null;
+        else if (state.view === 'library' && libraryEscape())
+            return;
+        else if (state.sel)
+            state.sel = null;
+        else
+            return;
+        notify();
+    });
+    mapInput.attach(r);
+    guardBackgrounds(r);
+}
+/* ---------- mounting and the clock ---------- */
+let ticks = 0, sig = '', frac = 0;
+// SillyTavern's own notifications (toastr: errors of extensions, saves…) show up in Mundi's corner while Mundi
+// is open, marked "(SillyTavern)". SillyTavern's own toast box is hidden meanwhile (see the CSS).
+function hookSillyTavernToasts() {
+    const t = window.toastr;
+    if (!t || t.__mundi)
+        return;
+    t.__mundi = true;
+    const kinds = { info: 'info', success: 'success', warning: 'warn', error: 'error' };
+    for (const [fn, kind] of Object.entries(kinds)) {
+        const orig = t[fn]?.bind(t);
+        if (!orig)
+            continue;
+        t[fn] = (message, title, opts) => {
+            if (ttsNoise(message))
+                return undefined; // TTS notices about characters without a voice (Add-ons → TTS)
+            // Mundi switches personas itself (Play as): SillyTavern's notices about it are noise while Mundi is open
+            if (state.open && /temporar(il)?y (chosen|persona)|persona locked|is locked to in this chat|persona.*(unlocked|lock)/i.test(`${String(title ?? '')} ${String(message ?? '')}`))
+                return undefined;
+            if (state.open) {
+                const plain = (v) => { const d = document.createElement('div'); d.innerHTML = String(v ?? ''); return (d.textContent ?? '').trim(); };
+                const text = plain(message), head = plain(title);
+                if (text || head)
+                    toast(text, kind, { source: 'SillyTavern', title: head, ms: kind === 'error' ? 9000 : kind === 'warn' ? 6000 : 4000 });
+            }
+            return orig(message, title, opts);
+        };
+    }
+}
+export function mount() {
+    hookSillyTavernToasts();
+    if (root())
+        return root();
+    const r = document.createElement('div');
+    r.id = ROOT_ID;
+    r.hidden = true;
+    r.innerHTML = '<div id="mundi-main"></div><div id="mundi-toasts"></div>';
+    document.body.appendChild(r);
+    installTranslator(r);
+    onRender(render);
+    attach(r);
+    // a line translated (or a picture added) after it arrived, e.g. by SillyTavern's Chat Translation: show it
+    let shownSig = '';
+    setInterval(() => {
+        if (!state.open || (state.view !== 'scene' && state.view !== 'chat') || state.generating)
+            return;
+        const sig = chat().slice(-8).map((m) => `${m?.extra?.display_text?.length ?? 0}.${Object.prototype.propertyIsEnumerable.call(m?.extra ?? {}, 'image') ? m.extra.image : ''}.${m?.extra?.media?.length ?? 0}`).join('|');
+        if (shownSig && sig !== shownSig)
+            notify();
+        shownSig = sig;
+    }, 1000);
+    setInterval(() => {
+        const g = game();
+        const w = g && getWorld(g.world);
+        if (!state.open || !g || !w || !inGame() || state.busy || state.generating || state.modal || !g.speed || clockMode(g) !== 'live')
+            return;
+        frac += g.speed / 60; // speed 60: one real second is one game minute
+        const mins = Math.floor(frac);
+        if (mins < 1)
+            return;
+        frac -= mins;
+        const loc = g.player.loc;
+        const msgs = advance(g, w, mins);
+        msgs.forEach(m => toast(m, 'warn'));
+        if (runPlans())
+            notify();
+        lightUpdate();
+        const now = residents(g).map(x => whereNow(g, w, x)).join('|') + `|${g.player.loc}`;
+        if (now !== sig || loc !== g.player.loc) {
+            sig = now;
+            syncScene().then(notify);
+        }
+        else if (++ticks % 10 === 0)
+            refreshPrompt(); // the time of day in the prompt
+        if (ticks % 15 === 0)
+            saveGame();
+        if (ticks % 30 === 0)
+            feedTick(); // characters post on their own (when that option is on)
+    }, 1000);
+    return r;
+}
+export const peopleHere = () => { const g = game(); const w = g && getWorld(g.world); return g && w ? presentAt(g, w, g.player.loc) : []; };
+export const openOnStart = () => settings().openOnStart;

@@ -1,0 +1,235 @@
+/* ---------- modern world: every control on the HUD's panels is liquid glass (the theme color tints the chosen one) ---------- */
+
+#mundi-root[data-style="modern"] {
+    --gb-bg: linear-gradient(160deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04) 55%), rgba(255, 255, 255, .06);
+    --gb-bg-hover: linear-gradient(160deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .07) 55%), rgba(255, 255, 255, .1);
+    --gb-edge: rgba(255, 255, 255, .22);
+    --gb-on: linear-gradient(160deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .06) 55%), color-mix(in srgb, var(--accent) 52%, transparent);
+    --gb-strong: linear-gradient(160deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .08) 55%), color-mix(in srgb, var(--accent) 78%, transparent);
+}
+#mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap, .mu-mapnav) button:not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)) {
+    background: var(--gb-bg) !important;
+    border: 1px solid var(--gb-edge) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .34), 0 2px 8px rgba(0, 0, 0, .16) !important;
+    color: var(--hud-fg) !important; text-shadow: none !important; filter: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    transition: background .15s, box-shadow .15s, transform .1s;
+}
+#mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap, .mu-mapnav) button:not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)):hover:not(:disabled):not([aria-disabled="true"]) {
+    background: var(--gb-bg-hover) !important; border-color: rgba(255, 255, 255, .34) !important;
+}
+#mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap, .mu-mapnav) button:not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)):is(.is-on, .mu-primary), #mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap, .mu-mapnav) button:not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)):is(.is-on, .mu-primary):hover:not(:disabled) {
+    background: var(--gb-on) !important;
+    border-color: color-mix(in srgb, var(--accent) 65%, #fff) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 0 14px color-mix(in srgb, var(--accent) 40%, transparent) !important;
+    color: #fff !important;
+}
+#mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap, .mu-mapnav) button:not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)).mu-primary { background: var(--gb-strong) !important; font-weight: 700; }
+#mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap) button.mu-ghost:not(.mu-ibtn):not(.mh-glass) { background: transparent !important; border: 1px solid transparent !important; box-shadow: none !important; color: var(--hud-fg) !important; }
+#mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap) .mu-ghost:not(.mu-ibtn):hover:not(:disabled) { background: rgba(255, 255, 255, .1) !important; border-color: rgba(255, 255, 255, .16) !important; }
+
+/* fields on glass */
+#mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap) :is(input[type="text"], input[type="search"], input[type="number"], input:not([type]), select, textarea) {
+    background: rgba(0, 0, 0, .2) !important; border: 1px solid rgba(255, 255, 255, .18) !important; color: var(--hud-fg) !important;
+    border-radius: 12px !important; box-shadow: inset 0 2px 5px rgba(0, 0, 0, .22) !important;
+}
+#mundi-root[data-style="modern"] :is(.mh-glass, .mu-pop, .mu-pcard, .mu-recap) select option { background: #1b2232; color: #f4f7fc; }
+
+/* the menu: plain rows on glass (not pills) */
+#mundi-root[data-style="modern"] .mh-menu-pop { background: linear-gradient(160deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .02) 50%), var(--glass-strong) !important; }
+#mundi-root[data-style="modern"] .mh-menu-pop.mh-glass button:not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)) { background: transparent !important; border: 1px solid transparent !important; box-shadow: none !important; }
+#mundi-root[data-style="modern"] .mh-menu-pop.mh-glass button:not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)):hover { background: rgba(255, 255, 255, .12) !important; border-color: rgba(255, 255, 255, .12) !important; }
+
+/* the map's zoom: three glass buttons, no box around them */
+#mundi-root[data-style="modern"] .mu-zoom { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+#mundi-root[data-style="modern"] .mu-zoom > button { -webkit-backdrop-filter: var(--glass-blur) !important; backdrop-filter: var(--glass-blur) !important; background: linear-gradient(160deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03) 55%), var(--glass) !important; }
+
+/* people chips in the map card */
+#mundi-root[data-style="modern"] .mu-pop-person { background: var(--gb-bg) !important; border: 1px solid var(--gb-edge) !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3) !important; color: var(--hud-fg) !important; }
+
+/* panels that open over other glass (the chat box): their own layer, so the blur under them does not flicker */
+#mundi-root .mh-lookpop, #mundi-root .mh-menu-pop, #mundi-root .mu-pop, #mundi-root .mu-recap, #mundi-root .mh-event { isolation: isolate; transform: translateZ(0); will-change: transform; }
+#mundi-root .mh-lookpop { background: linear-gradient(160deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .02) 45%), var(--glass-strong) !important; }
+#mundi-root .mh-lookpop * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* "Something else…": the window in the middle */
+#mundi-root .mu-ca-modal { width: min(460px, 100%); grid-template-rows: auto auto auto; }
+#mundi-root .mu-ca-modal h3 { margin: 2px 0 0; font-size: 20px; }
+#mundi-root .mu-ca-body { display: grid; gap: 10px; }
+#mundi-root .mu-ca-body input { width: 100%; padding: 12px 14px; font-size: 15px; }
+#mundi-root .mu-ca-modal .mh-ca-lens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+#mundi-root .mu-ca-modal .mh-ca-lens button { display: grid; gap: 2px; padding: 10px 6px; border-radius: 14px !important; }
+#mundi-root .mu-ca-modal .mh-ca-lens b { font-size: 14px; }
+#mundi-root .mu-ca-modal .mh-ca-lens small { font-size: 11px; opacity: .8; color: inherit; }
+#mundi-root .mu-ca-modal footer { display: flex; justify-content: flex-end; gap: 8px; }
+#mundi-root .mu-ca-modal footer .mu-primary { min-width: 120px; border-radius: 14px !important; }
+
+/* phone: a long name ends in "…"; the pencil renames the contact */
+#mundi-root .mu-ph-head.is-chat { grid-template-columns: 40px minmax(0, 1fr) 40px !important; }
+#mundi-root .mu-ph-chathead { min-width: 0; }
+#mundi-root .mu-ph-chathead > span { min-width: 0; display: grid; }
+#mundi-root .mu-ph-chathead b, #mundi-root .mu-ph-head > b { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#mundi-root .mu-ph-pen { width: 34px; height: 34px; justify-self: end; }
+#mundi-root .mu-ph-pen .mu-ic { width: 17px; height: 17px; }
+#mundi-root .mu-ph-nick { grid-column: 2 / 4; display: flex; gap: 6px; align-items: center; min-width: 0; }
+#mundi-root .mu-ph-nick input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 10px; }
+#mundi-root .mu-ph-nick .mu-ibtn { width: 34px; height: 34px; flex: none; }
+
+/* phone: editing a conversation (rename, delete messages) */
+#mundi-root .mu-ph-editnote { margin: 0; padding: 6px 12px; font-size: 12px; color: #ffb4b4; display: flex; align-items: center; gap: 6px; background: rgba(240, 84, 92, .12); }
+#mundi-root .mu-ph-editnote .mu-ic { width: 14px; height: 14px; }
+#mundi-root .mu-ph-thread.is-editing button.mu-ph-msg { display: block; font: inherit; text-align: left; cursor: pointer; position: relative; padding-right: 34px; border: 1px dashed rgba(240, 84, 92, .55) !important; }
+#mundi-root .mu-ph-thread.is-editing button.mu-ph-msg:hover { border-style: solid !important; filter: brightness(1.1); }
+#mundi-root .mu-ph-del { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #ff8a8a; display: grid; }
+#mundi-root .mu-ph-del .mu-ic { width: 16px; height: 16px; }
+
+/* phone settings: wallpaper from your pictures (this chat / the Mundi gallery) */
+#mundi-root .mu-ph-wp-pick { display: grid; gap: 10px; }
+#mundi-root .mu-ph-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(255, 255, 255, .06); }
+#mundi-root .mu-ph-tabs button, #mundi-root .mu-ph-tabs button:hover:not(:disabled) { padding: 7px 6px; font-size: 12px; border-radius: 9px; background: transparent !important; border: 0 !important; box-shadow: none !important; color: var(--fg) !important; text-shadow: none !important; }
+#mundi-root .mu-ph-tabs button.is-on, #mundi-root .mu-ph-tabs button.is-on:hover:not(:disabled) { background: rgba(255, 255, 255, .16) !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25) !important; font-weight: 700; }
+#mundi-root .mu-ph-body > section > button[data-act="wp-pick-open"], #mundi-root .mu-ph-body > section > button[data-act="wp-upload"] { width: 100%; margin-bottom: 6px; }
+
+/* your photo: opens "Play as" */
+#mundi-root button.mh-face { position: relative; padding: 0 !important; border: 0 !important; cursor: pointer; background: rgba(255, 255, 255, .1) !important; }
+#mundi-root button.mh-face:hover { box-shadow: inset 0 0 0 2px var(--accent), 0 4px 12px rgba(0, 0, 0, .25) !important; }
+#mundi-root .mh-face-swap { position: absolute; right: 5px; bottom: 5px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgba(10, 14, 24, .65); border: 1px solid rgba(255, 255, 255, .3); color: #fff; opacity: 0; transition: opacity .15s; }
+#mundi-root .mh-face-swap .mu-ic { width: 14px !important; height: 14px !important; opacity: 1 !important; }
+#mundi-root button.mh-face:hover .mh-face-swap, #mundi-root button.mh-face:focus-visible .mh-face-swap { opacity: 1; }
+/* the Play as window */
+#mundi-root .mu-pa { width: min(620px, 100%); grid-template-rows: auto minmax(0, 1fr) auto; }
+#mundi-root .mu-pa header h3 { margin: 2px 0 0; font-size: 20px; }
+#mundi-root .mu-pa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; overflow: auto; }
+#mundi-root .mu-pa-card { display: grid; justify-items: center; gap: 4px; padding: 12px 8px !important; border-radius: 16px !important; }
+#mundi-root .mu-pa-card img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; object-position: top; box-shadow: 0 0 0 2px rgba(255, 255, 255, .3); }
+#mundi-root .mu-pa-card b { font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-pa-card small { font-size: 11px; opacity: .75; }
+#mundi-root .mu-pa-note { font-size: 12px; margin: 0; }
+#mundi-root .mu-pa-edit { display: grid; gap: 10px; min-height: 0; }
+#mundi-root .mu-pa-pool { display: flex; flex-wrap: wrap; gap: 6px; max-height: 46vh; overflow: auto; }
+#mundi-root .mu-pa-pool .mu-chip img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+/* faces (Here, household, people) keep their own look; the Play as cards are glass */
+#mundi-root .mu-pa-card { background: var(--gb-bg, rgba(255, 255, 255, .08)) !important; border: 1px solid rgba(255, 255, 255, .22) !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3) !important; color: var(--hud-fg) !important; }
+#mundi-root .mu-pa-card:hover:not([aria-disabled="true"]) { background: var(--gb-bg-hover, rgba(255, 255, 255, .14)) !important; }
+#mundi-root .mu-pa-card.is-on { background: var(--gb-on, rgba(255, 255, 255, .2)) !important; border-color: color-mix(in srgb, var(--accent) 65%, #fff) !important; }
+
+/* "@" in the message box: who should answer (the list lives on the page, above the box) */
+#mundi-mention { position: fixed; z-index: 100000; display: none; gap: 2px; padding: 6px; border-radius: 14px; max-width: 320px;
+    background: linear-gradient(160deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .02) 50%), rgba(20, 26, 40, .82);
+    -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+    border: 1px solid rgba(255, 255, 255, .24); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 12px 30px rgba(4, 10, 24, .4); color: #f4f7fc; font: 600 13px/1.2 system-ui, sans-serif; }
+#mundi-mention small { padding: 4px 8px 6px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: .7; }
+#mundi-mention button { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+#mundi-mention button:hover, #mundi-mention button.is-on { background: rgba(255, 255, 255, .14); }
+#mundi-mention img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; object-position: top; }
+
+/* Chat look colors: transparency under each color (like SillyTavern's pickers) */
+#mundi-root .mu-look-colors .mu-look-color .mu-look-alpha { grid-column: 1 / 3; grid-row: 3; display: flex; align-items: center; gap: 6px; }
+#mundi-root .mu-look-alpha input[type="range"] { flex: 1; min-width: 0; height: 14px; accent-color: var(--accent); }
+#mundi-root .mu-look-alpha input[type="range"]:disabled { opacity: .35; }
+#mundi-root .mu-look-alpha small { width: 34px; text-align: right; font-size: 11px; opacity: .8; font-variant-numeric: tabular-nums; }
+#mundi-root .mu-look-colors .mu-look-color { grid-template-rows: auto auto auto !important; }
+
+/* Chat look: Mundi's own presets above yours */
+#mundi-root .mu-look-sub { display: block; margin: 6px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: .7; }
+#mundi-root .mu-look-themegrid.is-builtins { margin-bottom: 8px; }
+#mundi-root .mu-look-theme.is-builtin { background: var(--tb) !important; }
+#mundi-root .mu-look-theme.is-builtin b { color: var(--tm); }
+#mundi-root .mu-look-theme.is-builtin.is-on { box-shadow: 0 0 0 2px var(--accent) !important; }
+
+/* Help (phone app): a window in the middle, topics on the left */
+#mundi-root .mu-help-veil { z-index: 90; }
+#mundi-root .mu-help { width: min(860px, 100%); height: min(640px, calc(100vh - 40px)); grid-template-rows: auto minmax(0, 1fr); }
+#mundi-root .mu-help header h3 { margin: 2px 0 0; font-size: 20px; }
+#mundi-root .mu-help-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 14px; min-height: 0; }
+#mundi-root .mu-help-nav { display: grid; align-content: start; gap: 4px; overflow: auto; padding-right: 4px; }
+#mundi-root .mu-help-nav button { display: flex; align-items: center; gap: 8px; justify-content: flex-start; padding: 8px 10px !important; border-radius: 10px !important; font-size: 13px; text-align: left; }
+#mundi-root[data-style] .mu-help .mu-help-nav button:not(.is-on):not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+#mundi-root .mu-help-nav .mu-ic { width: 16px; height: 16px; flex: none; }
+#mundi-root .mu-help-page { overflow: auto; padding: 4px 10px 10px 4px; }
+#mundi-root .mu-help-page h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 18px; }
+#mundi-root .mu-help-intro { margin: 0 0 12px; line-height: 1.5; opacity: .9; }
+#mundi-root .mu-help-page dl { margin: 0; display: grid; gap: 10px; }
+#mundi-root .mu-help-page dt { font-weight: 800; font-size: 14px; }
+#mundi-root .mu-help-page dd { margin: 2px 0 0; line-height: 1.5; font-size: 13.5px; opacity: .88; }
+@media (max-width: 760px) { #mundi-root .mu-help-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); } #mundi-root .mu-help-nav { grid-auto-flow: column; overflow-x: auto; } }
+
+/* the picture by the side: no frame, at the left edge, the name right under it, beside the dialogue box */
+#mundi-root .mu-sidepic { left: 6px !important; width: var(--side-w, min(26vw, 440px)) !important; display: flex !important; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 4px; pointer-events: none; }
+#mundi-root .mu-sidepic > * { pointer-events: auto; }
+#mundi-root .mu-sidepic-frame { flex: 0 1 auto; min-height: 0; max-width: 100%; border-radius: 12px; box-shadow: none !important; background: none !important; overflow: hidden; display: flex; }
+#mundi-root .mu-sidepic-frame img { width: auto !important; height: auto !important; max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .45)); }
+#mundi-root .mu-sidepic-name { align-self: stretch; text-align: left !important; padding-left: 4px; font-size: 15px; }
+#mundi-root .mu-sidepic-frame { position: relative; }
+#mundi-root .mu-sidepic-frame img { max-height: calc(100vh - 230px); }
+#mundi-root .mu-sidepic-frame:hover .mu-sidepic-x { opacity: 1; }
+
+/* Help: wider, about 4:3 */
+#mundi-root .mu-help { width: min(1040px, calc(100vw - 32px)) !important; height: min(780px, calc(100vh - 40px)) !important; }
+#mundi-root .mu-help-body { grid-template-columns: 240px minmax(0, 1fr); }
+
+/* map: the place you are in sits under the clock card, not on its bottom strip */
+#mundi-root .mh-where { top: 152px !important; }
+/* map clock: the season on the weekday's line */
+#mundi-root .mh-clock-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+#mundi-root .mh-clock-row .mh-season { margin: 0; white-space: nowrap; }
+
+/* Homes app: the three bills of your home */
+#mundi-root .mu-bills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0 6px; }
+#mundi-root .mu-bill { display: grid; justify-items: center; gap: 2px; padding: 10px 4px !important; border-radius: 14px !important; font-size: 12px; text-align: center; }
+#mundi-root .mu-bill i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, .1); }
+#mundi-root .mu-bill b { font-size: 13px; }
+#mundi-root .mu-bill span { font-weight: 800; }
+#mundi-root .mu-bill small { font-size: 10.5px; opacity: .8; line-height: 1.2; }
+#mundi-root .mu-bill.is-paid { opacity: .85; }
+#mundi-root .mu-bill.is-paid i { color: #6ee59a; }
+#mundi-root .mu-bill.is-due { background: rgba(240, 84, 92, .22) !important; border: 1px solid rgba(255, 120, 120, .7) !important; color: #fff !important; }
+#mundi-root .mu-bill.is-due i { background: #e5484d; color: #fff; }
+#mundi-root .mu-bill.is-cut { animation: mu-bill-pulse 1.6s ease-in-out infinite; }
+@keyframes mu-bill-pulse { 50% { box-shadow: 0 0 0 3px rgba(240, 84, 92, .45); } }
+#mundi-root .mh-act.is-warn { border-color: rgba(255, 120, 120, .6) !important; background: linear-gradient(160deg, rgba(240, 84, 92, .3), rgba(240, 84, 92, .1)) !important; }
+#mundi-root .mu-diff .mu-herocard p { font-size: 12px; }
+
+/* Courses window */
+#mundi-root .mu-courses { grid-template-rows: max-content max-content max-content minmax(0, 1fr) !important; }
+#mundi-root .mu-courses > p { margin: 0; line-height: 1.45; }
+#mundi-root .mu-course-now { margin: 0; padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, .08); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#mundi-root .mu-course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; overflow: auto; padding: 2px 4px 6px 0; align-content: start; }
+#mundi-root .mu-course { display: grid; gap: 6px; align-content: start; padding: 12px; border-radius: 16px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .14); }
+#mundi-root .mu-course.is-on { border-color: color-mix(in srgb, var(--accent) 70%, #fff); }
+#mundi-root .mu-course.is-done { opacity: .75; }
+#mundi-root .mu-course header { display: flex; gap: 10px; align-items: center; }
+#mundi-root .mu-course header i { font-style: normal; font-size: 26px; }
+#mundi-root .mu-course header span { display: grid; }
+#mundi-root .mu-course header small { opacity: .8; font-size: 12px; }
+#mundi-root .mu-course p { margin: 0; font-size: 13px; line-height: 1.4; opacity: .88; }
+#mundi-root .mu-course em { font-style: normal; font-weight: 700; font-size: 13px; opacity: .85; }
+/* Profile app */
+#mundi-root .mu-profile section { display: grid; gap: 6px; }
+#mundi-root .mu-pf-top { position: relative; justify-items: center; text-align: center; padding-bottom: 8px; }
+#mundi-root .mu-pf-cover { position: absolute; inset: 0 0 auto 0; height: 64px; border-radius: 14px; background: linear-gradient(120deg, #0a66c2, #6aa8ff 60%, #b98cff); }
+#mundi-root .mu-pf-top img { position: relative; width: 86px; height: 86px; border-radius: 50%; object-fit: cover; object-position: top; margin-top: 18px; box-shadow: 0 0 0 4px var(--panel, #10151f); }
+#mundi-root .mu-pf-top b { font-size: 18px; }
+#mundi-root .mu-pf-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; margin-top: 6px; }
+#mundi-root .mu-pf-stats span { display: grid; padding: 6px 2px; border-radius: 10px; background: rgba(255, 255, 255, .06); }
+#mundi-root .mu-pf-stats small { font-size: 10.5px; opacity: .75; }
+#mundi-root .mu-profile h4 { display: flex; align-items: center; gap: 6px; }
+#mundi-root .mu-pf-row { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, .05); }
+#mundi-root .mu-pf-row small { opacity: .8; }
+#mundi-root .mu-pf-group small { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: .7; }
+
+/* Chat look presets: Mundi's and yours in one grid, "+" at the end; tools in the corner of the one in use */
+#mundi-root .mu-look-themegrid.is-presets .mu-look-theme.is-preset { position: relative; }
+#mundi-root[data-style] .mu-look-theme button.mu-look-preset-use:not(.mh-glass):not(.mu-ghost):not(.mu-ibtn):not(:has(> img)), #mundi-root .mu-look-preset-use { display: grid; gap: 4px; justify-items: start; text-align: left; background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; width: 100%; color: inherit !important; }
+#mundi-root .mu-look-preset-use b { color: var(--tm); }
+#mundi-root .mu-look-name { cursor: text; display: inline-block; margin-top: 4px; border-bottom: 1px dashed transparent; color: var(--tm); }
+#mundi-root .mu-look-name:hover { border-bottom-color: currentColor; }
+#mundi-root .mu-look-corner { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; }
+#mundi-root .mu-look-corner .mu-ibtn { width: 26px; height: 26px; padding: 0 !important; background: rgba(0, 0, 0, .35) !important; border-radius: 8px !important; }
+#mundi-root .mu-look-corner .mu-ic { width: 14px; height: 14px; }
+#mundi-root .mu-look-badge { position: absolute; bottom: 6px; right: 8px; font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: .55; }
+#mundi-root .mu-look-theme.is-preset.is-on { box-shadow: 0 0 0 2px var(--accent) !important; }
+#mundi-root .mu-look-new { display: grid !important; place-items: center; align-content: center; gap: 4px; min-height: 76px; border: 1.5px dashed rgba(255, 255, 255, .3) !important; background: transparent !important; box-shadow: none !important; color: var(--hud-fg, #fff) !important; opacity: .85; }
+#mundi-root .mu-look-new:hover { opacity: 1; border-color: var(--accent) !important; }
+#mundi-root .mu-look-new .mu-ic { width: 22px; height: 22px; }
+#mundi-root .mu-look-rename input { width: 100%; min-width: 0; padding: 4px 8px; }

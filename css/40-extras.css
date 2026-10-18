@@ -1,0 +1,168 @@
+/* Icons, library toolbar and grid, create dialog, cropper, expressions, SillyTavern's own panels, toasts */
+#mundi-root .mu-ic { flex: none; display: block; }
+#mundi-root button .mu-ic + span { white-space: nowrap; }
+#mundi-root .mu-ibtn { width: 38px; height: 38px; padding: 0; flex: none; }
+#mundi-root .mu-ibtn.mu-primary .mu-ic { stroke-width: 2.4; }
+#mundi-root .mu-tools button .mu-ic, #mundi-root .mu-where .mu-ic { width: 18px; height: 18px; }
+#mundi-root .mu-where { display: inline-flex; align-items: center; gap: 6px; }
+
+/* toasts: top right, under the header buttons */
+#mundi-toasts { top: 74px; right: 18px; left: auto; transform: none; width: min(360px, calc(100% - 24px)); justify-items: end; }
+#mundi-root .mu-toast { width: 100%; }
+
+/* library toolbar */
+#mundi-root .mu-lib-tools { display: flex; gap: 6px; align-items: center; }
+#mundi-root .mu-lib-tools .mu-right { margin-left: auto; }
+#mundi-root .mu-lib-crumb b { display: inline-flex; align-items: center; gap: 6px; }
+#mundi-root .mu-lib-item .mu-lib-thumb { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; background: var(--bg2); color: var(--muted); flex: none; }
+#mundi-root .mu-lib-item.is-folder .mu-lib-thumb { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, var(--bg2)); }
+#mundi-root .mu-lib-item .mu-fav, #mundi-root .mu-lib-item .mu-crownmark { color: var(--warn); display: grid; }
+#mundi-root .mu-lib-item .mu-fav { margin-left: auto; }
+#mundi-root .mu-lib-item .mu-crownmark { margin-left: auto; color: #f5c542; }
+#mundi-root .mu-lib-item .mu-crownmark + .mu-fav { margin-left: 4px; }
+#mundi-root .mu-lib-item .mu-fav .mu-ic, #mundi-root .mu-lib-item .mu-crownmark .mu-ic { width: 15px; height: 15px; }
+#mundi-root .mu-pick .mu-ic { width: 14px; height: 14px; stroke-width: 3; }
+#mundi-root .mu-tag { display: inline-flex; align-items: center; gap: 4px; }
+#mundi-root .mu-tag .mu-ic { width: 12px; height: 12px; }
+#mundi-root .mu-tag.is-gold { background: color-mix(in srgb, #f5c542 22%, transparent); border-color: color-mix(in srgb, #f5c542 60%, transparent); }
+#mundi-root .mu-crown.is-on { color: #f5c542; border-color: #f5c542; }
+#mundi-root .mu-lib-bulk { display: grid; gap: 8px; }
+#mundi-root .mu-lib-bulk > b { margin: 0; }
+#mundi-root .mu-lib-bulk > button { justify-self: start; }
+#mundi-root .mu-lib-bulkbtns { display: flex; gap: 6px; flex-wrap: wrap; }
+#mundi-root .mu-lib-bulkbtns button { padding: 6px 10px; }
+#mundi-root .mu-lib-bulkbtns .mu-ibtn { width: 34px; height: 34px; margin-left: auto; }
+
+/* grid view: cards like the new game's cast */
+#mundi-root .mu-lib-body.is-grid { grid-template-columns: minmax(360px, 1.15fr) 1fr; }
+#mundi-root .mu-lib-list.is-grid .mu-lib-items { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; padding: 10px; }
+#mundi-root .mu-lib-list.is-grid .mu-lib-item { position: relative; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; border: 1px solid var(--line); background: var(--bg2); border-radius: 12px; }
+#mundi-root .mu-lib-list.is-grid .mu-lib-item img, #mundi-root .mu-lib-list.is-grid .mu-lib-item .mu-lib-thumb { width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 8px; }
+#mundi-root .mu-lib-list.is-grid .mu-lib-item .mu-lib-thumb .mu-ic { width: 40%; height: 40%; }
+#mundi-root .mu-lib-list.is-grid .mu-lib-item > span { text-align: center; font-size: 13px; font-weight: 600; }
+#mundi-root .mu-lib-list.is-grid .mu-lib-item.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+#mundi-root .mu-lib-list.is-grid .mu-lib-item.is-folder small { position: absolute; top: 12px; right: 12px; padding: 1px 7px; border-radius: 999px; background: var(--panel); }
+#mundi-root .mu-lib-list.is-grid .mu-pick { position: absolute; top: 12px; left: 12px; background: var(--panel); }
+#mundi-root .mu-lib-list.is-grid .mu-fav, #mundi-root .mu-lib-list.is-grid .mu-crownmark { position: absolute; top: 12px; right: 12px; margin: 0; padding: 4px; border-radius: 50%; background: var(--panel); }
+#mundi-root .mu-lib-list.is-grid .mu-crownmark + .mu-fav { top: 40px; margin: 0; }
+
+/* card header picture you can click to change */
+#mundi-root .mu-lib-pic { position: relative; padding: 0; border: 0; background: none; border-radius: 10px; overflow: hidden; }
+#mundi-root .mu-lib-pic span { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .45); color: #fff; opacity: 0; transition: opacity .15s; }
+#mundi-root .mu-lib-pic:hover span, #mundi-root .mu-lib-pic:focus-visible span { opacity: 1; }
+#mundi-root .mu-lib-bookpic { width: 72px; height: 96px; border-radius: 10px; display: grid; place-items: center; background: var(--bg2); color: var(--accent); }
+#mundi-root .mu-lib-bookpic .mu-ic { width: 34px; height: 34px; }
+#mundi-root .mu-lib-savebar { justify-content: flex-start; }
+#mundi-root .mu-lib-savebar.is-top { position: static; padding: 0; background: none; }
+#mundi-root .mu-lib-sheet { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+#mundi-root .mu-traits > span small { margin-left: 6px; font-weight: 500; }
+#mundi-root .mu-chip small { color: var(--muted); margin-right: 4px; }
+#mundi-root .mu-chip[aria-disabled="true"] { opacity: .45; }
+
+/* create dialog */
+#mundi-root .mu-dlg:has(.mu-create) { width: min(620px, 100%); }
+#mundi-root .mu-create { display: grid; grid-template-columns: 150px 1fr; gap: 16px; }
+#mundi-root .mu-create-pic { display: grid; gap: 8px; justify-items: center; align-content: start; }
+#mundi-root .mu-create-pic img, #mundi-root .mu-create-pic i { width: 150px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 12px; display: grid; place-items: center; background: var(--bg2); color: var(--muted); }
+#mundi-root .mu-create-pic i .mu-ic { width: 48px; height: 48px; }
+#mundi-root .mu-create-pic button { font-size: 13px; padding: 6px 10px; }
+#mundi-root .mu-create-fields { display: grid; gap: 12px; align-content: start; }
+#mundi-root .mu-folder-list button .mu-ic { color: var(--warn); }
+
+/* cropper */
+#mundi-root .mu-crop-veil { position: absolute; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(5, 8, 15, .7); backdrop-filter: blur(3px); }
+#mundi-root .mu-crop { width: min(640px, 100%); max-height: 100%; overflow: auto; padding: 20px; display: grid; gap: 14px; }
+#mundi-root .mu-crop-body { display: flex; gap: 20px; flex-wrap: wrap; }
+#mundi-root .mu-crop-stage { position: relative; overflow: hidden; border-radius: 12px; background: #000; cursor: grab; touch-action: none; flex: none; }
+#mundi-root .mu-crop-stage:active { cursor: grabbing; }
+#mundi-root .mu-crop-stage img { position: absolute; top: 0; left: 0; max-width: none; transform-origin: 0 0; user-select: none; pointer-events: none; }
+#mundi-root .mu-crop-grid { position: absolute; inset: 0; pointer-events: none; border: 2px solid rgba(255, 255, 255, .85); border-radius: 12px;
+    background: linear-gradient(rgba(255, 255, 255, .22), rgba(255, 255, 255, .22)) 33.33% 0 / 1px 100% no-repeat, linear-gradient(rgba(255, 255, 255, .22), rgba(255, 255, 255, .22)) 66.66% 0 / 1px 100% no-repeat,
+        linear-gradient(rgba(255, 255, 255, .22), rgba(255, 255, 255, .22)) 0 33.33% / 100% 1px no-repeat, linear-gradient(rgba(255, 255, 255, .22), rgba(255, 255, 255, .22)) 0 66.66% / 100% 1px no-repeat; }
+#mundi-root .mu-crop-side { flex: 1; min-width: 220px; display: grid; gap: 14px; align-content: start; }
+#mundi-root .mu-crop-previews { display: flex; gap: 14px; align-items: flex-end; }
+#mundi-root .mu-crop-previews figure { margin: 0; display: grid; gap: 6px; justify-items: center; }
+#mundi-root .mu-crop-previews canvas { width: 64px; height: 64px; background: var(--bg2); }
+#mundi-root .mu-crop-previews canvas.is-round { border-radius: 50%; }
+#mundi-root .mu-crop-previews canvas.is-square { border-radius: 6px; }
+#mundi-root .mu-crop-previews canvas.is-rect { width: 64px; height: 96px; border-radius: 6px; }
+#mundi-root .mu-crop-previews figcaption { font-size: 12px; color: var(--muted); }
+
+/* expressions */
+#mundi-root .mu-expr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+#mundi-root .mu-expr { display: grid; gap: 6px; justify-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); position: relative; }
+#mundi-root .mu-expr.is-empty { border-style: dashed; }
+#mundi-root .mu-expr-img { width: 100%; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; display: grid; place-items: center; background: var(--bg); color: var(--muted); }
+#mundi-root .mu-expr-img img { width: 100%; height: 100%; object-fit: contain; }
+#mundi-root .mu-expr b { font-size: 12px; text-transform: capitalize; }
+#mundi-root .mu-expr > small { position: absolute; top: 12px; right: 12px; padding: 0 6px; border-radius: 999px; background: var(--panel); }
+#mundi-root .mu-expr .mu-ibtn { width: 32px; height: 32px; }
+
+/* SillyTavern's own panels inside Mundi */
+#mundi-root .mu-tabs-group { margin: 12px 0 2px; padding: 0 4px; font-size: 11px; }
+#mundi-root .mu-settings-layout:has(.is-native) { max-width: 1320px; grid-template-columns: 230px 1fr; }
+#mundi-root .mu-settings-body.is-native { padding: 6px 10px; display: block; }
+#mundi-root .mu-native-wrap { display: grid; gap: 8px; min-height: 0; overflow: auto; }
+#mundi-root .mu-lib-body.is-single > .mu-native-wrap { max-width: 1240px; width: 100%; margin: 0 auto; }
+#mundi-root .mu-native-note { padding: 0 4px; }
+#mundi-root .mu-native-host {
+    --SmartThemeBodyColor: var(--fg); --SmartThemeEmColor: var(--muted); --SmartThemeQuoteColor: var(--accent); --SmartThemeBorderColor: var(--line);
+    --SmartThemeBlurTintColor: transparent; --SmartThemeChatTintColor: transparent; --SmartThemeUnderlineColor: var(--accent);
+    color: var(--fg); font-size: 14px;
+}
+#mundi-root .mu-native {
+    display: block !important; position: relative !important; inset: auto !important; top: auto !important; left: auto !important; right: auto !important;
+    width: 100% !important; max-width: none !important; height: auto !important; min-height: 0 !important; max-height: none !important;
+    margin: 0 !important; transform: none !important; opacity: 1 !important; visibility: visible !important; overflow: visible !important;
+    box-shadow: none !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; backdrop-filter: none !important; z-index: auto !important;
+}
+#mundi-root .mu-native .scrollableInner, #mundi-root .mu-native .scrollableInnerFull { max-height: none !important; height: auto !important; overflow: visible !important; }
+#mundi-root .mu-native .text_pole, #mundi-root .mu-native select, #mundi-root .mu-native textarea, #mundi-root .mu-native input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+    background-color: var(--bg) !important; color: var(--fg) !important; border-color: var(--line) !important;
+}
+#mundi-root .mu-native .menu_button { background-color: var(--bg2) !important; color: var(--fg) !important; border-color: var(--line) !important; }
+#mundi-root .mu-native .standoutHeader, #mundi-root .mu-native .inline-drawer-header { background: var(--bg2) !important; border-radius: 8px; }
+/* the AI response settings are one tall column in SillyTavern: two columns here */
+#mundi-root #left-nav-panel.mu-native .scrollableInner { columns: 2 420px; column-gap: 24px; }
+#mundi-root #left-nav-panel.mu-native .scrollableInner > * { break-inside: avoid; }
+#mundi-root #right-nav-panel.mu-native { min-height: 70vh !important; }
+
+@media (max-width: 760px) {
+    #mundi-toasts { top: 64px; right: 12px; }
+    #mundi-root .mu-lib-body.is-grid { grid-template-columns: 1fr; }
+    #mundi-root .mu-lib-list.is-grid .mu-lib-items { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    #mundi-root .mu-create { grid-template-columns: 1fr; }
+    #mundi-root .mu-crop-stage { margin: 0 auto; }
+    #mundi-root .mu-settings-layout:has(.is-native) { grid-template-columns: 1fr; }
+    #mundi-root .mu-expr-grid { grid-template-columns: repeat(3, 1fr); }
+}
+#mundi-root .mu-settings-body, #mundi-root .mu-native-wrap, #mundi-root .mu-native-host, #mundi-root .mu-lib-body > * { min-width: 0; }
+#mundi-root .mu-native-host { width: 100%; overflow-x: auto; }
+/* backgrounds tab */
+#mundi-root .mu-lib-list.is-bgs .mu-lib-items { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+#mundi-root .mu-lib-list.is-bgs .mu-lib-item img, #mundi-root .mu-lib-list.is-bgs .mu-lib-item .mu-lib-thumb { aspect-ratio: 16 / 10; }
+#mundi-root .mu-lib-list.is-bgs .mu-lib-item > span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-bg-big { width: 100%; max-height: 52vh; object-fit: contain; border-radius: 10px; background: #000; }
+
+/* one width for every settings page: Mundi's own tabs and SillyTavern's panels line up the same way */
+#mundi-root .mu-settings-layout, #mundi-root .mu-settings-layout:has(.is-native) { max-width: 1320px; grid-template-columns: 230px minmax(0, 1fr); }
+#mundi-root .mu-settings-body.is-native { padding: 14px 18px; }
+/* SillyTavern's AI response settings: breathing room between its rows of sliders */
+#mundi-root .mu-settings-body.is-native .range-block { margin-bottom: 12px; }
+#mundi-root .mu-settings-body.is-native .range-block-title { margin-bottom: 4px; font-weight: 600; }
+#mundi-root .mu-settings-body.is-native .range-block-range-and-counter { gap: 10px; }
+#mundi-root .mu-settings-body.is-native h3, #mundi-root .mu-settings-body.is-native h4 { margin: 14px 0 8px; }
+/* the world creator uses the whole screen instead of a narrow box */
+#mundi-root .mu-cw-layout { max-width: 1600px; grid-template-columns: 220px minmax(0, 1fr); }
+@media (max-width: 760px) { #mundi-root .mu-settings-layout, #mundi-root .mu-settings-layout:has(.is-native), #mundi-root .mu-cw-layout { grid-template-columns: 1fr; } }
+
+/* AI response settings: sliders on the left, the prompt list on the right */
+#mundi-root .mu-native-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+#mundi-root .mu-native-cols:not(:has(.mu-native-side .mu-native)) { grid-template-columns: minmax(0, 1fr); }
+#mundi-root .mu-native-cols:not(:has(.mu-native-side .mu-native)) .mu-native-side { display: none; }
+#mundi-root .mu-native-side { position: sticky; top: 0; max-height: calc(100vh - 140px); overflow: auto; }
+#mundi-root .mu-native-side #completion_prompt_manager { display: block !important; margin: 0; }
+#mundi-root .mu-settings-layout:has(.mu-native-cols) { max-width: 1320px; }
+@media (max-width: 1100px) { #mundi-root .mu-native-cols { grid-template-columns: minmax(0, 1fr); } #mundi-root .mu-native-side { position: static; max-height: none; } }
+/* SillyTavern's own settings tabs: in the same column on a computer; on a phone, a row of their own under Mundi's */
+#mundi-root .mu-tabs-st { display: contents; }

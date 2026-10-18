@@ -1,0 +1,40 @@
+/* ---------- skins: colors and mood over a style (the style's layout never changes) ---------- */
+
+/* Modern · Noir */
+#mundi-root[data-style="modern"][data-skin="noir"] {
+    --bg: #0b0b0d; --bg2: #151518; --panel: rgba(18, 18, 21, .97); --line: #34343a; --fg: #f0eee9; --muted: #b5b1a8;
+    --a0: #f1d48a; --a1: #e2bf67; --a2: #c9a24a; --a3: #a9852f; --a4: #7f6320; --aon: #121212; --accent: #c9a24a;
+}
+#mundi-root[data-style="modern"][data-skin="noir"] .mu-subhead, #mundi-root[data-style="modern"][data-skin="noir"] .mu-top { background: linear-gradient(180deg, #1e1e22, #111114); }
+#mundi-root[data-style="modern"][data-skin="noir"] .mu-map img, #mundi-root[data-style="modern"][data-skin="noir"] .mu-mapimg { filter: saturate(.35) contrast(1.05); }
+
+/* Modern · Neon */
+#mundi-root[data-style="modern"][data-skin="neon"] {
+    --bg: #0a0614; --bg2: #140b26; --panel: rgba(20, 10, 38, .95); --line: #3c2366; --fg: #f3ecff; --muted: #c2b0e6;
+    --a0: #ff8ff0; --a1: #ff5fe3; --a2: #e935d1; --a3: #b81fa6; --a4: #84147a; --aon: #fff; --accent: #e935d1; --accent2: #22e6ff;
+}
+#mundi-root[data-style="modern"][data-skin="neon"] .mu-subhead, #mundi-root[data-style="modern"][data-skin="neon"] .mu-top { background: linear-gradient(90deg, #2a0b4a, #120a2e 60%, #0b2a3a); box-shadow: 0 0 18px rgba(233, 53, 209, .35); }
+#mundi-root[data-style="modern"][data-skin="neon"] .mu-panel, #mundi-root[data-style="modern"][data-skin="neon"] .mu-dock, #mundi-root[data-style="modern"][data-skin="neon"] .mu-hud { box-shadow: 0 0 0 1px rgba(34, 230, 255, .25), 0 0 22px rgba(233, 53, 209, .18); }
+
+/* Medieval · Dark Fantasy */
+#mundi-root[data-style="medieval"][data-skin="dark"] {
+    --bg: #0e0b0a; --bg2: #191312; --panel: rgba(22, 16, 15, .97); --line: #4a2a26; --fg: #e9dfd2; --muted: #b9a596;
+    --accent: #b3261e; --accent2: #7d8c5a; --bad: #e0503f; --warn: #c98a2e;
+}
+#mundi-root[data-style="medieval"][data-skin="dark"] .mu-subhead, #mundi-root[data-style="medieval"][data-skin="dark"] .mu-top,
+#mundi-root[data-style="medieval"][data-skin="dark"] .mu-hud, #mundi-root[data-style="medieval"][data-skin="dark"] .mu-dock {
+    background: linear-gradient(180deg, #221615, #120c0b); border-color: #5a2f29;
+}
+#mundi-root[data-style="medieval"][data-skin="dark"] button.is-on, #mundi-root[data-style="medieval"][data-skin="dark"] .mu-chip.is-on { background: linear-gradient(180deg, #8f1d17, #5e110d); color: #f2d7b0; }
+#mundi-root[data-style="medieval"][data-skin="dark"] .mu-mapimg { filter: saturate(.6) brightness(.85) contrast(1.08); }
+
+/* the skin picker */
+#mundi-root .mu-skins { flex-wrap: wrap; gap: 8px; }
+#mundi-root .mu-skin { flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; min-width: 150px; text-align: left; }
+#mundi-root .mu-skin i { width: 100%; height: 22px; border-radius: 5px; margin-bottom: 4px; }
+#mundi-root .mu-skin small { font-size: 11px; opacity: .85; }
+#mundi-root .mu-skin.is-modern-default i { background: linear-gradient(90deg, #0f1726, #1e88e5); }
+#mundi-root .mu-skin.is-modern-noir i { background: linear-gradient(90deg, #0b0b0d, #3a3a40, #c9a24a); }
+#mundi-root .mu-skin.is-modern-neon i { background: linear-gradient(90deg, #2a0b4a, #e935d1, #22e6ff); }
+#mundi-root .mu-skin.is-medieval-default i { background: linear-gradient(90deg, #3a2412, #8a5d33, #f1e3c6); }
+#mundi-root .mu-skin.is-medieval-dark i { background: linear-gradient(90deg, #0e0b0a, #5e110d, #b3261e); }

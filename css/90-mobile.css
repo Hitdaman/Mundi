@@ -1,0 +1,27 @@
+/* Phones and narrow windows */
+@media (max-width: 760px) {
+    #mundi-root .mu-brand { padding: 28px 20px 4px; }
+    #mundi-root .mu-menu-body { padding: 14px 20px; }
+    #mundi-root .mu-menu-foot { padding: 10px 20px 14px; }
+    #mundi-root .mu-menu-shade { background: linear-gradient(180deg, rgba(8, 12, 22, .9), rgba(8, 12, 22, .75)); }
+    #mundi-root .mu-settings-layout { grid-template-columns: 1fr; padding: 12px; }
+    #mundi-root .mu-tabs { grid-auto-flow: column; overflow-x: auto; }
+    #mundi-root .mu-wizard-body { padding: 14px; }
+    #mundi-root .mu-creator { grid-template-columns: 1fr; }
+    #mundi-root .mu-steps { margin-left: 0; width: 100%; }
+    #mundi-root .mu-castgrid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+
+    #mundi-root .mu-top { top: auto; bottom: 8px; left: 8px; right: 8px; transform: none; max-width: none; justify-content: space-between; gap: 8px; }
+    #mundi-root .mu-where { display: none; }
+    #mundi-root .mu-tools button { width: 34px; height: 34px; }
+    #mundi-root .mu-hud { top: 8px; left: 8px; right: 8px; padding: 6px 10px 6px 6px; }
+    #mundi-root .mu-hud-face { width: 40px; height: 40px; }
+    #mundi-root .mu-gauge .ring { width: 26px; height: 26px; }
+    #mundi-root .mu-gauge .ring i { width: 19px; height: 19px; font-size: 11px; }
+    #mundi-root .mu-side { top: auto; left: 8px; right: 8px; bottom: 64px; width: auto; max-height: 42vh; }
+    #mundi-root .mu-zoom { left: auto; right: 8px; top: 78px; bottom: auto; flex-direction: column; }
+    #mundi-root .mu-dialog { bottom: 64px; height: 50vh; width: calc(100% - 16px); }
+    #mundi-root .mu-composer { grid-template-columns: 1fr; }
+    #mundi-root .mu-composer-tools { justify-content: flex-end; }
+    #mundi-root .mu-sprite { height: 70%; }
+}

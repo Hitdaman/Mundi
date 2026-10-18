@@ -1,0 +1,2735 @@
+{
+ "format": 1,
+ "id": "modern",
+ "name": "Porto Alto",
+ "kind": "Modern",
+ "version": "0.1.0",
+ "description": "A coastal city of today. You just moved here: no friends, little money and a rented flat downtown. Work, friendships and romance are up to you.",
+ "setting": "Porto Alto is a modern coastal city of today, with a historic downtown, a financial district, a university, beaches and a busy waterfront. Everyone in it is an adult. Phones, cars and social media work as in the real world.",
+ "cover": "map.jpg",
+ "music": {
+  "menu": "menu",
+  "city": "city",
+  "home": "home"
+ },
+ "currency": {
+  "name": "dollar",
+  "symbol": "$"
+ },
+ "time": {
+  "startDay": 1,
+  "startMinutes": 600,
+  "speed": 60,
+  "periods": [
+   {
+    "id": "dawn",
+    "name": "Dawn",
+    "from": 0
+   },
+   {
+    "id": "morning",
+    "name": "Morning",
+    "from": 360
+   },
+   {
+    "id": "afternoon",
+    "name": "Afternoon",
+    "from": 720
+   },
+   {
+    "id": "evening",
+    "name": "Evening",
+    "from": 1080
+   },
+   {
+    "id": "night",
+    "name": "Night",
+    "from": 1320
+   }
+  ]
+ },
+ "travel": {
+  "minutesPerUnit": 0.6,
+  "round": [
+   15,
+   20,
+   30,
+   35,
+   45,
+   60,
+   90
+  ],
+  "sameMap": 15
+ },
+ "maps": [
+  {
+   "id": "city",
+   "name": "Porto Alto",
+   "image": "map.jpg",
+   "ratio": 1.7914
+  }
+ ],
+ "places": [
+  {
+   "id": "downtown",
+   "name": "Old Town",
+   "map": "city",
+   "x": 49.5,
+   "y": 18.5,
+   "tags": [
+    "work",
+    "leisure"
+   ],
+   "desc": "streets of old buildings, cafés, shops and squares.",
+   "event": "The streets are always busy."
+  },
+  {
+   "id": "cafe",
+   "name": "Downtown Café",
+   "map": "city",
+   "x": 55.4,
+   "y": 35,
+   "tags": [
+    "work",
+    "food"
+   ],
+   "desc": "a small coffee shop with big windows and the smell of fresh bread.",
+   "event": "The espresso machine hisses."
+  },
+  {
+   "id": "mall",
+   "name": "Shopping Mall",
+   "map": "city",
+   "x": 77,
+   "y": 41,
+   "tags": [
+    "work",
+    "leisure",
+    "shop"
+   ],
+   "desc": "a big glass building with shops, a cinema and a food court.",
+   "event": "The mall is packed."
+  },
+  {
+   "id": "finance",
+   "name": "Financial District",
+   "map": "city",
+   "x": 68,
+   "y": 12,
+   "tags": [
+    "work"
+   ],
+   "desc": "office skyscrapers, banks and business restaurants.",
+   "event": "People in suits hurry by."
+  },
+  {
+   "id": "industrial",
+   "name": "Industrial Zone",
+   "map": "city",
+   "x": 80,
+   "y": 62,
+   "tags": [
+    "work"
+   ],
+   "desc": "warehouses and workshops on the east side.",
+   "event": "Machines hum in the distance."
+  },
+  {
+   "id": "campus",
+   "name": "University",
+   "map": "city",
+   "x": 20,
+   "y": 50,
+   "tags": [
+    "work",
+    "study"
+   ],
+   "desc": "buildings with gardens on the hill, students and a library.",
+   "event": "There are students in the hallways."
+  },
+  {
+   "id": "stadium",
+   "name": "Stadium & Gym",
+   "map": "city",
+   "x": 42,
+   "y": 77,
+   "tags": [
+    "leisure",
+    "sport",
+    "work"
+   ],
+   "desc": "a stadium with a running track and a gym, surrounded by woods.",
+   "event": "Someone is training on the track."
+  },
+  {
+   "id": "waterfront",
+   "name": "Sky Hotel & Rooftop Bar",
+   "map": "city",
+   "x": 82,
+   "y": 22,
+   "tags": [
+    "work",
+    "leisure",
+    "food"
+   ],
+   "desc": "a tall hotel with a rooftop pool and a bar with a view over the whole city.",
+   "event": "Music drifts down from the rooftop."
+  },
+  {
+   "id": "beach",
+   "name": "Beach",
+   "map": "city",
+   "x": 56,
+   "y": 80,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "a strip of sand along the bay, with kiosks and boats in the distance.",
+   "event": "The tide is calm."
+  },
+  {
+   "id": "park",
+   "name": "Central Park",
+   "map": "city",
+   "x": 43,
+   "y": 25,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "woods with trails, benches and open lawns.",
+   "event": "Families and runners pass through."
+  },
+  {
+   "id": "ferris",
+   "name": "Amusement Park",
+   "map": "city",
+   "x": 50,
+   "y": 63,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "a seaside amusement park with a ferris wheel, a roller coaster and carousels.",
+   "event": "Screams of joy come from the roller coaster."
+  },
+  {
+   "id": "docks",
+   "name": "Port & Fish Market",
+   "map": "city",
+   "x": 88,
+   "y": 85,
+   "tags": [
+    "work",
+    "shop",
+    "food"
+   ],
+   "desc": "the container port, with cranes, ships and a market of fresh fish by the quay.",
+   "event": "Vendors call out the catch of the day."
+  },
+  {
+   "id": "civic",
+   "name": "City Hall",
+   "map": "city",
+   "x": 66,
+   "y": 32,
+   "tags": [
+    "service"
+   ],
+   "desc": "the domed city hall and its square, with fountains and benches.",
+   "event": "Pigeons cross the square."
+  },
+  {
+   "id": "hospital",
+   "name": "City Hospital",
+   "map": "city",
+   "x": 36,
+   "y": 52,
+   "tags": [
+    "service"
+   ],
+   "desc": "the city's main hospital, white corridors and a busy emergency room.",
+   "event": "An ambulance pulls in."
+  },
+  {
+   "id": "bridge",
+   "name": "Bridge",
+   "map": "city",
+   "x": 56,
+   "y": 47,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "the great suspension bridge over the river.",
+   "event": "The wind blows hard over the water."
+  },
+  {
+   "id": "mountains",
+   "name": "North Campsite",
+   "map": "city",
+   "x": 37,
+   "y": 7,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "a campsite among pine trees north of the river, with tents and a fire pit.",
+   "event": "Smoke rises from a campfire."
+  },
+  {
+   "id": "station",
+   "map": "city",
+   "name": "Train Station",
+   "x": 38,
+   "y": 19,
+   "tags": [
+    "service",
+    "work"
+   ],
+   "desc": "the central train station, where trains leave for the rest of the country.",
+   "event": "A train pulls into the platform."
+  },
+  {
+   "id": "school",
+   "map": "city",
+   "name": "School & Sports Field",
+   "x": 25,
+   "y": 65,
+   "tags": [
+    "leisure",
+    "service"
+   ],
+   "desc": "a neighborhood school with a basketball court and a football field open to everyone.",
+   "event": "Kids are playing football on the field."
+  },
+  {
+   "id": "farms",
+   "map": "city",
+   "name": "Farms",
+   "x": 14,
+   "y": 12,
+   "tags": [
+    "work",
+    "food"
+   ],
+   "desc": "fields, barns and silos on the north side, where the city buys its vegetables.",
+   "event": "A tractor works the field."
+  },
+  {
+   "id": "woods",
+   "map": "city",
+   "name": "Riverside Woods",
+   "x": 5,
+   "y": 46,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "woods on the west bank of the river, with trails and a small campsite.",
+   "event": "Birds sing in the trees."
+  },
+  {
+   "id": "pinecamp",
+   "map": "city",
+   "name": "Pine Woods Camp",
+   "x": 33,
+   "y": 92,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "a pine forest by the beach with tents and picnic tables.",
+   "event": "Someone is grilling by the tents."
+  }
+ ],
+ "homes": {
+  "zones": [
+   {
+    "id": "downtown",
+    "name": "Old Town",
+    "map": "city",
+    "kind": "apartment",
+    "rent": 120,
+    "desc": "apartments in old brick buildings by the train station, close to everything",
+    "spots": [
+     [
+      45.4,
+      13.5
+     ],
+     [
+      52.3,
+      6.3
+     ],
+     [
+      56.6,
+      21
+     ],
+     [
+      52,
+      28
+     ],
+     [
+      54.5,
+      13
+     ]
+    ]
+   },
+   {
+    "id": "east",
+    "name": "Industrial Flats",
+    "map": "city",
+    "kind": "apartment",
+    "rent": 80,
+    "desc": "cheap flats next to the factories and the port",
+    "spots": [
+     [
+      83.8,
+      72.3
+     ],
+     [
+      79.5,
+      76.4
+     ],
+     [
+      85,
+      48
+     ]
+    ]
+   },
+   {
+    "id": "waterfront",
+    "name": "Skyline Towers",
+    "map": "city",
+    "kind": "apartment",
+    "rent": 350,
+    "desc": "luxury apartments in the glass towers of the city center",
+    "spots": [
+     [
+      88.8,
+      28.5
+     ],
+     [
+      88,
+      32
+     ],
+     [
+      98,
+      34.8
+     ],
+     [
+      98,
+      16
+     ],
+     [
+      92.7,
+      23
+     ],
+     [
+      87.3,
+      11.8
+     ]
+    ]
+   },
+   {
+    "id": "north",
+    "name": "North Suburbs",
+    "map": "city",
+    "kind": "house",
+    "rent": 180,
+    "desc": "quiet streets of houses with gardens and pools, next to the school",
+    "spots": [
+     [
+      4.5,
+      67.4
+     ],
+     [
+      7,
+      65
+     ],
+     [
+      10.3,
+      68
+     ],
+     [
+      1.7,
+      68.8
+     ],
+     [
+      4.9,
+      73
+     ],
+     [
+      7.6,
+      71.2
+     ],
+     [
+      11.6,
+      74.3
+     ],
+     [
+      14.4,
+      72
+     ],
+     [
+      1.6,
+      76.8
+     ],
+     [
+      9.1,
+      76.8
+     ],
+     [
+      17.9,
+      76
+     ],
+     [
+      14.8,
+      78
+     ],
+     [
+      20.6,
+      77.5
+     ]
+    ]
+   },
+   {
+    "id": "south",
+    "name": "South Suburbs",
+    "map": "city",
+    "kind": "house",
+    "rent": 150,
+    "desc": "houses near the stadium and the pine woods, a short walk from the beach",
+    "spots": [
+     [
+      5.8,
+      80.2
+     ],
+     [
+      11.8,
+      81.3
+     ],
+     [
+      9.1,
+      84
+     ],
+     [
+      23.5,
+      81.3
+     ],
+     [
+      20.8,
+      84
+     ],
+     [
+      4.9,
+      86.5
+     ],
+     [
+      18.2,
+      86.5
+     ],
+     [
+      14.8,
+      89.6
+     ],
+     [
+      25.2,
+      87.5
+     ],
+     [
+      22.5,
+      90.3
+     ],
+     [
+      7.6,
+      89.6
+     ],
+     [
+      4.9,
+      92
+     ],
+     [
+      12.8,
+      93.8
+     ],
+     [
+      19.4,
+      93.1
+     ],
+     [
+      1.9,
+      94.5
+     ],
+     [
+      15.5,
+      96.9
+     ],
+     [
+      28.3,
+      85.1
+     ]
+    ]
+   }
+  ],
+  "kinds": {
+   "apartment": {
+    "name": "Apartment",
+    "desc": "an apartment with a living room, a bedroom and a balcony",
+    "image": "bedroom.jpg",
+    "bills": {
+     "water": 15,
+     "power": 25
+    }
+   },
+   "house": {
+    "name": "House",
+    "desc": "a house with a living room, a bedroom and a yard",
+    "image": "bedroom.jpg",
+    "bills": {
+     "water": 25,
+     "power": 45
+    }
+   }
+  }
+ },
+ "statuses": [
+  {
+   "id": "life",
+   "name": "Life",
+   "icon": "❤",
+   "color": "#ff4d7a",
+   "start": 100,
+   "max": 100,
+   "hud": true,
+   "zero": {
+    "text": "You pass out and wake up at the City Hospital. The bill is {cost}.",
+    "place": "hospital",
+    "cost": 300,
+    "restore": 60
+   },
+   "rpg": true
+  },
+  {
+   "id": "energy",
+   "name": "Energy",
+   "icon": "⚡",
+   "color": "#ffc233",
+   "start": 100,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 5,
+    "everyMinutes": 60,
+    "awakeOnly": true
+   },
+   "zero": {
+    "text": "Exhausted, you fall asleep where you are and wake up at home.",
+    "place": "home",
+    "restore": 40
+   }
+  },
+  {
+   "id": "hunger",
+   "name": "Hunger",
+   "icon": "🍽",
+   "color": "#ff8a3d",
+   "start": 85,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 10,
+    "everyMinutes": 120
+   },
+   "zero": {
+    "text": "You are starving.",
+    "drain": {
+     "status": "life",
+     "amount": 5,
+     "everyMinutes": 60
+    }
+   }
+  },
+  {
+   "id": "thirst",
+   "name": "Thirst",
+   "icon": "💧",
+   "color": "#3db8ff",
+   "start": 85,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 10,
+    "everyMinutes": 90
+   },
+   "zero": {
+    "text": "You are badly dehydrated.",
+    "drain": {
+     "status": "life",
+     "amount": 5,
+     "everyMinutes": 60
+    }
+   }
+  },
+  {
+   "id": "mood",
+   "name": "Mood",
+   "icon": "☺",
+   "color": "#b88cff",
+   "start": 70,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 2,
+    "everyMinutes": 180
+   }
+  },
+  {
+   "id": "hygiene",
+   "name": "Hygiene",
+   "icon": "🧼",
+   "color": "#5ec8e6",
+   "start": 100,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 4,
+    "everyMinutes": 60,
+    "awakeOnly": true
+   },
+   "zero": {
+    "text": "You badly need a wash: people keep their distance and your mood sinks.",
+    "drain": {
+     "status": "mood",
+     "amount": 2,
+     "everyMinutes": 60
+    }
+   }
+  }
+ ],
+ "actions": [
+  {
+   "id": "coffee",
+   "name": "Coffee",
+   "label": "Have a coffee",
+   "icon": "☕",
+   "cost": 5,
+   "minutes": 10,
+   "tags": [
+    "food"
+   ],
+   "effects": {
+    "energy": 15,
+    "thirst": 10
+   }
+  },
+  {
+   "id": "snack",
+   "name": "Snack",
+   "label": "Grab a snack",
+   "icon": "🥪",
+   "cost": 12,
+   "minutes": 15,
+   "anywhere": true,
+   "effects": {
+    "hunger": 30,
+    "energy": 3
+   }
+  },
+  {
+   "id": "meal",
+   "name": "Meal",
+   "label": "Eat a meal",
+   "icon": "🍝",
+   "cost": 30,
+   "minutes": 40,
+   "tags": [
+    "food"
+   ],
+   "effects": {
+    "hunger": 60,
+    "mood": 5,
+    "energy": 8
+   }
+  },
+  {
+   "id": "drink",
+   "name": "Drink",
+   "label": "Drink something",
+   "icon": "🥤",
+   "cost": 5,
+   "minutes": 5,
+   "anywhere": true,
+   "effects": {
+    "thirst": 40,
+    "energy": 2
+   }
+  },
+  {
+   "id": "cook",
+   "name": "Cook",
+   "label": "Cook at home",
+   "icon": "🍳",
+   "cost": 8,
+   "minutes": 45,
+   "home": true,
+   "effects": {
+    "hunger": 55,
+    "mood": 3,
+    "energy": 5
+   },
+   "roll": {
+    "dc": 9,
+    "traits": [
+     "Good cook",
+     "Creative",
+     "Cooking"
+    ],
+    "success": {
+     "text": "It came out really good.",
+     "effects": {
+      "mood": 4
+     }
+    },
+    "fail": {
+     "text": "A bit burnt, but it fills you up.",
+     "effects": {
+      "mood": -3
+     }
+    }
+   }
+  },
+  {
+   "id": "water",
+   "name": "Water",
+   "label": "Drink water",
+   "icon": "💧",
+   "cost": 0,
+   "minutes": 5,
+   "home": true,
+   "effects": {
+    "thirst": 45,
+    "energy": 2
+   }
+  },
+  {
+   "id": "relax",
+   "name": "Relax",
+   "label": "Take a walk",
+   "icon": "🌿",
+   "cost": 0,
+   "minutes": 60,
+   "tags": [
+    "leisure"
+   ],
+   "effects": {
+    "mood": 12,
+    "energy": -5
+   }
+  },
+  {
+   "id": "doctor",
+   "name": "Doctor",
+   "label": "See a doctor",
+   "icon": "🩺",
+   "cost": 80,
+   "minutes": 60,
+   "place": "hospital",
+   "effects": {
+    "life": 40
+   }
+  },
+  {
+   "id": "shower",
+   "name": "Shower",
+   "label": "Take a shower",
+   "icon": "🚿",
+   "cost": 0,
+   "minutes": 20,
+   "home": true,
+   "effects": {
+    "hygiene": 100,
+    "mood": 3,
+    "energy": 5
+   }
+  },
+  {
+   "id": "washup",
+   "name": "Go to the bathroom",
+   "label": "Go to the bathroom",
+   "icon": "🧴",
+   "cost": 0,
+   "minutes": 10,
+   "tags": [
+    "food",
+    "shop",
+    "service",
+    "sport",
+    "study"
+   ],
+   "effects": {
+    "hygiene": 50
+   }
+  },
+  {
+   "id": "fish",
+   "name": "Fishing",
+   "label": "Go fishing",
+   "icon": "🎣",
+   "cost": 0,
+   "minutes": 90,
+   "place": "docks",
+   "effects": {
+    "energy": -10
+   },
+   "roll": {
+    "dc": 12,
+    "traits": [
+     "Athletic",
+     "Calm"
+    ],
+    "success": {
+     "text": "You caught a good fish and sold it at the market.",
+     "money": 45,
+     "effects": {
+      "mood": 6
+     }
+    },
+    "fail": {
+     "text": "Nothing bit today.",
+     "effects": {
+      "mood": -5
+     }
+    }
+   }
+  },
+  {
+   "id": "fix",
+   "name": "Repairs",
+   "label": "Fix something at home",
+   "icon": "🔧",
+   "cost": 0,
+   "minutes": 60,
+   "home": true,
+   "effects": {
+    "energy": -10
+   },
+   "roll": {
+    "dc": 13,
+    "traits": [
+     "Handy",
+     "Smart"
+    ],
+    "success": {
+     "text": "You fixed the leaky faucet yourself.",
+     "effects": {
+      "mood": 10
+     }
+    },
+    "fail": {
+     "text": "You made it worse and had to buy a new part.",
+     "money": -25,
+     "effects": {
+      "mood": -8
+     }
+    }
+   }
+  },
+  {
+   "id": "busk",
+   "name": "Busking",
+   "label": "Play music for tips",
+   "icon": "🎸",
+   "cost": 0,
+   "minutes": 60,
+   "tags": [
+    "leisure"
+   ],
+   "effects": {
+    "energy": -8
+   },
+   "roll": {
+    "dc": 14,
+    "traits": [
+     "Musical",
+     "Charming",
+     "Outgoing"
+    ],
+    "success": {
+     "text": "A small crowd gathered and tipped well.",
+     "money": 35,
+     "effects": {
+      "mood": 8
+     }
+    },
+    "fail": {
+     "text": "People walked past without stopping.",
+     "effects": {
+      "mood": -6
+     }
+    }
+   }
+  },
+  {
+   "id": "gymshower",
+   "name": "Shower at the gym",
+   "label": "Shower at the gym",
+   "icon": "🚿",
+   "cost": 0,
+   "minutes": 20,
+   "tags": [
+    "sport"
+   ],
+   "effects": {
+    "hygiene": 100,
+    "energy": 5
+   }
+  },
+  {
+   "id": "cinema",
+   "name": "Watch a movie",
+   "label": "Watch a movie at the cinema",
+   "icon": "🎬",
+   "cost": 25,
+   "minutes": 150,
+   "place": "mall",
+   "effects": {
+    "mood": 20,
+    "energy": -5
+   }
+  }
+ ],
+ "sleep": {
+  "until": 420,
+  "restore": {
+   "energy": 100,
+   "life": 10,
+   "mood": 5
+  },
+  "homeOnly": true
+ },
+ "rent": {
+  "everyDays": 7,
+  "text": "Rent for your home: {cost}."
+ },
+ "sheet": {
+  "fields": [
+   "name",
+   "age",
+   "appearance",
+   "origin",
+   "traits",
+   "bio",
+   "portrait"
+  ],
+  "age": {
+   "min": 18,
+   "max": 60,
+   "default": 24
+  },
+  "appearance": [
+   {
+    "id": "hair",
+    "label": "Hair",
+    "options": [
+     "Black",
+     "Brown",
+     "Blond",
+     "Red",
+     "Gray"
+    ]
+   },
+   {
+    "id": "hairStyle",
+    "label": "Hair style",
+    "options": [
+     "Short",
+     "Medium",
+     "Long",
+     "Curly",
+     "Shaved"
+    ]
+   },
+   {
+    "id": "eyes",
+    "label": "Eyes",
+    "options": [
+     "Brown",
+     "Black",
+     "Green",
+     "Blue",
+     "Gray"
+    ]
+   },
+   {
+    "id": "skin",
+    "label": "Skin",
+    "options": [
+     "Fair",
+     "Olive",
+     "Tan",
+     "Deep"
+    ]
+   },
+   {
+    "id": "build",
+    "label": "Build",
+    "options": [
+     "Slim",
+     "Average",
+     "Athletic",
+     "Strong",
+     "Heavy"
+    ]
+   }
+  ],
+  "traits": [
+   {
+    "id": "proficiency",
+    "label": "Proficiency",
+    "max": 2,
+    "options": [
+     "Strong",
+     "Smart",
+     "Charming",
+     "Creative",
+     "Athletic",
+     "Handy",
+     "Musical",
+     "Good with numbers",
+     "Good cook",
+     "Tech-savvy"
+    ]
+   },
+   {
+    "id": "personality",
+    "label": "Personality",
+    "max": 3,
+    "options": [
+     "Outgoing",
+     "Shy",
+     "Calm",
+     "Hot-headed",
+     "Cheerful",
+     "Serious",
+     "Romantic",
+     "Ambitious",
+     "Lazy",
+     "Curious",
+     "Sarcastic",
+     "Kind"
+    ]
+   },
+   {
+    "id": "interests",
+    "label": "Interests",
+    "max": 3,
+    "options": [
+     "Sports",
+     "Music",
+     "Games",
+     "Books",
+     "Cooking",
+     "Fashion",
+     "Technology",
+     "Nature",
+     "Art",
+     "Movies",
+     "Nightlife",
+     "Travel"
+    ]
+   }
+  ]
+ },
+ "catalogs": {
+  "origins": [
+   {
+    "id": "newcomer",
+    "name": "Newcomer",
+    "desc": "You arrive knowing nobody. The default choice.",
+    "money": 2000,
+    "home": "downtown"
+   },
+   {
+    "id": "local",
+    "name": "Local kid",
+    "desc": "You grew up here: you already know two people and live on the East Side.",
+    "money": 1200,
+    "home": "east",
+    "knows": 2
+   },
+   {
+    "id": "student",
+    "name": "Student",
+    "desc": "You came for the university and live near the campus.",
+    "money": 1000,
+    "home": "north"
+   },
+   {
+    "id": "heir",
+    "name": "Heir",
+    "desc": "Family money: a flat on the waterfront, but no job yet.",
+    "money": 15000,
+    "home": "waterfront"
+   }
+  ],
+  "courses": [
+   {
+    "id": "cooking",
+    "name": "Cooking class",
+    "area": "Cooking",
+    "days": 3,
+    "cost": 150,
+    "grants": [
+     "Good cook"
+    ],
+    "icon": "🍳",
+    "desc": "Knife skills, sauces and timing. Your meals come out better."
+   },
+   {
+    "id": "fitness",
+    "name": "Fitness coach certificate",
+    "area": "Sports",
+    "days": 4,
+    "cost": 250,
+    "grants": [
+     "Athletic"
+    ],
+    "icon": "🏋️",
+    "desc": "Training plans and nutrition. Workouts go better."
+   },
+   {
+    "id": "firstaid",
+    "name": "Lifeguard & first aid",
+    "area": "Health",
+    "days": 2,
+    "cost": 150,
+    "grants": [
+     "Calm"
+    ],
+    "icon": "🛟",
+    "desc": "Rescue and first aid. Needed to work as a lifeguard."
+   },
+   {
+    "id": "programming",
+    "name": "Programming bootcamp",
+    "area": "Technology",
+    "days": 5,
+    "cost": 600,
+    "grants": [
+     "Tech-savvy"
+    ],
+    "icon": "💻",
+    "desc": "Code, apps and the web. Needed for software jobs."
+   },
+   {
+    "id": "finance",
+    "name": "Finance & accounting",
+    "area": "Business",
+    "days": 5,
+    "cost": 500,
+    "grants": [
+     "Good with numbers"
+    ],
+    "icon": "📊",
+    "desc": "Budgets, markets and spreadsheets. Needed for finance jobs."
+   },
+   {
+    "id": "engineering",
+    "name": "Engineering degree",
+    "area": "Technology",
+    "days": 7,
+    "cost": 900,
+    "grants": [
+     "Handy",
+     "Smart"
+    ],
+    "icon": "⚙️",
+    "desc": "Machines and structures. Needed to work as an engineer."
+   },
+   {
+    "id": "medicine",
+    "name": "Medical school",
+    "area": "Health",
+    "days": 10,
+    "cost": 2000,
+    "grants": [
+     "Smart"
+    ],
+    "icon": "🩺",
+    "desc": "Long and hard. Needed to work as a doctor."
+   },
+   {
+    "id": "nursing",
+    "name": "Nursing course",
+    "area": "Health",
+    "days": 5,
+    "cost": 600,
+    "grants": [
+     "Kind"
+    ],
+    "icon": "💉",
+    "desc": "Patient care. Needed to work as a nurse."
+   },
+   {
+    "id": "education",
+    "name": "Teaching certificate",
+    "area": "Education",
+    "days": 4,
+    "cost": 400,
+    "grants": [
+     "Kind"
+    ],
+    "icon": "🍎",
+    "desc": "How to teach. Needed to work as a teacher."
+   },
+   {
+    "id": "science",
+    "name": "Research methods",
+    "area": "Science",
+    "days": 6,
+    "cost": 700,
+    "grants": [
+     "Curious"
+    ],
+    "icon": "🔬",
+    "desc": "Experiments and papers. Needed to work as a researcher."
+   },
+   {
+    "id": "mechanics",
+    "name": "Auto mechanics",
+    "area": "Trades",
+    "days": 4,
+    "cost": 350,
+    "grants": [
+     "Handy"
+    ],
+    "icon": "🔧",
+    "desc": "Engines and repairs. Needed to work as a mechanic."
+   },
+   {
+    "id": "publicadmin",
+    "name": "Public administration",
+    "area": "Business",
+    "days": 5,
+    "cost": 500,
+    "grants": [
+     "Serious"
+    ],
+    "icon": "🏛️",
+    "desc": "How the city works. Needed to work at City Hall."
+   },
+   {
+    "id": "hospitality",
+    "name": "Hospitality & service",
+    "area": "Service",
+    "days": 2,
+    "cost": 120,
+    "grants": [
+     "Charming"
+    ],
+    "icon": "🛎️",
+    "desc": "Guests, customers and smiles. Helps in hotels, bars and shops."
+   },
+   {
+    "id": "music",
+    "name": "Music lessons",
+    "area": "Arts",
+    "days": 4,
+    "cost": 300,
+    "grants": [
+     "Musical"
+    ],
+    "icon": "🎸",
+    "desc": "An instrument and some theory. Busking goes better."
+   },
+   {
+    "id": "art",
+    "name": "Art & design",
+    "area": "Arts",
+    "days": 4,
+    "cost": 300,
+    "grants": [
+     "Creative"
+    ],
+    "icon": "🎨",
+    "desc": "Drawing, color and design. Paintings sell better."
+   },
+   {
+    "id": "speaking",
+    "name": "Public speaking",
+    "area": "Social",
+    "days": 3,
+    "cost": 200,
+    "grants": [
+     "Outgoing"
+    ],
+    "icon": "🎤",
+    "desc": "Confidence in front of people. Helps in interviews."
+   }
+  ]
+ },
+ "occupations": [
+  {
+   "id": "barista",
+   "name": "Barista",
+   "place": "cafe",
+   "ranks": [
+    {
+     "name": "Attendant",
+     "pay": 15
+    },
+    {
+     "name": "Barista",
+     "pay": 20
+    },
+    {
+     "name": "Manager",
+     "pay": 25
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Good cook",
+    "Charming",
+    "Outgoing"
+   ],
+   "hours": [
+    7,
+    19
+   ],
+   "promote": [
+    4,
+    8
+   ]
+  },
+  {
+   "id": "courier",
+   "name": "Courier",
+   "place": "downtown",
+   "ranks": [
+    {
+     "name": "Courier",
+     "pay": 14
+    },
+    {
+     "name": "Route lead",
+     "pay": 20
+    }
+   ],
+   "shift": 5,
+   "cost": {
+    "energy": 35,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Athletic",
+    "Strong"
+   ],
+   "hours": [
+    8,
+    20
+   ],
+   "promote": [
+    4
+   ]
+  },
+  {
+   "id": "analyst",
+   "name": "Financial analyst",
+   "place": "finance",
+   "ranks": [
+    {
+     "name": "Intern",
+     "pay": 20
+    },
+    {
+     "name": "Junior",
+     "pay": 35
+    },
+    {
+     "name": "Mid-level",
+     "pay": 55
+    },
+    {
+     "name": "Senior",
+     "pay": 80
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 30,
+    "mood": 5,
+    "hunger": 15,
+    "thirst": 15,
+    "hygiene": 15
+   },
+   "likes": [
+    "Smart",
+    "Good with numbers"
+   ],
+   "needs": [
+    "Smart",
+    "Good with numbers"
+   ],
+   "hours": [
+    8,
+    19
+   ],
+   "promote": [
+    4,
+    8,
+    14
+   ],
+   "courses": [
+    "finance"
+   ]
+  },
+  {
+   "id": "engineer",
+   "name": "Engineer",
+   "place": "industrial",
+   "ranks": [
+    {
+     "name": "Technician",
+     "pay": 25
+    },
+    {
+     "name": "Engineer",
+     "pay": 45
+    },
+    {
+     "name": "Coordinator",
+     "pay": 70
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 30,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Smart",
+    "Handy",
+    "Tech-savvy"
+   ],
+   "needs": [
+    "Smart",
+    "Handy",
+    "Tech-savvy"
+   ],
+   "hours": [
+    7,
+    19
+   ],
+   "promote": [
+    4,
+    8
+   ],
+   "courses": [
+    "engineering"
+   ]
+  },
+  {
+   "id": "trainer",
+   "name": "Gym instructor",
+   "place": "stadium",
+   "ranks": [
+    {
+     "name": "Assistant",
+     "pay": 18
+    },
+    {
+     "name": "Instructor",
+     "pay": 28
+    },
+    {
+     "name": "Head coach",
+     "pay": 40
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 35,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Athletic",
+    "Strong"
+   ],
+   "hours": [
+    6,
+    22
+   ],
+   "promote": [
+    4,
+    8
+   ]
+  },
+  {
+   "id": "librarian",
+   "name": "Librarian",
+   "place": "campus",
+   "ranks": [
+    {
+     "name": "Assistant",
+     "pay": 16
+    },
+    {
+     "name": "Librarian",
+     "pay": 28
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 20,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Smart",
+    "Calm",
+    "Books"
+   ],
+   "hours": [
+    8,
+    20
+   ],
+   "promote": [
+    4
+   ]
+  },
+  {
+   "id": "waiter",
+   "name": "Waiter",
+   "place": "waterfront",
+   "ranks": [
+    {
+     "name": "Waiter",
+     "pay": 18
+    },
+    {
+     "name": "Maître d'",
+     "pay": 45
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 30,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Charming",
+    "Outgoing"
+   ],
+   "hours": [
+    11,
+    23
+   ],
+   "promote": [
+    4
+   ]
+  },
+  {
+   "id": "farmhand",
+   "name": "Farmhand",
+   "place": "farms",
+   "ranks": [
+    {
+     "name": "Farmhand",
+     "pay": 13
+    },
+    {
+     "name": "Foreman",
+     "pay": 22
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 35,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Strong",
+    "Athletic",
+    "Nature"
+   ],
+   "hours": [
+    5,
+    17
+   ],
+   "promote": [
+    6
+   ]
+  },
+  {
+   "id": "nurse",
+   "name": "Nurse",
+   "place": "hospital",
+   "ranks": [
+    {
+     "name": "Nursing assistant",
+     "pay": 18
+    },
+    {
+     "name": "Nurse",
+     "pay": 32
+    },
+    {
+     "name": "Head nurse",
+     "pay": 48
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 35,
+    "mood": 3,
+    "hunger": 15,
+    "thirst": 15,
+    "hygiene": 15
+   },
+   "likes": [
+    "Kind",
+    "Calm",
+    "Smart"
+   ],
+   "needs": [
+    "Kind",
+    "Calm",
+    "Smart"
+   ],
+   "hours": [
+    0,
+    24
+   ],
+   "promote": [
+    5,
+    12
+   ],
+   "courses": [
+    "nursing"
+   ]
+  },
+  {
+   "id": "cashier",
+   "name": "Cashier",
+   "place": "mall",
+   "ranks": [
+    {
+     "name": "Cashier",
+     "pay": 14
+    },
+    {
+     "name": "Shift lead",
+     "pay": 20
+    },
+    {
+     "name": "Store manager",
+     "pay": 30
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Outgoing",
+    "Kind",
+    "Good with numbers"
+   ],
+   "hours": [
+    9,
+    22
+   ],
+   "promote": [
+    4,
+    8
+   ]
+  },
+  {
+   "id": "cook",
+   "name": "Cook",
+   "place": "mall",
+   "ranks": [
+    {
+     "name": "Line cook",
+     "pay": 15
+    },
+    {
+     "name": "Cook",
+     "pay": 24
+    },
+    {
+     "name": "Head chef",
+     "pay": 38
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 30,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Good cook",
+    "Creative",
+    "Cooking"
+   ],
+   "hours": [
+    10,
+    23
+   ],
+   "promote": [
+    4,
+    9
+   ],
+   "needs": [
+    "Good cook"
+   ]
+  },
+  {
+   "id": "stylist",
+   "name": "Hair stylist",
+   "place": "mall",
+   "ranks": [
+    {
+     "name": "Assistant",
+     "pay": 14
+    },
+    {
+     "name": "Stylist",
+     "pay": 24
+    },
+    {
+     "name": "Salon owner",
+     "pay": 38
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Fashion",
+    "Creative",
+    "Charming"
+   ],
+   "hours": [
+    9,
+    20
+   ],
+   "promote": [
+    4,
+    9
+   ]
+  },
+  {
+   "id": "receptionist",
+   "name": "Hotel receptionist",
+   "place": "waterfront",
+   "ranks": [
+    {
+     "name": "Receptionist",
+     "pay": 17
+    },
+    {
+     "name": "Concierge",
+     "pay": 26
+    },
+    {
+     "name": "Hotel manager",
+     "pay": 42
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Charming",
+    "Outgoing",
+    "Calm"
+   ],
+   "hours": [
+    6,
+    24
+   ],
+   "promote": [
+    4,
+    9
+   ]
+  },
+  {
+   "id": "bartender",
+   "name": "Bartender",
+   "place": "waterfront",
+   "ranks": [
+    {
+     "name": "Barback",
+     "pay": 15
+    },
+    {
+     "name": "Bartender",
+     "pay": 24
+    },
+    {
+     "name": "Mixologist",
+     "pay": 35
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 30,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Outgoing",
+    "Charming",
+    "Nightlife"
+   ],
+   "hours": [
+    18,
+    4
+   ],
+   "promote": [
+    4,
+    8
+   ]
+  },
+  {
+   "id": "lifeguard",
+   "name": "Lifeguard",
+   "place": "beach",
+   "ranks": [
+    {
+     "name": "Lifeguard",
+     "pay": 17
+    },
+    {
+     "name": "Head lifeguard",
+     "pay": 26
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 35,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Athletic",
+    "Nature",
+    "Calm"
+   ],
+   "hours": [
+    8,
+    19
+   ],
+   "promote": [
+    5
+   ],
+   "needs": [
+    "Athletic",
+    "Strong"
+   ],
+   "courses": [
+    "firstaid"
+   ]
+  },
+  {
+   "id": "gardener",
+   "name": "Gardener",
+   "place": "park",
+   "ranks": [
+    {
+     "name": "Gardener",
+     "pay": 14
+    },
+    {
+     "name": "Head gardener",
+     "pay": 22
+    },
+    {
+     "name": "Park ranger",
+     "pay": 30
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 30,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Nature",
+    "Calm",
+    "Handy"
+   ],
+   "hours": [
+    6,
+    18
+   ],
+   "promote": [
+    4,
+    8
+   ]
+  },
+  {
+   "id": "rideop",
+   "name": "Ride operator",
+   "place": "ferris",
+   "ranks": [
+    {
+     "name": "Ride operator",
+     "pay": 15
+    },
+    {
+     "name": "Shift supervisor",
+     "pay": 22
+    },
+    {
+     "name": "Park manager",
+     "pay": 34
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Outgoing",
+    "Cheerful",
+    "Kind"
+   ],
+   "hours": [
+    10,
+    23
+   ],
+   "promote": [
+    4,
+    9
+   ]
+  },
+  {
+   "id": "dockworker",
+   "name": "Dock worker",
+   "place": "docks",
+   "ranks": [
+    {
+     "name": "Dockhand",
+     "pay": 17
+    },
+    {
+     "name": "Crane operator",
+     "pay": 28
+    },
+    {
+     "name": "Harbor master",
+     "pay": 42
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 40,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Strong",
+    "Handy",
+    "Calm"
+   ],
+   "hours": [
+    5,
+    17
+   ],
+   "promote": [
+    5,
+    10
+   ],
+   "needs": [
+    "Strong",
+    "Handy"
+   ]
+  },
+  {
+   "id": "clerk",
+   "name": "City clerk",
+   "place": "civic",
+   "ranks": [
+    {
+     "name": "Clerk",
+     "pay": 18
+    },
+    {
+     "name": "Officer",
+     "pay": 30
+    },
+    {
+     "name": "Department head",
+     "pay": 48
+    },
+    {
+     "name": "Councilor",
+     "pay": 70
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Smart",
+    "Serious",
+    "Ambitious"
+   ],
+   "hours": [
+    8,
+    17
+   ],
+   "promote": [
+    4,
+    8,
+    14
+   ],
+   "needs": [
+    "Smart",
+    "Good with numbers",
+    "Kind"
+   ],
+   "courses": [
+    "publicadmin"
+   ]
+  },
+  {
+   "id": "doctor",
+   "name": "Doctor",
+   "place": "hospital",
+   "ranks": [
+    {
+     "name": "Resident",
+     "pay": 30
+    },
+    {
+     "name": "Doctor",
+     "pay": 55
+    },
+    {
+     "name": "Surgeon",
+     "pay": 85
+    }
+   ],
+   "shift": 10,
+   "cost": {
+    "energy": 40,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Smart",
+    "Calm",
+    "Kind"
+   ],
+   "hours": [
+    0,
+    24
+   ],
+   "promote": [
+    6,
+    14
+   ],
+   "needs": [
+    "Smart"
+   ],
+   "courses": [
+    "medicine"
+   ]
+  },
+  {
+   "id": "teacher",
+   "name": "Teacher",
+   "place": "school",
+   "ranks": [
+    {
+     "name": "Teaching assistant",
+     "pay": 16
+    },
+    {
+     "name": "Teacher",
+     "pay": 28
+    },
+    {
+     "name": "Principal",
+     "pay": 45
+    }
+   ],
+   "shift": 7,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Kind",
+    "Books",
+    "Calm"
+   ],
+   "hours": [
+    7,
+    17
+   ],
+   "promote": [
+    5,
+    12
+   ],
+   "needs": [
+    "Smart",
+    "Kind"
+   ],
+   "courses": [
+    "education"
+   ]
+  },
+  {
+   "id": "stationagent",
+   "name": "Station agent",
+   "place": "station",
+   "ranks": [
+    {
+     "name": "Ticket agent",
+     "pay": 15
+    },
+    {
+     "name": "Conductor",
+     "pay": 25
+    },
+    {
+     "name": "Station manager",
+     "pay": 38
+    }
+   ],
+   "shift": 7,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Calm",
+    "Travel",
+    "Serious"
+   ],
+   "hours": [
+    5,
+    24
+   ],
+   "promote": [
+    4,
+    9
+   ]
+  },
+  {
+   "id": "mechanic",
+   "name": "Mechanic",
+   "place": "industrial",
+   "ranks": [
+    {
+     "name": "Apprentice",
+     "pay": 15
+    },
+    {
+     "name": "Mechanic",
+     "pay": 26
+    },
+    {
+     "name": "Workshop owner",
+     "pay": 40
+    }
+   ],
+   "shift": 7,
+   "cost": {
+    "energy": 35,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Handy",
+    "Strong",
+    "Tech-savvy"
+   ],
+   "hours": [
+    7,
+    19
+   ],
+   "promote": [
+    4,
+    9
+   ],
+   "needs": [
+    "Handy"
+   ],
+   "courses": [
+    "mechanics"
+   ]
+  },
+  {
+   "id": "developer",
+   "name": "Software developer",
+   "place": "finance",
+   "ranks": [
+    {
+     "name": "Junior developer",
+     "pay": 26
+    },
+    {
+     "name": "Developer",
+     "pay": 45
+    },
+    {
+     "name": "Lead developer",
+     "pay": 70
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Tech-savvy",
+    "Smart",
+    "Games"
+   ],
+   "hours": [
+    9,
+    19
+   ],
+   "promote": [
+    4,
+    10
+   ],
+   "needs": [
+    "Tech-savvy",
+    "Smart"
+   ],
+   "courses": [
+    "programming"
+   ]
+  },
+  {
+   "id": "researcher",
+   "name": "Researcher",
+   "place": "campus",
+   "ranks": [
+    {
+     "name": "Lab assistant",
+     "pay": 18
+    },
+    {
+     "name": "Researcher",
+     "pay": 34
+    },
+    {
+     "name": "Professor",
+     "pay": 55
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Smart",
+    "Curious",
+    "Books"
+   ],
+   "hours": [
+    8,
+    20
+   ],
+   "promote": [
+    5,
+    12
+   ],
+   "needs": [
+    "Smart",
+    "Curious"
+   ],
+   "courses": [
+    "science"
+   ]
+  }
+ ],
+ "cast": {
+  "routineTemplates": {
+   "office": {
+    "weekday": [
+     [
+      0,
+      "home"
+     ],
+     [
+      8,
+      "work"
+     ],
+     [
+      18,
+      "leisure"
+     ],
+     [
+      21,
+      "home"
+     ]
+    ],
+    "weekend": [
+     [
+      0,
+      "home"
+     ],
+     [
+      11,
+      "leisure"
+     ],
+     [
+      16,
+      "leisure"
+     ],
+     [
+      21,
+      "home"
+     ]
+    ]
+   },
+   "early": {
+    "weekday": [
+     [
+      0,
+      "home"
+     ],
+     [
+      6,
+      "work"
+     ],
+     [
+      14,
+      "leisure"
+     ],
+     [
+      20,
+      "home"
+     ]
+    ],
+    "weekend": [
+     [
+      0,
+      "home"
+     ],
+     [
+      9,
+      "leisure"
+     ],
+     [
+      14,
+      "leisure"
+     ],
+     [
+      20,
+      "home"
+     ]
+    ]
+   },
+   "night": {
+    "weekday": [
+     [
+      0,
+      "work"
+     ],
+     [
+      2,
+      "home"
+     ],
+     [
+      14,
+      "leisure"
+     ],
+     [
+      18,
+      "work"
+     ]
+    ],
+    "weekend": [
+     [
+      0,
+      "work"
+     ],
+     [
+      3,
+      "home"
+     ],
+     [
+      15,
+      "leisure"
+     ],
+     [
+      19,
+      "work"
+     ]
+    ]
+   },
+   "student": {
+    "weekday": [
+     [
+      0,
+      "home"
+     ],
+     [
+      8,
+      "campus"
+     ],
+     [
+      15,
+      "leisure"
+     ],
+     [
+      20,
+      "home"
+     ]
+    ],
+    "weekend": [
+     [
+      0,
+      "home"
+     ],
+     [
+      11,
+      "leisure"
+     ],
+     [
+      17,
+      "leisure"
+     ],
+     [
+      22,
+      "home"
+     ]
+    ]
+   }
+  },
+  "examples": [
+   {
+    "name": "Bianca",
+    "age": 24,
+    "occupation": "barista",
+    "home": "downtown",
+    "routine": "early",
+    "leisure": [
+     "beach",
+     "downtown"
+    ],
+    "description": "{{char}} is Bianca, 24, the barista at the Downtown Café. Wavy dark hair tied in a messy bun, freckles, an apron with coffee stains, a quick smile. Talkative, warm and a little nosy; she remembers every regular's order. She surfs on her days off and dreams of opening her own café.",
+    "first_mes": "*Bianca wipes the counter and looks up with a grin.* Hey, new face! What can I get you? First coffee in Porto Alto is on the house, by the way."
+   },
+   {
+    "name": "Helena",
+    "age": 31,
+    "occupation": "analyst",
+    "home": "waterfront",
+    "routine": "office",
+    "leisure": [
+     "waterfront"
+    ],
+    "description": "{{char}} is Helena, 31, a senior financial analyst. Sleek black hair in a low ponytail, sharp tailored suits, reading glasses she pretends not to need. Ambitious, dry-witted and hard to impress, she works too much and secretly loves bad romantic comedies.",
+    "first_mes": "*Helena glances up from her tablet, one eyebrow raised.* You're standing in my light. *A beat.* ...Kidding. Mostly. Can I help you?"
+   },
+   {
+    "name": "Yumi",
+    "age": 22,
+    "occupation": null,
+    "home": "north",
+    "routine": "student",
+    "leisure": [
+     "ferris",
+     "park"
+    ],
+    "description": "{{char}} is Yumi, 22, an architecture student. Short purple-dyed hair, oversized sweaters, a sketchbook always under her arm. Dreamy, shy at first and then endlessly enthusiastic about buildings, anime and the city's hidden corners.",
+    "first_mes": "*Yumi nearly drops her sketchbook.* Oh! Sorry, I was drawing the— never mind. Are you new around here? You have that lost look."
+   },
+   {
+    "name": "Carla",
+    "age": 28,
+    "occupation": "trainer",
+    "home": "east",
+    "routine": "early",
+    "leisure": [
+     "park",
+     "beach"
+    ],
+    "description": "{{char}} is Carla, 28, a gym instructor at the stadium. Tall, athletic, a high ponytail and a whistle she uses too often. Direct, competitive and loud, with a soft spot for people who try hard.",
+    "first_mes": "*Carla jogs up, barely out of breath.* You look like you could use a workout. First class is free — if you can keep up."
+   },
+   {
+    "name": "Marina",
+    "age": 35,
+    "occupation": null,
+    "home": "south",
+    "routine": "early",
+    "leisure": [
+     "docks"
+    ],
+    "description": "{{char}} is Marina, 35, who runs her family's fish stall at the Pier Market. Sun-browned skin, strong hands, a laugh you can hear across the market. Practical, generous and blunt; she has opinions about everyone in town.",
+    "first_mes": "*Marina slaps a fish onto the ice.* You buying or just looking? Either way, you'll want the snapper today. Trust me."
+   },
+   {
+    "name": "Lia",
+    "age": 26,
+    "occupation": "engineer",
+    "home": "east",
+    "routine": "office",
+    "leisure": [
+     "mall"
+    ],
+    "description": "{{char}} is Lia, 26, an engineer at a factory in the Industrial Zone. Hair always under a cap, grease on her sleeve, a calculator brain. Introverted, precise and quietly funny once she trusts you.",
+    "first_mes": "*Lia pulls out an earbud.* Sorry, were you talking to me? I was in the middle of a podcast about bridges. ...That sounds worse out loud."
+   },
+   {
+    "name": "Sofia",
+    "age": 29,
+    "occupation": "librarian",
+    "home": "north",
+    "routine": "office",
+    "leisure": [
+     "downtown",
+     "park"
+    ],
+    "description": "{{char}} is Sofia, 29, a librarian at the university. Long auburn hair, soft cardigans, a calm voice. Gentle, bookish and observant; she notices what people don't say.",
+    "first_mes": "*Sofia lowers her book and smiles.* You've walked past this shelf three times. Looking for something, or someone?"
+   },
+   {
+    "name": "Jade",
+    "age": 23,
+    "occupation": "waiter",
+    "home": "south",
+    "routine": "night",
+    "leisure": [
+     "beach"
+    ],
+    "description": "{{char}} is Jade, 23, a waitress at the Yacht Club. Platinum bob, a small tattoo on her wrist, sharp eyeliner. Flirty, restless and spontaneous; she works nights and lives for the beach by day.",
+    "first_mes": "*Jade balances a tray on one hand and winks.* Table for one? Lucky you, I've got the best one. Follow me."
+   }
+  ]
+ },
+ "lore": [
+  {
+   "keys": [
+    "Porto Alto",
+    "city"
+   ],
+   "constant": true,
+   "content": "Porto Alto is a modern coastal city of today: historic Old Town, a financial district of glass towers, a university on the hill, beaches and a lively waterfront."
+  },
+  {
+   "keys": [
+    "Old Town",
+    "downtown"
+   ],
+   "content": "Old Town is the historic center of Porto Alto: narrow streets, cafés, small shops and squares, always busy."
+  },
+  {
+   "keys": [
+    "Financial District",
+    "office"
+   ],
+   "content": "The Financial District is a cluster of glass skyscrapers with banks, offices and expensive business restaurants."
+  },
+  {
+   "keys": [
+    "Waterfront",
+    "Yacht Club"
+   ],
+   "content": "The Waterfront is a promenade along the bay with yachts, the Yacht Club and seafood restaurants."
+  },
+  {
+   "keys": [
+    "Pier Market",
+    "docks"
+   ],
+   "content": "The Docks and Pier Market are where fishermen sell the catch of the day among warehouses and boat piers."
+  },
+  {
+   "keys": [
+    "University",
+    "campus"
+   ],
+   "content": "The University Campus sits on the hill: gardens, old brick buildings and a large library."
+  }
+ ],
+ "features": {
+  "phone": true,
+  "device": "Phone"
+ },
+ "mode": "lifesim"
+}

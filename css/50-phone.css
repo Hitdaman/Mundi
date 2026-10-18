@@ -1,0 +1,499 @@
+/* The phone */
+#mundi-root .mu-phonebtn { position: relative; }
+#mundi-root .mu-phonebtn em, #mundi-root .mu-ph-app em, #mundi-root .mu-ph-row > em {
+    position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #ff3b30; color: #fff;
+    font: 700 11px/18px system-ui, sans-serif; font-style: normal; text-align: center;
+}
+#mundi-root .mu-phone {
+    position: absolute; z-index: 25; right: 22px; bottom: 22px; width: 360px; height: min(700px, calc(100% - 100px));
+    display: grid; grid-template-rows: auto 1fr auto; border-radius: 38px; padding: 10px; background: #0b0d12;
+    box-shadow: 0 0 0 2px #2a2f3a, 0 24px 60px rgba(0, 0, 0, .55); animation: mu-phone-in .22s ease;
+}
+@keyframes mu-phone-in { from { transform: translateY(30px); opacity: 0; } }
+#mundi-root .mu-ph-status { display: flex; align-items: center; gap: 8px; padding: 6px 14px 8px; color: #fff; font-size: 13px; }
+#mundi-root .mu-ph-status span { flex: 1; text-align: center; color: #9aa3b8; font-size: 12px; }
+#mundi-root .mu-ph-status .mu-ibtn { width: 28px; height: 28px; color: #fff; background: transparent; border: 0; box-shadow: none; }
+#mundi-root .mu-ph-screen { position: relative; overflow: auto; border-radius: 28px; background: var(--bg); color: var(--fg); display: flex; flex-direction: column; min-height: 0; }
+#mundi-root .mu-ph-homebar { justify-self: center; width: 120px; height: 5px; margin: 8px 0 2px; padding: 0; border-radius: 3px; background: #6b7280; border: 0; box-shadow: none; }
+#mundi-root .mu-ph-head { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; padding: 10px 8px; background: var(--panel); border-bottom: 1px solid var(--line); text-align: center; }
+#mundi-root .mu-ph-head .mu-ibtn { width: 34px; height: 34px; }
+/* home screen */
+#mundi-root .mu-ph-apps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 8px; padding: 28px 16px; align-content: start;
+    background: radial-gradient(circle at 30% 10%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 60%), radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--accent2) 30%, transparent), transparent 55%); flex: 1; }
+#mundi-root .mu-ph-app { position: relative; flex-direction: column; gap: 6px; padding: 0; background: none; border: 0; box-shadow: none; font-size: 11px; font-weight: 600; color: var(--fg); }
+#mundi-root .mu-ph-app i { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(160deg, color-mix(in srgb, var(--c) 80%, #fff), var(--c)); color: #fff; box-shadow: 0 4px 10px rgba(0, 0, 0, .25); }
+#mundi-root .mu-ph-app i .mu-ic { width: 28px; height: 28px; }
+#mundi-root .mu-ph-app em { top: -6px; right: 6px; }
+/* lists */
+#mundi-root .mu-ph-list { display: grid; align-content: start; }
+#mundi-root .mu-ph-row { position: relative; justify-content: flex-start; gap: 10px; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; text-align: left; }
+#mundi-root .mu-ph-row img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; }
+#mundi-root .mu-ph-row > span { display: grid; gap: 2px; min-width: 0; flex: 1; }
+#mundi-root .mu-ph-row > span small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-ph-row > em { position: static; }
+#mundi-root .mu-ph-heart { color: #ff375f; }
+#mundi-root .mu-bond { display: block; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+#mundi-root .mu-bond i { display: block; height: 100%; background: linear-gradient(90deg, #ff9f0a, #ff375f); }
+/* thread */
+#mundi-root .mu-ph-thread { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 6px; padding: 12px; }
+#mundi-root .mu-ph-msg { max-width: 78%; padding: 8px 12px; border-radius: 18px 18px 18px 4px; background: var(--bg2); border: 1px solid var(--line); align-self: flex-start; white-space: pre-wrap; overflow-wrap: anywhere; }
+#mundi-root .mu-ph-msg small { display: block; font-size: 10px; margin-top: 2px; opacity: .7; }
+#mundi-root .mu-ph-msg.is-me { align-self: flex-end; border-radius: 18px 18px 4px 18px; background: #0a84ff; border-color: #0a84ff; color: #fff; }
+#mundi-root .mu-ph-msg.is-me small { color: #e6f0ff; }
+#mundi-root .mu-ph-msg.is-typing { display: flex; gap: 4px; }
+#mundi-root .mu-ph-msg.is-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: mu-dot 1s infinite; }
+#mundi-root .mu-ph-msg.is-typing i:nth-child(2) { animation-delay: .15s; } #mundi-root .mu-ph-msg.is-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes mu-dot { 50% { transform: translateY(-4px); opacity: .5; } }
+#mundi-root .mu-ph-compose { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--line); background: var(--panel); position: sticky; bottom: 0; }
+#mundi-root .mu-ph-compose input { border-radius: 999px; }
+/* app pages */
+#mundi-root .mu-ph-body { display: grid; gap: 12px; padding: 14px; align-content: start; }
+#mundi-root .mu-ph-body section { display: grid; gap: 8px; }
+#mundi-root .mu-ph-card { display: grid; gap: 4px; padding: 12px; border-radius: 16px; background: var(--bg2); border: 1px solid var(--line); }
+#mundi-root .mu-ph-card button { justify-self: start; margin-top: 6px; }
+#mundi-root .mu-ph-balance b { font-size: 30px; }
+#mundi-root .mu-ph-profile { display: grid; justify-items: center; gap: 4px; text-align: center; }
+#mundi-root .mu-ph-profile img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-ph-profile .mu-bond { width: 70%; }
+#mundi-root .mu-ph-love { color: #ff375f; font-weight: 700; text-align: center; }
+#mundi-root .mu-ph-job { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); }
+#mundi-root .mu-ph-job > span { display: grid; gap: 2px; min-width: 0; }
+#mundi-root .mu-ph-ledger > div { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+#mundi-root .mu-ph-ledger span { display: grid; }
+#mundi-root .mu-good { color: var(--good); }
+#mundi-root .mu-jobrow { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 0; }
+#mundi-root .mu-jobrow span { display: grid; }
+@media (max-width: 760px) {
+    #mundi-root .mu-phone { inset: 0; width: auto; height: auto; border-radius: 0; padding: 0; }
+    #mundi-root .mu-ph-screen { border-radius: 0; }
+    #mundi-root .mu-ph-status { padding: 10px 12px; }
+}
+/* new game: styles */
+#mundi-root .mu-styles { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+#mundi-root .mu-style { flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; text-align: left; }
+#mundi-root .mu-style b { font-size: 15px; }
+#mundi-root .mu-style.is-soon { opacity: .75; border-style: dashed; }
+#mundi-root .mu-style.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); opacity: 1; }
+#mundi-root .mu-style-info { padding: 14px 18px; }
+#mundi-root .mu-style-info ul { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+/* map: the card that opens next to a pin */
+#mundi-root .mu-pop {
+    position: absolute; z-index: 20; width: 300px; max-height: min(62vh, 520px); overflow: auto; padding: 14px 16px; display: none; gap: 8px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); backdrop-filter: blur(8px);
+}
+#mundi-root .mu-pop.is-open { display: grid; animation: mu-pop-in .14s ease; }
+@keyframes mu-pop-in { from { opacity: 0; transform: translateY(6px); } }
+#mundi-root .mu-pop.is-below { animation-name: mu-pop-in-b; }
+@keyframes mu-pop-in-b { from { opacity: 0; transform: translateY(-6px); } }
+#mundi-root .mu-pop.is-here { width: 330px; }
+#mundi-root .mu-pop h3 { font-size: 17px; }
+#mundi-root .mu-pop p { font-size: 13px; line-height: 1.45; }
+#mundi-root .mu-pop .mu-card { padding: 10px 0 0; border: 0; border-top: 1px solid var(--line); background: none; box-shadow: none; border-radius: 0; display: grid; gap: 6px; }
+#mundi-root .mu-pop-people { display: flex; flex-wrap: wrap; gap: 6px; }
+#mundi-root .mu-pop-person { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; border-radius: 999px; background: var(--bg2); border: 1px solid var(--line); font-size: 12px; }
+#mundi-root .mu-pop-person img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-pop .mu-acts { display: grid; gap: 6px; }
+#mundi-root .mu-pop .mu-badge { justify-self: start; }
+@media (max-width: 760px) { #mundi-root .mu-pop, #mundi-root .mu-pop.is-here { width: min(320px, calc(100% - 16px)); } }
+@media (min-width: 761px) { #mundi-root:has(.mu-phone) #mundi-toasts { right: 400px; } }
+/* Chirp */
+#mundi-root .mu-ph-compose.is-top { position: static; border-top: 0; border-bottom: 1px solid var(--line); }
+#mundi-root .mu-ch-refresh { margin: 6px auto; font-size: 13px; }
+#mundi-root .mu-ch-feed { display: grid; align-content: start; }
+#mundi-root .mu-ch-post { display: grid; grid-template-columns: 40px 1fr; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+#mundi-root .mu-ch-post:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+#mundi-root .mu-ch-post > img, #mundi-root .mu-ch-reply > img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-ch-post header { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+#mundi-root .mu-ch-post p { margin: 2px 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+#mundi-root .mu-ch-img { width: 100%; border-radius: 12px; margin-bottom: 6px; }
+#mundi-root .mu-ch-post footer { display: flex; gap: 22px; align-items: center; color: var(--muted); font-size: 12px; }
+#mundi-root .mu-ch-post footer > span, #mundi-root .mu-ch-like { display: inline-flex; align-items: center; gap: 5px; }
+#mundi-root .mu-ch-post footer .mu-ic { width: 16px; height: 16px; }
+#mundi-root .mu-ch-like { padding: 2px 6px; background: none !important; border: 0 !important; box-shadow: none !important; color: var(--muted); font-size: 12px; }
+#mundi-root .mu-ch-like.is-on { color: #f91880; }
+#mundi-root .mu-ch-reply { display: grid; grid-template-columns: 40px 1fr; gap: 10px; padding: 10px 14px 10px 28px; border-bottom: 1px solid var(--line); font-size: 13px; }
+#mundi-root .mu-ch-reply p { margin: 2px 0 0; }
+/* Spark */
+#mundi-root .mu-sp-card { position: relative; margin: 12px; border-radius: 18px; overflow: hidden; background: #000; flex: 1; min-height: 360px; display: flex; }
+#mundi-root .mu-sp-card > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#mundi-root .mu-sp-info { position: relative; margin-top: auto; width: 100%; padding: 60px 16px 16px; background: linear-gradient(transparent, rgba(0, 0, 0, .85)); color: #fff; display: grid; gap: 6px; }
+#mundi-root .mu-sp-info h3 { color: #fff; font-size: 22px; }
+#mundi-root .mu-sp-info small { color: #ffd1da; font-weight: 700; }
+#mundi-root .mu-sp-info p { font-size: 13px; color: #eee; }
+#mundi-root .mu-sp-info .mu-chip { background: rgba(255, 255, 255, .15); border: 1px solid rgba(255, 255, 255, .3); color: #fff; padding: 3px 10px; font-size: 12px; }
+#mundi-root .mu-sp-info .mu-chip.is-on { background: #ff4f6d; border-color: #ff4f6d; }
+#mundi-root .mu-sp-btns { display: flex; justify-content: center; gap: 28px; padding: 4px 0 16px; }
+#mundi-root .mu-sp-btns button { width: 64px; height: 64px; border-radius: 50% !important; padding: 0; background: var(--bg2); box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
+#mundi-root .mu-sp-btns .mu-ic { width: 30px; height: 30px; }
+#mundi-root .mu-sp-no { color: #ff6b6b; } #mundi-root .mu-sp-yes { color: #2ed47a; }
+#mundi-root .mu-sp-match { display: grid; justify-items: center; gap: 14px; padding: 30px 16px; text-align: center; background: linear-gradient(160deg, #ff4f6d, #ff9a5a); color: #fff; flex: 1; align-content: center; }
+#mundi-root .mu-sp-match h2 { color: #fff; font-size: 30px; }
+#mundi-root .mu-sp-pair { display: flex; }
+#mundi-root .mu-sp-pair img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; }
+#mundi-root .mu-sp-pair img + img { margin-left: -18px; }
+#mundi-root .mu-ph-head { grid-template-columns: 80px 1fr 80px; } #mundi-root .mu-ph-head .mu-row { flex-wrap: nowrap; gap: 2px; justify-content: flex-end; }
+/* status bar: time + notifications on the left, signal, wifi and battery on the right */
+#mundi-root .mu-ph-status { display: flex; justify-content: space-between; align-items: center; padding: 6px 18px 8px; color: #fff; }
+#mundi-root .mu-ph-left, #mundi-root .mu-ph-right { display: inline-flex; align-items: center; gap: 6px; }
+#mundi-root .mu-ph-left b { font-size: 14px; }
+#mundi-root .mu-ph-notif { display: inline-grid; place-items: center; color: #34c759; animation: mu-in .25s ease; }
+#mundi-root .mu-ph-notif .mu-ic, #mundi-root .mu-ph-right .mu-ic { width: 16px; height: 16px; }
+#mundi-root .mu-ph-batt { display: inline-flex; align-items: center; gap: 4px; }
+#mundi-root .mu-ph-batt small { color: #fff; font-size: 11px; font-weight: 700; }
+#mundi-root .mu-ph-batt i { position: relative; width: 24px; height: 12px; border: 1.5px solid #fff; border-radius: 3px; padding: 1.5px; display: block; }
+#mundi-root .mu-ph-batt i::after { content: ""; position: absolute; right: -4px; top: 3px; width: 2px; height: 4px; border-radius: 0 1px 1px 0; background: #fff; }
+#mundi-root .mu-ph-batt b { display: block; width: 100%; height: 100%; border-radius: 1px; background: #34c759; }
+/* the round button that closes the phone */
+#mundi-root .mu-ph-close, #mundi-root .mu-ph-close:hover:not(:disabled) { justify-self: center; width: 42px; height: 42px; margin: 8px 0 2px; padding: 0; border-radius: 50% !important;
+    background: radial-gradient(circle at 50% 40%, #2a2f3a, #14171e) !important; border: 2px solid #3a404d !important; box-shadow: inset 0 1px 2px rgba(255, 255, 255, .08) !important; }
+#mundi-root .mu-ph-close:hover:not(:disabled) { border-color: #6b7280 !important; }
+/* WhatsApp-style chat header */
+#mundi-root .mu-ph-head.is-chat { grid-template-columns: 40px 1fr; text-align: left; }
+#mundi-root .mu-ph-chathead, #mundi-root .mu-ph-chathead:hover:not(:disabled) { justify-content: flex-start; gap: 10px; padding: 0; background: none !important; border: 0 !important; box-shadow: none !important; text-align: left; }
+#mundi-root .mu-ph-chathead img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-ph-chathead span { display: grid; line-height: 1.2; }
+#mundi-root .mu-ph-chathead small { font-size: 11px; color: var(--muted); font-weight: 600; }
+@media (max-width: 760px) { #mundi-root .mu-ph-close { margin: 6px 0 10px; } }
+#mundi-root .mu-ph-status { padding: 6px 6px 8px 20px; } #mundi-root .mu-ph-right { margin-right: -2px; }
+
+/* ---------- plans: people in the scene, their card, the plan form ---------- */
+#mundi-root .mu-people { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 70%; z-index: 4; }
+#mundi-root .mu-person { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; font-size: 13px; }
+#mundi-root .mu-person img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; object-position: top; }
+#mundi-root .mu-person.is-on { border-color: var(--accent); }
+#mundi-root .mu-person i { display: inline-flex; color: var(--accent); }
+#mundi-root .mu-person i .mu-ic { width: 14px; height: 14px; }
+#mundi-root .mu-pcard { position: absolute; top: 108px; left: 50%; transform: translateX(-50%); width: min(320px, calc(100% - 32px)); z-index: 6; display: grid; gap: 8px; padding: 12px;
+    background: var(--panel); border: 2px solid var(--pe); box-shadow: 0 0 0 1px var(--line), var(--shadow); border-radius: var(--r); }
+#mundi-root .mu-pcard header { display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; align-items: center; }
+#mundi-root .mu-pcard header img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; object-position: top; }
+#mundi-root .mu-pcard header span { display: grid; gap: 3px; min-width: 0; }
+#mundi-root .mu-pcard > button { display: flex; align-items: center; justify-content: center; gap: 8px; }
+#mundi-root .mu-pcard small { font-size: 12px; }
+#mundi-root .mu-hud-with { display: flex; align-items: center; gap: 4px; }
+#mundi-root .mu-hud-with small { font-size: 11px; color: var(--muted); margin-right: 2px; }
+#mundi-root .mu-hud-with button { padding: 0; width: 26px; height: 26px; border-radius: 50%; overflow: hidden; min-height: 0; }
+#mundi-root .mu-hud-with img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+#mundi-root .mu-ph-plan { display: grid; gap: 8px; }
+#mundi-root .mu-ph-plan > button { display: flex; align-items: center; justify-content: center; gap: 8px; }
+#mundi-root .mu-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#mundi-root .mu-plan-row img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; object-position: top; flex: none; }
+#mundi-root .mu-plan-row > span { flex: 1; }
+
+/* ---------- new game: scenario or world ---------- */
+#mundi-root .mu-heropick.is-modes { max-width: 820px; margin: 6vh auto 0; }
+#mundi-root .mu-heropick.is-modes .mu-herocard { min-height: 220px; }
+#mundi-root .mu-wizard-foot .mu-as { white-space: nowrap; display: flex; align-items: center; gap: 8px; margin: 0; }
+#mundi-root .mu-wizard-foot .mu-as select { min-width: 180px; }
+#mundi-root .mu-scene.is-chat .mu-top .mu-clock b { font-size: 18px; }
+
+/* ---------- scenario pickers (background, add a character) ---------- */
+#mundi-root .mu-scpick { position: absolute; z-index: 36; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(760px, calc(100% - 32px)); max-height: calc(100% - 80px); display: grid; grid-template-rows: auto auto auto 1fr; gap: 10px; padding: 16px; overflow: hidden; }
+#mundi-root .mu-scpick header { display: flex; align-items: center; justify-content: space-between; }
+#mundi-root .mu-scpick-grid { overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; min-height: 0; }
+#mundi-root .mu-scpick-grid.is-bg { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+#mundi-root .mu-scpick-grid button { display: grid; gap: 6px; padding: 6px; text-align: center; font-size: 12px; }
+#mundi-root .mu-scpick-grid img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; object-position: top; border-radius: var(--ri); }
+#mundi-root .mu-scpick-grid.is-bg img { aspect-ratio: 16 / 9; object-position: center; }
+#mundi-root .mu-scpick-grid span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-person > button { padding: 0 4px; min-height: 0; border: 0; background: none; box-shadow: none; }
+#mundi-root .mu-person > button .mu-ic { width: 13px; height: 13px; }
+#mundi-root span.mu-person { border: 1.5px solid var(--line); background: var(--panel); border-radius: var(--rb); }
+
+/* ---------- scene layouts ---------- */
+/* Classic SillyTavern: the conversation fills the middle column, the character stands on its left. */
+#mundi-root[data-layout="classic"] .mu-dialog { top: 76px; bottom: 12px; height: auto; width: min(760px, calc(100% - 24px)); }
+#mundi-root[data-layout="classic"] .mu-sprites { right: auto; width: calc(50% - min(380px, 50% - 12px)); padding: 0 12px; justify-content: center; }
+#mundi-root[data-layout="classic"] .mu-sprite { height: 80%; max-width: calc(100% / var(--n, 1)); }
+#mundi-root[data-layout="classic"] .mu-sprite .is-avatar { margin-bottom: 20vh; height: 46%; }
+#mundi-root[data-layout="classic"] .mu-people { left: 12px; transform: none; max-width: calc(50% - 400px); justify-content: flex-start; }
+/* Visual novel without the box: the text sits over the scene. */
+#mundi-root[data-layout="vn"][data-vn="nobox"] .mu-dialog,
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-dialog { background: none; border-color: transparent; box-shadow: none; backdrop-filter: none; }
+#mundi-root[data-layout="vn"][data-vn="nobox"] .mu-log,
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-log { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .95), 0 0 1px #000; }
+#mundi-root[data-layout="vn"][data-vn="nobox"] .mu-line-text em,
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-line-text em { color: #dfe6f3; }
+#mundi-root[data-layout="vn"][data-vn="nobox"] .mu-composer,
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-composer { border-top: 0; border-radius: var(--r); background: color-mix(in srgb, var(--panel) 88%, transparent); }
+/* Subtitles: only her last line, centered under her, like a film subtitle. */
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-dialog { height: auto; max-height: 52vh; grid-template-rows: minmax(0, auto) auto; }
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-log { max-height: 34vh; text-align: center; font-size: calc(18px * var(--mu-scene-text, 1)); padding-bottom: 8px; }
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-line-head { justify-content: center; }
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-line-tools { margin-left: 0; }
+#mundi-root[data-layout="vn"][data-vn="subtitle"] .mu-log > p.mu-muted { display: none; }
+/* the layout picker in Settings */
+#mundi-root .mu-layouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#mundi-root .mu-layout { display: grid; gap: 4px; text-align: left; padding: 12px; }
+#mundi-root .mu-layout.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+#mundi-root .mu-layout small { color: var(--muted); font-weight: 600; }
+#mundi-root .mu-layout > i { position: relative; display: block; height: 70px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 14%, var(--bg2)); border: 1px solid var(--line); margin-bottom: 6px; }
+#mundi-root .mu-layout > i b { position: absolute; width: 16%; height: 62%; bottom: 0; background: var(--accent); opacity: .7; border-radius: 4px 4px 0 0; }
+#mundi-root .mu-layout > i u { position: absolute; background: var(--fg); opacity: .25; border-radius: 3px; }
+#mundi-root .mu-layout > i.is-vn b { left: 42%; }
+#mundi-root .mu-layout > i.is-vn u { left: 10%; right: 10%; bottom: 6px; height: 34%; }
+#mundi-root .mu-layout > i.is-classic b { left: 6%; }
+#mundi-root .mu-layout > i.is-classic u { left: 30%; right: 12%; top: 6px; bottom: 6px; }
+@media (max-width: 760px) {
+    #mundi-root[data-layout="classic"] .mu-dialog { width: calc(100% - 16px); }
+    #mundi-root[data-layout="classic"] .mu-sprites { display: none; }
+}
+
+/* ---------- Load: worlds and scenarios ---------- */
+#mundi-root .mu-saves { max-height: calc(100vh - 220px); grid-template-rows: auto 1fr auto; }
+#mundi-root .mu-saves-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+#mundi-root .mu-saves-bar .mu-search { max-width: 240px; }
+#mundi-root .mu-saves-list { overflow: auto; min-height: 0; }
+#mundi-root .mu-save { flex-wrap: nowrap; }
+#mundi-root .mu-save-img { width: 44px; height: 44px; flex: none; border-radius: 50%; object-fit: cover; object-position: top; display: grid; place-items: center; background: var(--bh); color: var(--accent); }
+#mundi-root .mu-save-txt { flex: 1; min-width: 0; display: grid; gap: 2px; }
+#mundi-root .mu-save-txt small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-save-kind { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; padding: 1px 6px; border-radius: 6px; background: var(--bh); color: var(--accent); vertical-align: 2px; }
+#mundi-root .mu-save-prev { color: var(--muted); font-style: italic; }
+
+/* ---------- This world (the globe) ---------- */
+#mundi-root .mu-worldcfg .mu-subhead small { opacity: .85; }
+#mundi-root .mu-switch-row { margin-left: auto; display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+#mundi-root .mu-switch-row input { width: 18px; height: 18px; }
+#mundi-root .mu-worldcfg .mu-settings-layout { max-width: 1120px; }
+#mundi-root .mu-wc-people { display: grid; grid-template-columns: 240px 1fr; gap: 16px; min-height: 0; }
+#mundi-root .mu-wc-list { display: grid; gap: 6px; align-content: start; max-height: calc(100vh - 220px); overflow: auto; padding-right: 4px; }
+#mundi-root .mu-wc-list > .mu-primary { display: flex; align-items: center; justify-content: center; gap: 6px; }
+#mundi-root .mu-wc-row { justify-content: flex-start; display: flex; gap: 10px; align-items: center; text-align: left; padding: 6px 8px; }
+#mundi-root .mu-wc-row.is-on { border-color: var(--accent); background: var(--bh); }
+#mundi-root .mu-wc-row img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; object-position: top; flex: none; }
+#mundi-root .mu-wc-row span { display: grid; min-width: 0; }
+#mundi-root .mu-wc-row small { color: var(--muted); font-weight: 600; }
+#mundi-root .mu-wc-form { display: grid; gap: 12px; align-content: start; }
+#mundi-root .mu-wc-form > button { display: flex; align-items: center; justify-content: center; gap: 6px; justify-self: start; }
+#mundi-root .mu-wc-head { display: flex; gap: 12px; align-items: center; }
+#mundi-root .mu-wc-head img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: top; }
+#mundi-root .mu-wc-head h3 { margin: 0; }
+#mundi-root .mu-wc-head small { color: var(--muted); }
+#mundi-root .mu-wc-sec { display: grid; gap: 8px; margin-bottom: 16px; }
+#mundi-root .mu-wc-sec > button { justify-self: start; display: flex; align-items: center; gap: 6px; }
+#mundi-root .mu-wc-books { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+#mundi-root .mu-wc-recap { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--ri); }
+#mundi-root .mu-wc-recap p { margin: 4px 0 0; }
+@media (max-width: 760px) { #mundi-root .mu-wc-people { grid-template-columns: 1fr; } }
+
+/* ---------- Add-ons ---------- */
+#mundi-root .mu-addons { display: grid; gap: 12px; }
+#mundi-root .mu-addon { border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: grid; gap: 6px; }
+#mundi-root .mu-addon.is-ready { border-color: color-mix(in srgb, var(--good) 60%, var(--line)); }
+#mundi-root .mu-addon header { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+#mundi-root .mu-addon p { margin: 0; }
+#mundi-root .mu-addon-state { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--bh); color: var(--muted); }
+#mundi-root .mu-addon-state.is-ok { color: var(--good); }
+#mundi-root .mu-addon-state.is-warn { color: var(--warn); }
+#mundi-root .mu-addon .mu-row { justify-content: space-between; align-items: center; }
+#mundi-root .mu-addon-link { display: inline-flex; gap: 6px; align-items: center; color: var(--accent); font-weight: 700; text-decoration: none; }
+#mundi-root .mu-mic.is-on { background: var(--bad); border-color: var(--bad); color: #fff; animation: mu-blink 1.2s infinite; }
+#mundi-root .mu-wc-book { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--ri); }
+#mundi-root .mu-wc-book.is-on { border-color: var(--accent); background: var(--bh); }
+#mundi-root .mu-wc-book .mu-check { margin: 0; min-width: 0; }
+#mundi-root .mu-wc-book button { padding: 2px 8px; font-size: 12px; min-height: 0; }
+#mundi-root .mu-wc-main { font-size: 11px; text-transform: uppercase; color: var(--accent); }
+#mundi-root .mu-wc-sec > .mu-row { gap: 8px; align-items: center; }
+#mundi-root .mu-wc-sec > .mu-row .mu-search { flex: 1; }
+#mundi-root .mu-wc-sec > .mu-row button { display: flex; align-items: center; gap: 6px; }
+
+/* ---------- worlds list: create / import / edit ---------- */
+#mundi-root .mu-worldcard-wrap { position: relative; display: grid; }
+#mundi-root .mu-world-edit { position: absolute; top: 8px; right: 8px; z-index: 2; background: var(--panel); }
+#mundi-root .mu-worldcard.is-new { border-style: dashed; }
+#mundi-root .mu-worldcard.is-new .mu-worldart { display: grid; place-items: center; background: var(--bh); color: var(--accent); }
+#mundi-root .mu-worldcard.is-new .mu-worldart .mu-ic { width: 42px; height: 42px; }
+
+/* ---------- in game: a link pin opens another map ---------- */
+#mundi-root .mu-pin.is-link .dot { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--accent); color: #fff; border-color: #fff; }
+#mundi-root .mu-pin.is-link .dot .mu-ic { width: 15px; height: 15px; }
+#mundi-root .mu-mapnav { position: absolute; z-index: 9; left: 50%; top: 76px; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; padding: 6px 8px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); }
+#mundi-root .mu-mapnav button { display: flex; gap: 6px; align-items: center; }
+#mundi-root .mu-mapnav b { padding: 0 6px; }
+
+/* ---------- world creator ---------- */
+#mundi-root .mu-creator-ed .mu-cw-top { margin-left: auto; gap: 8px; align-items: center; }
+#mundi-root .mu-creator-ed .mu-cw-top button { display: flex; gap: 6px; align-items: center; }
+#mundi-root .mu-cw-layout { max-width: 1400px; grid-template-columns: 190px 1fr; }
+#mundi-root .mu-cw-layout .mu-settings-body { min-width: 0; }
+#mundi-root .mu-cw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: start; }
+#mundi-root .mu-cw-sec { display: grid; gap: 10px; align-content: start; min-width: 0; }
+#mundi-root .mu-cw-sec h4 { margin: 6px 0 0; }
+#mundi-root .mu-cw-wide { grid-column: 1 / -1; }
+#mundi-root .mu-cw-sec > button, #mundi-root .mu-cw-form > button, #mundi-root .mu-cw-trait > button { justify-self: start; display: flex; gap: 6px; align-items: center; }
+#mundi-root .mu-cw-inline { align-items: flex-end; gap: 8px; flex-wrap: nowrap; }
+#mundi-root .mu-cw-inline > .mu-field { flex: 1; margin: 0; min-width: 0; }
+#mundi-root .mu-cw-inline > button { margin-bottom: 4px; }
+#mundi-root .mu-cw-spacer { flex: 1; }
+#mundi-root .mu-cw-master { display: grid; grid-template-columns: 230px 1fr; gap: 16px; min-width: 0; }
+#mundi-root .mu-cw-list { display: grid; gap: 6px; align-content: start; max-height: calc(100vh - 230px); overflow: auto; padding-right: 4px; }
+#mundi-root .mu-cw-list > .mu-primary { display: flex; gap: 6px; align-items: center; justify-content: center; }
+#mundi-root .mu-cw-row { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; text-align: left; padding: 6px 10px; justify-items: start; }
+#mundi-root .mu-cw-row > b, #mundi-root .mu-cw-row > small { grid-column: 2; }
+#mundi-root .mu-cw-row > img { grid-row: span 2; width: 34px; height: 34px; border-radius: 50%; object-fit: cover; object-position: top; }
+#mundi-root .mu-cw-row small { color: var(--muted); font-weight: 600; font-size: 12px; }
+#mundi-root .mu-cw-row.is-on { border-color: var(--accent); background: var(--bh); }
+#mundi-root .mu-cw-form { display: grid; gap: 10px; align-content: start; min-width: 0; }
+#mundi-root .mu-cw-del { margin-top: 10px; }
+#mundi-root .mu-cw-effects { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+#mundi-root .mu-cw-cover { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--ri); background: var(--bh) center / cover no-repeat; border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); }
+#mundi-root .mu-cw-cover.is-small { aspect-ratio: 16 / 7; max-width: 340px; }
+#mundi-root .mu-cw-kind { display: grid; grid-template-columns: 160px 1fr; gap: 12px; padding: 10px; border: 1px solid var(--line); border-radius: var(--ri); }
+#mundi-root .mu-cw-kind .mu-cw-cover { aspect-ratio: 4 / 3; }
+#mundi-root .mu-cw-trait { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: var(--ri); }
+#mundi-root .mu-cw-apps { display: grid; gap: 6px; }
+#mundi-root .mu-cw-app { display: grid; grid-template-columns: 36px auto 1fr 120px 44px; gap: 8px; align-items: center; }
+#mundi-root .mu-cw-app.is-off { opacity: .55; }
+#mundi-root .mu-cw-app > i { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--c); color: #fff; }
+#mundi-root .mu-cw-app input[type=color], #mundi-root .mu-cw-color input { width: 44px; height: 34px; padding: 2px; }
+#mundi-root .mu-heropick.is-start { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#mundi-root .mu-heropick.is-start .mu-herocard { min-height: 0; padding: 14px; }
+#mundi-root .mu-heropick.is-start .mu-herocard.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+#mundi-root .mu-dlg .mu-row { justify-content: flex-end; }
+#mundi-root .mu-settings-body.is-maps { padding: 10px; }
+
+/* ---------- map editor ---------- */
+#mundi-root .mu-me { display: grid; grid-template-columns: 220px minmax(0, 1fr); grid-template-rows: auto auto; gap: 12px; align-items: start; }
+#mundi-root .mu-me-maps { grid-row: 1 / span 2; }
+#mundi-root .mu-me-side { grid-column: 2; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--ri); overflow: visible; }
+#mundi-root .mu-me-side > h4 { margin: 0; }
+#mundi-root .mu-me-pf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+#mundi-root .mu-me-pfcol { display: grid; gap: 8px; align-content: start; min-width: 0; }
+#mundi-root .mu-me-pfcol > button { justify-self: start; display: flex; gap: 6px; align-items: center; }
+#mundi-root .mu-me-maps, #mundi-root .mu-me-side { display: grid; gap: 8px; align-content: start; overflow: auto; min-height: 0; }
+#mundi-root .mu-me-maps > .mu-primary, #mundi-root .mu-me-side > button, #mundi-root .mu-me-mapform button { display: flex; gap: 6px; align-items: center; justify-content: center; }
+#mundi-root .mu-me-side > button { justify-self: start; }
+#mundi-root .mu-me-mapform { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--ri); }
+#mundi-root .mu-me-center { display: grid; grid-template-rows: auto auto; gap: 8px; min-width: 0; }
+#mundi-root .mu-me-tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+#mundi-root .mu-me-tools button { display: flex; gap: 6px; align-items: center; padding: 6px 10px; }
+#mundi-root .mu-me-tools button.is-on { border-color: var(--accent); background: var(--bh); }
+#mundi-root .mu-me-tools select { width: auto; }
+#mundi-root .mu-me-zoom { margin-left: auto; display: flex; gap: 4px; }
+#mundi-root .mu-me-stage { overflow: auto; border: 1px solid var(--line); border-radius: var(--ri); background: #0b0f18; max-height: min(64vh, 680px); overscroll-behavior: contain; }
+#mundi-root .mu-me-stage.is-place, #mundi-root .mu-me-stage.is-link, #mundi-root .mu-me-stage.is-homes { cursor: crosshair; }
+#mundi-root .mu-me-img { position: relative; background-size: 100% 100%; user-select: none; touch-action: none; }
+#mundi-root .mu-me-pin { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: grab; z-index: 2; touch-action: none; }
+#mundi-root .mu-me-pin .dot { width: 14px; height: 14px; border-radius: 50%; background: #10162a; border: 3px solid var(--accent); box-shadow: 0 0 0 2px rgba(0, 0, 0, .55); display: grid; place-items: center; }
+#mundi-root .mu-me-pin.is-link .dot { width: 24px; height: 24px; border-radius: 7px; background: var(--accent); color: #fff; border-color: #fff; }
+#mundi-root .mu-me-pin.is-link .dot .mu-ic { width: 14px; height: 14px; }
+#mundi-root .mu-me-pin .label { padding: 1px 7px; border-radius: 999px; background: rgba(8, 10, 22, .84); color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+#mundi-root .mu-me-pin.is-sel .dot { background: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 55%, transparent); }
+#mundi-root .mu-me-pin.is-sel .label { background: var(--accent); }
+#mundi-root .mu-me-home { position: absolute; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 4px; background: rgba(67, 181, 27, .75); color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; border: 1.5px solid #fff; z-index: 1; cursor: grab; opacity: .55; }
+#mundi-root .mu-me-home.is-zone { opacity: 1; background: var(--good); box-shadow: 0 0 0 3px rgba(67, 181, 27, .35); }
+#mundi-root .mu-me-stage.is-homes .mu-me-home.is-zone { cursor: pointer; }
+#mundi-root .mu-me-empty { grid-column: 2 / -1; display: grid; place-items: center; border: 2px dashed var(--line); border-radius: var(--r); color: var(--muted); }
+@media (max-width: 1100px) { #mundi-root .mu-me { grid-template-columns: 1fr; } #mundi-root .mu-me-maps, #mundi-root .mu-me-side { grid-row: auto; grid-column: auto; } #mundi-root .mu-me-pf { grid-template-columns: 1fr; } #mundi-root .mu-cw-master { grid-template-columns: 1fr; } }
+#mundi-root .mu-as-btn { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; min-width: 180px; }
+#mundi-root .mu-as-btn img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; object-position: top; }
+#mundi-root .mu-as-btn b { flex: 1; text-align: left; }
+#mundi-root .mu-scpick-grid button.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+#mundi-root .mu-charlore .mu-chips .mu-chip { display: inline-flex; align-items: center; gap: 4px; }
+#mundi-root .mu-charlore .mu-chip button { padding: 0 2px; min-height: 0; border: 0; background: none; box-shadow: none; }
+#mundi-root .mu-charlore .mu-chip button .mu-ic { width: 12px; height: 12px; }
+#mundi-root .mu-charlore select { max-width: 320px; }
+#mundi-root .mu-charlore-pick { display: grid; gap: 8px; margin: 10px 0; }
+#mundi-root .mu-charlore-row { display: grid; grid-template-columns: 36px 140px 1fr; gap: 10px; align-items: center; }
+#mundi-root .mu-charlore-row img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; object-position: top; }
+#mundi-root .mu-charlore-row .mu-check { margin: 0 10px 0 0; }
+
+/* SillyTavern's own notifications while Mundi is open: shown in Mundi's corner instead */
+body.mundi-open #toast-container { display: none !important; }
+#mundi-root .mu-toast.is-ext { display: grid; gap: 2px; cursor: pointer; }
+#mundi-root .mu-toast-src { font-size: 11px; font-weight: 800; letter-spacing: .02em; color: var(--muted); }
+#mundi-root .mu-toast.is-ext b { font-size: 13px; }
+#mundi-root .mu-cast-bar { gap: 8px; align-items: center; flex-wrap: wrap; }
+#mundi-root .mu-cast-bar .mu-search { flex: 1; min-width: 200px; }
+#mundi-root .mu-cast-bar button { display: flex; gap: 6px; align-items: center; }
+#mundi-root .mu-castcard.is-folder { display: grid; grid-template-rows: 1fr auto; gap: 6px; padding: 8px; border: 1.5px solid var(--line); border-radius: var(--rb); background: linear-gradient(180deg, var(--b1), var(--b2)); }
+#mundi-root .mu-castcard.is-folder.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+#mundi-root .mu-castfolder { display: grid; justify-items: center; gap: 4px; width: 100%; background: none !important; border: 0 !important; box-shadow: none !important; padding: 0; }
+#mundi-root .mu-castfolder-ic { width: 100%; aspect-ratio: 2 / 3; display: grid; place-items: center; border-radius: 8px; background: var(--bh); color: var(--accent); }
+#mundi-root .mu-castfolder-ic .mu-ic { width: 44px; height: 44px; }
+#mundi-root .mu-castfolder small { color: var(--muted); font-weight: 700; }
+#mundi-root .mu-castfolder-all { font-size: 12px; padding: 4px 6px; }
+
+/* the style of each world, on its card */
+#mundi-root .mu-worldart { position: relative; }
+#mundi-root .mu-style-tag { position: absolute; left: 10px; top: 10px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; font-style: normal; letter-spacing: .03em;
+    background: rgba(10, 14, 22, .78); color: #fff; border: 1px solid rgba(255, 255, 255, .25); backdrop-filter: blur(4px); }
+#mundi-root .mu-style-tag.is-medieval { background: rgba(70, 40, 18, .88); color: #f6d98f; border-color: #b88a35; font-family: "Cinzel", serif; }
+#mundi-root .mu-style-tag.is-modern { background: rgba(10, 132, 255, .85); }
+
+/* new world: name, style, then where it starts from */
+#mundi-root .mu-cw-new { max-width: 1100px; margin: 0 auto; }
+#mundi-root .mu-cw-new-body { display: grid; gap: 12px; padding: 4px 4px 30px; }
+#mundi-root .mu-cw-new-body h3 { margin: 14px 0 0; }
+#mundi-root .mu-cw-new-body > p { margin: 0; }
+#mundi-root .mu-cw-new-name { max-width: 420px; }
+#mundi-root .mu-cw-new-name input { font-size: 17px; }
+#mundi-root .mu-cw-new-go { justify-content: flex-end; gap: 14px; margin-top: 10px; position: sticky; bottom: 0; padding: 12px 0; background: linear-gradient(transparent, var(--bg) 35%); }
+#mundi-root .mu-worldcard.is-later { opacity: .6; cursor: default; border-style: dashed; }
+#mundi-root .mu-cw-new { height: 100%; min-height: 0; overflow: auto; display: block; }
+#mundi-root .mu-cw-new .mu-subhead { position: sticky; top: 0; z-index: 3; }
+#mundi-root .mu-heropick.mu-modes { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+/* pictures a character sends in a line */
+#mundi-root .mu-line-img { display: block; max-width: min(100%, 420px); max-height: 360px; margin: 8px 0 4px; border-radius: 10px; object-fit: contain; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+#mundi-root .mu-line-text a:has(> .mu-line-img) { display: inline-block; }
+
+/* the hidden narrator (scenes where you are alone) */
+#mundi-root .mu-line.is-narrator .mu-line-head b { color: var(--muted); font-style: italic; font-weight: 600; }
+#mundi-root .mu-line.is-narrator .mu-line-text { font-style: italic; opacity: .92; }
+/* the Journal */
+#mundi-root .mu-journal { gap: 16px; }
+#mundi-root .mu-jr-day h4 { margin: 0 0 6px; }
+#mundi-root .mu-jr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+#mundi-root .mu-jr-list li { display: grid; gap: 1px; padding-left: 10px; border-left: 3px solid var(--accent); }
+#mundi-root .mu-jr-list small { color: var(--muted); font-size: 11px; }
+#mundi-root .mu-jr-prose { margin: 8px 0 0; padding: 8px 12px; border-left: 3px solid var(--line); font-style: italic; white-space: pre-wrap; }
+#mundi-root .mu-jr-btn { justify-self: start; margin-top: 6px; }
+
+/* a casual encounter */
+#mundi-root .mu-bump { position: absolute; z-index: 24; left: 50%; top: 96px; transform: translateX(-50%); width: min(460px, calc(100% - 24px)); display: grid; grid-template-columns: 64px 1fr; gap: 10px 14px; align-items: center;
+    padding: 14px 16px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); animation: mu-in .25s ease; }
+#mundi-root .mu-bump > img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: top; }
+#mundi-root .mu-bump p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+#mundi-root .mu-bump-btns { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* the Journal as a calendar */
+#mundi-root .mu-jcal { display: grid; gap: 6px; padding: 10px; border-radius: 14px; background: color-mix(in srgb, var(--panel) 70%, transparent); border: 1px solid var(--line); }
+#mundi-root .mu-jc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#mundi-root .mu-jc-head b { font-size: 15px; }
+#mundi-root .mu-jc-head b small { color: var(--muted); font-weight: 500; margin-left: 4px; }
+#mundi-root .mu-jc-head .mu-icon-btn { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; }
+#mundi-root .mu-jc-head .mu-icon-btn[disabled] { opacity: .3; }
+#mundi-root .mu-jc-next svg { transform: scaleX(-1); }
+#mundi-root .mu-jc-week, #mundi-root .mu-jc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+#mundi-root .mu-jc-week small { text-align: center; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+#mundi-root .mu-jc-cell { position: relative; aspect-ratio: 1; min-width: 0; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid transparent;
+    background: color-mix(in srgb, var(--text) 5%, transparent); color: var(--text); font: inherit; cursor: pointer; transition: background .15s, border-color .15s; }
+#mundi-root .mu-jc-cell b { font-size: 13px; font-weight: 600; }
+#mundi-root .mu-jc-cell i { position: absolute; bottom: 4px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: transparent; }
+#mundi-root .mu-jc-cell.has-notes i { background: var(--muted); }
+#mundi-root .mu-jc-cell.has-entry i { background: var(--accent); }
+#mundi-root button.mu-jc-cell:hover { border-color: var(--line); }
+#mundi-root .mu-jc-cell.is-today { border-color: var(--accent); }
+#mundi-root .mu-jc-cell.is-sel { background: var(--accent); color: #fff; }
+#mundi-root .mu-jc-cell.is-sel i { background: #fff; }
+#mundi-root .mu-jc-cell.is-future { opacity: .3; cursor: default; }
+#mundi-root .mu-jc-cell.is-blank { background: none; cursor: default; }
+#mundi-root .mu-jr-day { display: grid; gap: 8px; }
+#mundi-root .mu-jr-day h4 small { font-weight: 500; font-size: 11px; margin-left: 4px; }
+#mundi-root .mu-jr-day .mu-jr-prose { margin: 0; font-size: 14px; line-height: 1.5; }
+#mundi-root .mu-jr-btn, #mundi-root .mu-jr-notes-btn { justify-self: start; display: inline-flex; align-items: center; gap: 6px; }
+/* app icons: no button hover background, just a little lift */
+#mundi-root .mu-ph-app:hover, #mundi-root .mu-ph-app:focus, #mundi-root .mu-ph-app:active, #mundi-root .mu-ph-app:focus-visible { background: none !important; box-shadow: none !important; filter: none !important; }
+#mundi-root .mu-ph-app i { transition: transform .15s ease, box-shadow .15s ease; }
+#mundi-root .mu-ph-app:hover i { transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 16px rgba(0, 0, 0, .28); }
+#mundi-root .mu-ph-app:active i { transform: scale(.95); }
+/* wallpaper */
+#mundi-root .mu-ph-screen.has-bg:has(.mu-ph-apps) { background: var(--ph-bg) center / cover no-repeat !important; }
+#mundi-root .mu-ph-screen.has-bg .mu-ph-app span { color: #fff !important; text-shadow: 0 1px 3px rgba(0, 0, 0, .85) !important; }
+#mundi-root .mu-ph-wp-now { height: 150px; border-radius: 14px; background: linear-gradient(160deg, #bfe0ff, #dccdff 50%, #ffd6e6) center / cover no-repeat; display: grid; place-items: center; margin-bottom: 10px; color: #33405a; }
+#mundi-root .mu-ph-wp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+#mundi-root .mu-ph-wp-grid button { aspect-ratio: 9 / 16; padding: 0; border-radius: 10px; background: #0002 center / cover no-repeat; border: 2px solid transparent; }
+#mundi-root .mu-ph-wp-grid button.is-on { border-color: var(--accent, #7aa2ff); }
+#mundi-root .mh-event-name { display: block; font-weight: 600; opacity: .85; }

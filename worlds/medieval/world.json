@@ -1,0 +1,1998 @@
+{
+ "format": 1,
+ "id": "medieval",
+ "name": "Valdoria",
+ "kind": "Medieval",
+ "style": "medieval",
+ "version": "0.1.0",
+ "description": "A kingdom of stone towns and dirt roads. You arrive in Aurenfort, its walled capital, with a few coins and no name to speak of. A trade, friends and love are yours to earn.",
+ "setting": "Valdoria is a medieval kingdom without magic. Its capital, Aurenfort, is a walled town around a castle and a market square, on a river; the port of Maré Alta lies to the south-east and the farming village of Trigal to the west. People travel on foot or on horseback, send letters by courier and pay in gold, silver and copper coins. Everyone in it is an adult.",
+ "cover": "kingdom.jpg",
+ "currency": {
+  "name": "coins",
+  "symbol": "",
+  "tiers": [
+   {
+    "symbol": "g",
+    "value": 100
+   },
+   {
+    "symbol": "s",
+    "value": 10
+   },
+   {
+    "symbol": "c",
+    "value": 1
+   }
+  ]
+ },
+ "time": {
+  "startDay": 1,
+  "startMinutes": 480,
+  "speed": 60,
+  "periods": [
+   {
+    "id": "dawn",
+    "name": "Dawn",
+    "from": 0
+   },
+   {
+    "id": "morning",
+    "name": "Morning",
+    "from": 360
+   },
+   {
+    "id": "afternoon",
+    "name": "Afternoon",
+    "from": 720
+   },
+   {
+    "id": "vespers",
+    "name": "Vespers",
+    "from": 1080
+   },
+   {
+    "id": "night",
+    "name": "Night",
+    "from": 1320
+   }
+  ]
+ },
+ "travel": {
+  "minutesPerUnit": 1.0,
+  "round": [
+   15,
+   20,
+   30,
+   45,
+   60,
+   90,
+   120,
+   180,
+   240,
+   360
+  ],
+  "sameMap": 20
+ },
+ "maps": [
+  {
+   "id": "kingdom",
+   "name": "Valdoria",
+   "image": "kingdom.jpg",
+   "ratio": 1.7914,
+   "minutesPerUnit": 6
+  },
+  {
+   "id": "aurenfort",
+   "name": "Aurenfort",
+   "image": "aurenfort.jpg",
+   "ratio": 1.7914,
+   "parent": "kingdom"
+  },
+  {
+   "id": "mare_alta",
+   "name": "Maré Alta",
+   "image": "mare-alta.jpg",
+   "ratio": 1.7914,
+   "parent": "kingdom"
+  },
+  {
+   "id": "trigal",
+   "name": "Trigal",
+   "image": "trigal.jpg",
+   "ratio": 1.7914,
+   "parent": "kingdom"
+  }
+ ],
+ "places": [
+  {
+   "id": "to_aurenfort",
+   "name": "Aurenfort",
+   "map": "kingdom",
+   "x": 52,
+   "y": 45,
+   "link": "aurenfort"
+  },
+  {
+   "id": "to_mare_alta",
+   "name": "Maré Alta (port)",
+   "map": "kingdom",
+   "x": 78,
+   "y": 75,
+   "link": "mare_alta"
+  },
+  {
+   "id": "to_trigal",
+   "name": "Trigal (village)",
+   "map": "kingdom",
+   "x": 15,
+   "y": 60,
+   "link": "trigal"
+  },
+  {
+   "id": "monastery",
+   "name": "Saint Aldric Monastery",
+   "map": "kingdom",
+   "x": 57,
+   "y": 12,
+   "tags": [
+    "leisure",
+    "service"
+   ],
+   "desc": "a quiet stone monastery on a hill, with a library and an herb garden.",
+   "event": "Monks chant at vespers."
+  },
+  {
+   "id": "fort",
+   "name": "Northwatch Fort",
+   "map": "kingdom",
+   "x": 20,
+   "y": 15,
+   "tags": [
+    "work"
+   ],
+   "desc": "a wooden fort on the northern border, where soldiers keep watch on the woods.",
+   "event": "Smoke rises from the watchtower."
+  },
+  {
+   "id": "castle",
+   "name": "Castle",
+   "map": "aurenfort",
+   "x": 52,
+   "y": 18,
+   "tags": [
+    "work",
+    "service"
+   ],
+   "desc": "the royal castle: great hall, guards and court.",
+   "event": "Banners fly over the keep.",
+   "bg": "bg-castle.jpg"
+  },
+  {
+   "id": "gardens",
+   "name": "Castle Gardens",
+   "map": "aurenfort",
+   "x": 43,
+   "y": 27,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "quiet gardens with hedges, roses and benches below the castle."
+  },
+  {
+   "id": "guildhall",
+   "name": "Scribes' Hall",
+   "map": "aurenfort",
+   "x": 70,
+   "y": 22,
+   "tags": [
+    "work",
+    "study"
+   ],
+   "desc": "the hall of scribes and clerks, full of books, ink and parchment."
+  },
+  {
+   "id": "square",
+   "name": "Market Square",
+   "map": "aurenfort",
+   "x": 55,
+   "y": 52,
+   "tags": [
+    "shop",
+    "food",
+    "leisure",
+    "work"
+   ],
+   "desc": "the heart of town: stalls, a well, a fountain and the notice board.",
+   "event": "Merchants shout their prices."
+  },
+  {
+   "id": "chapel",
+   "name": "Cathedral of the Dawn",
+   "map": "aurenfort",
+   "x": 67,
+   "y": 40,
+   "tags": [
+    "leisure",
+    "service"
+   ],
+   "desc": "a tall stone cathedral with candles, bells and stained glass."
+  },
+  {
+   "id": "tavern",
+   "name": "The Golden Goose",
+   "map": "aurenfort",
+   "x": 45,
+   "y": 41,
+   "tags": [
+    "food",
+    "leisure",
+    "work"
+   ],
+   "desc": "a noisy tavern with ale, stew, music and gossip.",
+   "event": "Someone is playing a lute.",
+   "bg": "bg-tavern.jpg"
+  },
+  {
+   "id": "inn",
+   "name": "Wayfarer's Rest",
+   "map": "aurenfort",
+   "x": 55,
+   "y": 40,
+   "tags": [
+    "food",
+    "service",
+    "work"
+   ],
+   "desc": "an inn with rooms upstairs, a common room and a bathhouse out back.",
+   "bg": "bg-inn.jpg"
+  },
+  {
+   "id": "barracks",
+   "name": "Guard Barracks",
+   "map": "aurenfort",
+   "x": 83,
+   "y": 37,
+   "tags": [
+    "sport",
+    "work"
+   ],
+   "desc": "the town guard's barracks and training yard."
+  },
+  {
+   "id": "stables",
+   "name": "Stables",
+   "map": "aurenfort",
+   "x": 15,
+   "y": 33,
+   "tags": [
+    "work",
+    "service"
+   ],
+   "desc": "stables by the west gate, where horses are kept, sold and hired."
+  },
+  {
+   "id": "smithy",
+   "name": "Smithy",
+   "map": "aurenfort",
+   "x": 17,
+   "y": 58,
+   "tags": [
+    "work"
+   ],
+   "desc": "a hot, loud forge where tools, horseshoes and blades are made.",
+   "event": "Sparks fly from the anvil."
+  },
+  {
+   "id": "healer",
+   "name": "Healer's House",
+   "map": "aurenfort",
+   "x": 36,
+   "y": 30,
+   "tags": [
+    "service",
+    "work"
+   ],
+   "desc": "a house that smells of herbs, where the sick are treated."
+  },
+  {
+   "id": "docks",
+   "name": "River Docks",
+   "map": "aurenfort",
+   "x": 88,
+   "y": 83,
+   "tags": [
+    "work",
+    "leisure",
+    "food"
+   ],
+   "desc": "wooden docks on the river, with barges, fishermen and a fish stall."
+  },
+  {
+   "id": "harbor",
+   "name": "Harbor",
+   "map": "mare_alta",
+   "x": 68,
+   "y": 75,
+   "tags": [
+    "work",
+    "leisure"
+   ],
+   "desc": "the busy harbor, with ships, nets and gulls.",
+   "event": "A ship is unloading barrels."
+  },
+  {
+   "id": "fishmarket",
+   "name": "Fish Market",
+   "map": "mare_alta",
+   "x": 60,
+   "y": 60,
+   "tags": [
+    "shop",
+    "food",
+    "work"
+   ],
+   "desc": "stalls of fresh fish, oysters and salt.",
+   "event": "Fishwives shout over each other."
+  },
+  {
+   "id": "warehouses",
+   "name": "Warehouses",
+   "map": "mare_alta",
+   "x": 75,
+   "y": 55,
+   "tags": [
+    "work"
+   ],
+   "desc": "stone warehouses full of crates, wine casks and cloth."
+  },
+  {
+   "id": "saltdog",
+   "name": "The Salty Dog",
+   "map": "mare_alta",
+   "x": 50,
+   "y": 52,
+   "tags": [
+    "food",
+    "leisure"
+   ],
+   "desc": "a sailors' tavern with rum, sea songs and fights.",
+   "event": "A sailor tells a tall tale."
+  },
+  {
+   "id": "seachurch",
+   "name": "Church of the Tides",
+   "map": "mare_alta",
+   "x": 55,
+   "y": 28,
+   "tags": [
+    "leisure",
+    "service"
+   ],
+   "desc": "a white church on the hill, where sailors pray for calm seas."
+  },
+  {
+   "id": "lighthouse",
+   "name": "Lighthouse",
+   "map": "mare_alta",
+   "x": 89,
+   "y": 63,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "the old lighthouse at the end of the pier, with a view of the open sea."
+  },
+  {
+   "id": "shipyard",
+   "name": "Shipyard",
+   "map": "mare_alta",
+   "x": 23,
+   "y": 82,
+   "tags": [
+    "work"
+   ],
+   "desc": "a yard where carpenters build and mend ships.",
+   "event": "Hammers ring on a new hull."
+  },
+  {
+   "id": "beach",
+   "name": "Beach",
+   "map": "mare_alta",
+   "x": 38,
+   "y": 88,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "a strip of sand and rocks below the walls."
+  },
+  {
+   "id": "customs",
+   "name": "Customs House",
+   "map": "mare_alta",
+   "x": 47,
+   "y": 70,
+   "tags": [
+    "work",
+    "study"
+   ],
+   "desc": "where the harbor master counts every crate and coin."
+  },
+  {
+   "id": "green",
+   "name": "Village Green",
+   "map": "trigal",
+   "x": 47,
+   "y": 52,
+   "tags": [
+    "leisure"
+   ],
+   "desc": "the grassy green with the old well, where the village gathers.",
+   "event": "Children chase a goose."
+  },
+  {
+   "id": "plough",
+   "name": "The Plough",
+   "map": "trigal",
+   "x": 58,
+   "y": 40,
+   "tags": [
+    "food",
+    "leisure"
+   ],
+   "desc": "a thatched village tavern with cider and bread."
+  },
+  {
+   "id": "vchapel",
+   "name": "Village Chapel",
+   "map": "trigal",
+   "x": 45,
+   "y": 30,
+   "tags": [
+    "leisure",
+    "service"
+   ],
+   "desc": "a small chapel with a wooden bell tower."
+  },
+  {
+   "id": "mill",
+   "name": "Watermill",
+   "map": "trigal",
+   "x": 60,
+   "y": 20,
+   "tags": [
+    "work"
+   ],
+   "desc": "the watermill where the village grain is ground.",
+   "event": "The mill wheel never stops."
+  },
+  {
+   "id": "vforge",
+   "name": "Village Forge",
+   "map": "trigal",
+   "x": 58,
+   "y": 58,
+   "tags": [
+    "work"
+   ],
+   "desc": "a shed forge for horseshoes and plough blades."
+  },
+  {
+   "id": "fields",
+   "name": "Wheat Fields",
+   "map": "trigal",
+   "x": 10,
+   "y": 30,
+   "tags": [
+    "work",
+    "leisure"
+   ],
+   "desc": "golden fields of wheat and barley."
+  },
+  {
+   "id": "orchard",
+   "name": "Orchard",
+   "map": "trigal",
+   "x": 88,
+   "y": 65,
+   "tags": [
+    "leisure",
+    "food"
+   ],
+   "desc": "apple and pear trees by the stream."
+  }
+ ],
+ "homes": {
+  "zones": [
+   {
+    "id": "low",
+    "name": "Low Quarter",
+    "map": "aurenfort",
+    "kind": "cottage",
+    "rent": 40,
+    "desc": "narrow streets of small cottages near the river.",
+    "spots": [
+     [
+      38,
+      73
+     ],
+     [
+      45,
+      70
+     ],
+     [
+      52,
+      72
+     ],
+     [
+      42,
+      80
+     ],
+     [
+      48,
+      82
+     ],
+     [
+      56,
+      83
+     ],
+     [
+      35,
+      66
+     ],
+     [
+      60,
+      78
+     ],
+     [
+      30,
+      76
+     ],
+     [
+      50,
+      90
+     ]
+    ]
+   },
+   {
+    "id": "merchant",
+    "name": "Merchant Row",
+    "map": "aurenfort",
+    "kind": "house",
+    "rent": 150,
+    "desc": "timber houses of craftsmen and merchants.",
+    "spots": [
+     [
+      70,
+      57
+     ],
+     [
+      75,
+      62
+     ],
+     [
+      80,
+      58
+     ],
+     [
+      72,
+      66
+     ],
+     [
+      84,
+      55
+     ],
+     [
+      78,
+      52
+     ],
+     [
+      67,
+      62
+     ],
+     [
+      82,
+      66
+     ]
+    ]
+   },
+   {
+    "id": "castle",
+    "name": "Castle Ward",
+    "map": "aurenfort",
+    "kind": "manor",
+    "rent": 400,
+    "desc": "stone manors of the well-born, near the castle.",
+    "spots": [
+     [
+      33,
+      22
+     ],
+     [
+      38,
+      16
+     ],
+     [
+      30,
+      28
+     ],
+     [
+      40,
+      26
+     ],
+     [
+      27,
+      21
+     ],
+     [
+      36,
+      32
+     ]
+    ]
+   },
+   {
+    "id": "port",
+    "name": "Harbor Houses",
+    "map": "mare_alta",
+    "kind": "cottage",
+    "rent": 30,
+    "desc": "whitewashed fishermen's houses inside the harbor walls.",
+    "spots": [
+     [
+      22,
+      42
+     ],
+     [
+      28,
+      33
+     ],
+     [
+      35,
+      27
+     ],
+     [
+      42,
+      22
+     ],
+     [
+      50,
+      25
+     ],
+     [
+      32,
+      45
+     ],
+     [
+      38,
+      55
+     ],
+     [
+      45,
+      40
+     ]
+    ]
+   },
+   {
+    "id": "village",
+    "name": "Trigal Farms",
+    "map": "trigal",
+    "kind": "cottage",
+    "rent": 20,
+    "desc": "farm cottages around the village.",
+    "spots": [
+     [
+      37,
+      25
+     ],
+     [
+      24,
+      30
+     ],
+     [
+      33,
+      38
+     ],
+     [
+      29,
+      48
+     ],
+     [
+      41,
+      63
+     ],
+     [
+      54,
+      72
+     ],
+     [
+      49,
+      78
+     ],
+     [
+      73,
+      58
+     ],
+     [
+      70,
+      82
+     ]
+    ]
+   }
+  ],
+  "kinds": {
+   "cottage": {
+    "name": "Cottage",
+    "desc": "a one-room cottage with a hearth, a table and a straw bed",
+    "image": "bg-inn.jpg",
+    "bills": {
+     "firewood": 3,
+     "water": 1
+    }
+   },
+   "house": {
+    "name": "House",
+    "desc": "a two-storey timber house with a kitchen, a hearth and a bedroom upstairs",
+    "bills": {
+     "firewood": 6,
+     "water": 2
+    }
+   },
+   "manor": {
+    "name": "Manor",
+    "desc": "a stone manor with a hall, servants' rooms and a garden",
+    "bills": {
+     "firewood": 15,
+     "servants": 40
+    }
+   }
+  }
+ },
+ "statuses": [
+  {
+   "id": "life",
+   "name": "Health",
+   "icon": "❤",
+   "color": "#ff4d7a",
+   "start": 100,
+   "max": 100,
+   "hud": true,
+   "zero": {
+    "text": "You collapse and wake up at the Healer's House. The healer asks {cost}.",
+    "place": "healer",
+    "cost": 60,
+    "restore": 60
+   },
+   "rpg": true
+  },
+  {
+   "id": "energy",
+   "name": "Energy",
+   "icon": "⚡",
+   "color": "#ffc233",
+   "start": 100,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 5,
+    "everyMinutes": 60,
+    "awakeOnly": true
+   },
+   "zero": {
+    "text": "Exhausted, you fall asleep where you are and wake up at home.",
+    "place": "home",
+    "restore": 40
+   }
+  },
+  {
+   "id": "hunger",
+   "name": "Hunger",
+   "icon": "🍽",
+   "color": "#ff8a3d",
+   "start": 85,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 10,
+    "everyMinutes": 120
+   },
+   "zero": {
+    "text": "You are starving.",
+    "drain": {
+     "status": "life",
+     "amount": 5,
+     "everyMinutes": 60
+    }
+   }
+  },
+  {
+   "id": "thirst",
+   "name": "Thirst",
+   "icon": "💧",
+   "color": "#3db8ff",
+   "start": 85,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 10,
+    "everyMinutes": 90
+   },
+   "zero": {
+    "text": "You are badly dehydrated.",
+    "drain": {
+     "status": "life",
+     "amount": 5,
+     "everyMinutes": 60
+    }
+   }
+  },
+  {
+   "id": "mood",
+   "name": "Mood",
+   "icon": "☺",
+   "color": "#b88cff",
+   "start": 70,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 2,
+    "everyMinutes": 180
+   }
+  },
+  {
+   "id": "hygiene",
+   "name": "Hygiene",
+   "icon": "🧼",
+   "color": "#5ec8e6",
+   "start": 100,
+   "max": 100,
+   "hud": true,
+   "decay": {
+    "amount": 4,
+    "everyMinutes": 60,
+    "awakeOnly": true
+   },
+   "zero": {
+    "text": "You badly need a wash: people keep their distance and your mood sinks.",
+    "drain": {
+     "status": "mood",
+     "amount": 2,
+     "everyMinutes": 60
+    }
+   }
+  }
+ ],
+ "actions": [
+  {
+   "id": "stew",
+   "name": "Stew",
+   "label": "Eat a bowl of stew",
+   "icon": "🍲",
+   "cost": 8,
+   "minutes": 30,
+   "tags": [
+    "food"
+   ],
+   "effects": {
+    "hunger": 40,
+    "mood": 5
+   }
+  },
+  {
+   "id": "bread",
+   "name": "Bread",
+   "label": "Eat some bread",
+   "icon": "🍞",
+   "cost": 3,
+   "minutes": 10,
+   "anywhere": true,
+   "effects": {
+    "hunger": 15
+   }
+  },
+  {
+   "id": "ale",
+   "name": "Ale",
+   "label": "Drink an ale",
+   "icon": "🍺",
+   "cost": 4,
+   "minutes": 20,
+   "tags": [
+    "food"
+   ],
+   "effects": {
+    "thirst": 30,
+    "mood": 8,
+    "energy": -3
+   }
+  },
+  {
+   "id": "well",
+   "name": "Water",
+   "label": "Drink water from the well",
+   "icon": "💧",
+   "cost": 0,
+   "minutes": 5,
+   "anywhere": true,
+   "effects": {
+    "thirst": 20
+   }
+  },
+  {
+   "id": "cook",
+   "name": "Cooking",
+   "label": "Cook at home",
+   "icon": "🍳",
+   "cost": 5,
+   "minutes": 45,
+   "home": true,
+   "effects": {
+    "hunger": 50,
+    "mood": 3
+   }
+  },
+  {
+   "id": "fire",
+   "name": "Rest",
+   "label": "Rest by the fire",
+   "icon": "🔥",
+   "cost": 0,
+   "minutes": 30,
+   "tags": [
+    "leisure"
+   ],
+   "effects": {
+    "energy": 10,
+    "mood": 5
+   }
+  },
+  {
+   "id": "bath",
+   "name": "Bath",
+   "label": "Take a hot bath",
+   "icon": "🛁",
+   "cost": 6,
+   "minutes": 40,
+   "place": "inn",
+   "effects": {
+    "mood": 15,
+    "energy": 5,
+    "hygiene": 90
+   }
+  },
+  {
+   "id": "pray",
+   "name": "Prayer",
+   "label": "Pray at the chapel",
+   "icon": "🕯",
+   "cost": 0,
+   "minutes": 20,
+   "place": "chapel",
+   "effects": {
+    "mood": 15
+   }
+  },
+  {
+   "id": "healer",
+   "name": "Healing",
+   "label": "See the healer",
+   "icon": "🌿",
+   "cost": 60,
+   "minutes": 60,
+   "place": "healer",
+   "effects": {
+    "life": 40
+   }
+  },
+  {
+   "id": "basin",
+   "name": "Wash",
+   "label": "Wash at the basin",
+   "icon": "🪣",
+   "cost": 0,
+   "minutes": 15,
+   "home": true,
+   "effects": {
+    "hygiene": 60
+   }
+  },
+  {
+   "id": "fish",
+   "name": "Fishing",
+   "label": "Fish from the docks",
+   "icon": "🎣",
+   "cost": 0,
+   "minutes": 90,
+   "place": "docks",
+   "effects": {
+    "energy": -10
+   },
+   "roll": {
+    "dc": 12,
+    "traits": [
+     "Strong",
+     "Quick"
+    ],
+    "success": {
+     "text": "You caught a fat river fish and sold it at the stall.",
+     "money": 6,
+     "effects": {
+      "mood": 5
+     }
+    },
+    "fail": {
+     "text": "The fish were not biting.",
+     "effects": {
+      "mood": -5
+     }
+    }
+   }
+  },
+  {
+   "id": "mend",
+   "name": "Mending",
+   "label": "Mend your clothes",
+   "icon": "🧵",
+   "cost": 0,
+   "minutes": 45,
+   "home": true,
+   "effects": {
+    "energy": -5
+   },
+   "roll": {
+    "dc": 11,
+    "traits": [
+     "Skilled with hands"
+    ],
+    "success": {
+     "text": "Your clothes look almost new.",
+     "effects": {
+      "mood": 8
+     }
+    },
+    "fail": {
+     "text": "You pricked your fingers and tore the seam further.",
+     "effects": {
+      "mood": -6
+     }
+    }
+   }
+  },
+  {
+   "id": "snare",
+   "name": "Snaring",
+   "label": "Set snares for rabbits",
+   "icon": "🐇",
+   "cost": 0,
+   "minutes": 120,
+   "place": "fields",
+   "effects": {
+    "energy": -12
+   },
+   "roll": {
+    "dc": 13,
+    "traits": [
+     "Quick",
+     "Strong"
+    ],
+    "success": {
+     "text": "Two rabbits! You sold one and kept one for the pot.",
+     "money": 4,
+     "effects": {
+      "hunger": 20
+     }
+    },
+    "fail": {
+     "text": "The snares stayed empty.",
+     "effects": {
+      "mood": -5
+     }
+    }
+   }
+  }
+ ],
+ "sleep": {
+  "until": 420,
+  "restore": {
+   "energy": 100,
+   "life": 10,
+   "mood": 5
+  },
+  "homeOnly": true
+ },
+ "rent": {
+  "everyDays": 7,
+  "text": "Rent for your home: {cost}."
+ },
+ "sheet": {
+  "fields": [
+   "name",
+   "age",
+   "appearance",
+   "origin",
+   "traits",
+   "bio",
+   "portrait"
+  ],
+  "age": {
+   "min": 18,
+   "max": 60,
+   "default": 24
+  },
+  "appearance": [
+   {
+    "id": "hair",
+    "label": "Hair",
+    "options": [
+     "Black",
+     "Brown",
+     "Blond",
+     "Red",
+     "Gray"
+    ]
+   },
+   {
+    "id": "eyes",
+    "label": "Eyes",
+    "options": [
+     "Brown",
+     "Black",
+     "Green",
+     "Blue",
+     "Gray"
+    ]
+   },
+   {
+    "id": "skin",
+    "label": "Skin",
+    "options": [
+     "Fair",
+     "Olive",
+     "Tan",
+     "Deep"
+    ]
+   },
+   {
+    "id": "build",
+    "label": "Build",
+    "options": [
+     "Slim",
+     "Average",
+     "Athletic",
+     "Strong",
+     "Heavy"
+    ]
+   },
+   {
+    "id": "hairStyle",
+    "label": "Hair style",
+    "options": [
+     "Short",
+     "Long",
+     "Braided",
+     "Tied back",
+     "Shaved"
+    ]
+   }
+  ],
+  "traits": [
+   {
+    "id": "proficiency",
+    "label": "Proficiency",
+    "max": 2,
+    "options": [
+     "Strong",
+     "Literate",
+     "Charming",
+     "Skilled with hands",
+     "Good cook",
+     "Good with animals",
+     "Quick",
+     "Devout",
+     "Musical",
+     "Good with numbers"
+    ]
+   },
+   {
+    "id": "personality",
+    "label": "Personality",
+    "max": 3,
+    "options": [
+     "Outgoing",
+     "Shy",
+     "Calm",
+     "Hot-headed",
+     "Cheerful",
+     "Serious",
+     "Romantic",
+     "Ambitious",
+     "Lazy",
+     "Curious",
+     "Sarcastic",
+     "Kind"
+    ]
+   },
+   {
+    "id": "interests",
+    "label": "Interests",
+    "max": 3,
+    "options": [
+     "Music",
+     "Swordplay",
+     "Riding",
+     "Hunting",
+     "Herbs",
+     "Reading",
+     "Dancing",
+     "Cards and dice",
+     "Fishing",
+     "Faith",
+     "Crafts",
+     "Travel"
+    ]
+   }
+  ]
+ },
+ "catalogs": {
+  "origins": [
+   {
+    "id": "traveler",
+    "name": "Traveler",
+    "desc": "You arrive with a pack, a few coins and nobody to vouch for you.",
+    "money": 150,
+    "home": "low"
+   },
+   {
+    "id": "peasant",
+    "name": "Peasant",
+    "desc": "You grew up on a farm near Trigal and know two people in the area.",
+    "money": 250,
+    "home": "village",
+    "knows": 2
+   },
+   {
+    "id": "merchant",
+    "name": "Merchant's child",
+    "desc": "Your family trades in the market: a house on Merchant Row and some savings.",
+    "money": 1200,
+    "home": "merchant"
+   },
+   {
+    "id": "noble",
+    "name": "Noble's bastard",
+    "desc": "Unacknowledged but provided for: a manor room in the Castle Ward and a fat purse.",
+    "money": 4000,
+    "home": "castle",
+    "knows": 1
+   }
+  ]
+ },
+ "occupations": [
+  {
+   "id": "smith",
+   "name": "Blacksmith",
+   "place": "smithy",
+   "ranks": [
+    {
+     "name": "Apprentice",
+     "pay": 4
+    },
+    {
+     "name": "Journeyman",
+     "pay": 7
+    },
+    {
+     "name": "Master smith",
+     "pay": 11
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Strong",
+    "Skilled with hands"
+   ],
+   "hours": [
+    6,
+    18
+   ],
+   "promote": [
+    5,
+    10
+   ]
+  },
+  {
+   "id": "guard",
+   "name": "Town guard",
+   "place": "barracks",
+   "ranks": [
+    {
+     "name": "Recruit",
+     "pay": 5
+    },
+    {
+     "name": "Sergeant",
+     "pay": 8
+    },
+    {
+     "name": "Captain",
+     "pay": 13
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Strong",
+    "Quick"
+   ],
+   "hours": [
+    0,
+    24
+   ],
+   "promote": [
+    6,
+    12
+   ]
+  },
+  {
+   "id": "tavern",
+   "name": "Tavern hand",
+   "place": "tavern",
+   "ranks": [
+    {
+     "name": "Server",
+     "pay": 3
+    },
+    {
+     "name": "Cook",
+     "pay": 5
+    },
+    {
+     "name": "Innkeeper",
+     "pay": 9
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Charming",
+    "Good cook"
+   ],
+   "hours": [
+    10,
+    24
+   ],
+   "promote": [
+    4,
+    8
+   ]
+  },
+  {
+   "id": "scribe",
+   "name": "Scribe",
+   "place": "guildhall",
+   "ranks": [
+    {
+     "name": "Copyist",
+     "pay": 5
+    },
+    {
+     "name": "Scribe",
+     "pay": 8
+    },
+    {
+     "name": "Master scribe",
+     "pay": 12
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Literate",
+    "Good with numbers"
+   ],
+   "needs": [
+    "Literate"
+   ],
+   "hours": [
+    7,
+    17
+   ],
+   "promote": [
+    5,
+    10
+   ]
+  },
+  {
+   "id": "healer",
+   "name": "Healer",
+   "place": "healer",
+   "ranks": [
+    {
+     "name": "Helper",
+     "pay": 4
+    },
+    {
+     "name": "Healer",
+     "pay": 8
+    },
+    {
+     "name": "Herbmaster",
+     "pay": 12
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Devout",
+    "Literate"
+   ],
+   "hours": [
+    7,
+    19
+   ],
+   "promote": [
+    5,
+    10
+   ]
+  },
+  {
+   "id": "merchant",
+   "name": "Merchant",
+   "place": "square",
+   "ranks": [
+    {
+     "name": "Stall hand",
+     "pay": 4
+    },
+    {
+     "name": "Trader",
+     "pay": 7
+    },
+    {
+     "name": "Merchant",
+     "pay": 12
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Charming",
+    "Good with numbers"
+   ],
+   "hours": [
+    7,
+    19
+   ],
+   "promote": [
+    4,
+    9
+   ]
+  },
+  {
+   "id": "groom",
+   "name": "Stablehand",
+   "place": "stables",
+   "ranks": [
+    {
+     "name": "Groom",
+     "pay": 3
+    },
+    {
+     "name": "Stable master",
+     "pay": 7
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Good with animals"
+   ],
+   "hours": [
+    6,
+    18
+   ],
+   "promote": [
+    6
+   ]
+  },
+  {
+   "id": "fisher",
+   "name": "Fisher",
+   "place": "docks",
+   "ranks": [
+    {
+     "name": "Deckhand",
+     "pay": 3
+    },
+    {
+     "name": "Fisher",
+     "pay": 6
+    },
+    {
+     "name": "Boat owner",
+     "pay": 10
+    }
+   ],
+   "shift": 6,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Strong",
+    "Quick"
+   ],
+   "hours": [
+    5,
+    15
+   ],
+   "promote": [
+    5,
+    10
+   ]
+  },
+  {
+   "id": "farmhand",
+   "name": "Farmhand",
+   "place": "fields",
+   "ranks": [
+    {
+     "name": "Farmhand",
+     "pay": 3
+    },
+    {
+     "name": "Farmer",
+     "pay": 6
+    }
+   ],
+   "shift": 8,
+   "cost": {
+    "energy": 25,
+    "hunger": 15,
+    "thirst": 15,
+    "mood": 5,
+    "hygiene": 15
+   },
+   "likes": [
+    "Strong",
+    "Good with animals"
+   ],
+   "hours": [
+    5,
+    17
+   ],
+   "promote": [
+    8
+   ]
+  }
+ ],
+ "cast": {
+  "routineTemplates": {
+   "office": {
+    "weekday": [
+     [
+      0,
+      "home"
+     ],
+     [
+      8,
+      "work"
+     ],
+     [
+      18,
+      "leisure"
+     ],
+     [
+      21,
+      "home"
+     ]
+    ],
+    "weekend": [
+     [
+      0,
+      "home"
+     ],
+     [
+      11,
+      "leisure"
+     ],
+     [
+      16,
+      "leisure"
+     ],
+     [
+      21,
+      "home"
+     ]
+    ]
+   },
+   "early": {
+    "weekday": [
+     [
+      0,
+      "home"
+     ],
+     [
+      6,
+      "work"
+     ],
+     [
+      14,
+      "leisure"
+     ],
+     [
+      20,
+      "home"
+     ]
+    ],
+    "weekend": [
+     [
+      0,
+      "home"
+     ],
+     [
+      9,
+      "leisure"
+     ],
+     [
+      14,
+      "leisure"
+     ],
+     [
+      20,
+      "home"
+     ]
+    ]
+   },
+   "night": {
+    "weekday": [
+     [
+      0,
+      "work"
+     ],
+     [
+      2,
+      "home"
+     ],
+     [
+      14,
+      "leisure"
+     ],
+     [
+      18,
+      "work"
+     ]
+    ],
+    "weekend": [
+     [
+      0,
+      "work"
+     ],
+     [
+      3,
+      "home"
+     ],
+     [
+      15,
+      "leisure"
+     ],
+     [
+      19,
+      "work"
+     ]
+    ]
+   },
+   "student": {
+    "weekday": [
+     [
+      0,
+      "home"
+     ],
+     [
+      8,
+      "campus"
+     ],
+     [
+      15,
+      "leisure"
+     ],
+     [
+      20,
+      "home"
+     ]
+    ],
+    "weekend": [
+     [
+      0,
+      "home"
+     ],
+     [
+      11,
+      "leisure"
+     ],
+     [
+      17,
+      "leisure"
+     ],
+     [
+      22,
+      "home"
+     ]
+    ]
+   }
+  },
+  "examples": [
+   {
+    "name": "Elara",
+    "age": 23,
+    "occupation": "tavern",
+    "home": "low",
+    "routine": "early",
+    "leisure": [
+     "square",
+     "docks"
+    ],
+    "description": "{{char}} is Elara, 23, a server at The Golden Goose. Red hair always escaping its braid, a laugh you hear across the room. Quick-witted, nosy and kind; she knows every rumor in Aurenfort before it is true.",
+    "first_mes": "*Elara sets a mug down in front of you without asking.* \"First one's on the house, stranger. Second one costs you a story.\"",
+    "personality": ""
+   },
+   {
+    "name": "Brienne",
+    "age": 27,
+    "occupation": "guard",
+    "home": "merchant",
+    "routine": "office",
+    "leisure": [
+     "tavern",
+     "gardens"
+    ],
+    "description": "{{char}} is Brienne, 27, a sergeant of the town guard. Tall, broad-shouldered, short dark hair, a scar on her chin. Blunt, loyal, secretly fond of romantic ballads.",
+    "first_mes": "*Brienne looks you over from boots to face.* \"New in town? Keep your hands where I can see them and we'll get along.\"",
+    "personality": ""
+   },
+   {
+    "name": "Isolde",
+    "age": 25,
+    "occupation": "scribe",
+    "home": "castle",
+    "routine": "office",
+    "leisure": [
+     "gardens",
+     "monastery"
+    ],
+    "description": "{{char}} is Isolde, 25, a scribe at the Scribes' Hall and a noble's daughter. Pale, ink-stained fingers, long black hair. Precise, proud and curious about everything outside her books.",
+    "first_mes": "*Isolde barely looks up from her ledger.* \"If you are here to have something written, it costs two silver. If you are here to talk, it costs my patience.\"",
+    "personality": ""
+   },
+   {
+    "name": "Mira",
+    "age": 22,
+    "occupation": "healer",
+    "home": "low",
+    "routine": "early",
+    "leisure": [
+     "chapel",
+     "square"
+    ],
+    "description": "{{char}} is Mira, 22, the healer's helper. Freckles, honey-brown curls, a satchel of herbs. Gentle and stubborn; she cannot walk past a hurt animal.",
+    "first_mes": "*Mira hurries past with a basket of herbs, then stops.* \"You look pale. Have you eaten today? Come, I'll find you something.\"",
+    "personality": ""
+   },
+   {
+    "name": "Rowena",
+    "age": 26,
+    "occupation": "smith",
+    "home": "low",
+    "routine": "early",
+    "leisure": [
+     "tavern",
+     "docks"
+    ],
+    "description": "{{char}} is Rowena, 26, a journeyman blacksmith. Strong arms, soot on her cheeks, blond hair tied back. Gruff and proud of her work, warm once you earn it.",
+    "first_mes": "*Rowena wipes her hands on her apron.* \"If you need something forged, say it fast. The iron won't wait.\"",
+    "personality": ""
+   },
+   {
+    "name": "Liesel",
+    "age": 24,
+    "occupation": "merchant",
+    "home": "merchant",
+    "routine": "office",
+    "leisure": [
+     "square",
+     "tavern"
+    ],
+    "description": "{{char}} is Liesel, 24, a cloth trader in the Market Square. Sharp blue eyes, a green hood, a smile made for selling. Ambitious, playful, always counting.",
+    "first_mes": "*Liesel holds up a bolt of blue wool.* \"This would suit you. For you, today only, a special price.\"",
+    "personality": ""
+   },
+   {
+    "name": "Ysolde",
+    "age": 28,
+    "occupation": "groom",
+    "home": "low",
+    "routine": "early",
+    "leisure": [
+     "stables",
+     "green"
+    ],
+    "description": "{{char}} is Ysolde, 28, a stablehand by the west gate. Weathered skin, a straw hat, a quiet voice. Shy with people, completely at ease with horses.",
+    "first_mes": "*Ysolde keeps brushing the mare.* \"She likes you. That's rare. You can stay.\"",
+    "personality": ""
+   },
+   {
+    "name": "Catrin",
+    "age": 21,
+    "occupation": "fisher",
+    "home": "low",
+    "routine": "early",
+    "leisure": [
+     "docks",
+     "tavern"
+    ],
+    "description": "{{char}} is Catrin, 21, a deckhand on a river barge. Sun-browned, short black hair, a loud laugh. Reckless, cheerful and always hungry.",
+    "first_mes": "*Catrin jumps off the barge, nearly into you.* \"Oi! Watch it! ...Oh. You're new. Want to help me carry these nets?\"",
+    "personality": ""
+   }
+  ]
+ },
+ "lore": [
+  {
+   "keys": [
+    "Valdoria",
+    "kingdom"
+   ],
+   "constant": true,
+   "content": "Valdoria is a medieval kingdom without magic, ruled from the castle of Aurenfort. Roads are dirt, nights are dark, letters travel by courier and coins are gold, silver and copper (1 gold = 10 silver = 100 copper)."
+  },
+  {
+   "keys": [
+    "Aurenfort",
+    "capital"
+   ],
+   "content": "Aurenfort is the walled capital on the river: the castle and its gardens to the north, the Market Square in the middle, the Low Quarter by the river, Merchant Row to the east and the Castle Ward of manors near the castle."
+  },
+  {
+   "keys": [
+    "Maré Alta",
+    "port"
+   ],
+   "content": "Maré Alta is the port town to the south-east, a day's walk from the capital: fishermen, sailors, smugglers and foreign goods."
+  },
+  {
+   "keys": [
+    "Trigal",
+    "village"
+   ],
+   "content": "Trigal is the farming village to the west: wheat fields, a water mill and a small tavern."
+  }
+ ],
+ "features": {
+  "phone": true,
+  "device": "Journal",
+  "apps": [
+   {
+    "id": "messages",
+    "name": "Letters",
+    "icon": "send",
+    "color": "#8a5a2b",
+    "on": true
+   },
+   {
+    "id": "people",
+    "name": "Acquaintances",
+    "icon": "users",
+    "color": "#6b7d3a",
+    "on": true
+   },
+   {
+    "id": "jobs",
+    "name": "Trade",
+    "icon": "briefcase",
+    "color": "#7a4b2a",
+    "on": true
+   },
+   {
+    "id": "bank",
+    "name": "Purse",
+    "icon": "wallet",
+    "color": "#b08a2e",
+    "on": true
+   },
+   {
+    "id": "homes",
+    "name": "Lodging",
+    "icon": "home",
+    "color": "#8b3a2e",
+    "on": true
+   },
+   {
+    "id": "social",
+    "name": "Notice board",
+    "icon": "pin",
+    "color": "#5b4636",
+    "on": true
+   },
+   {
+    "id": "dating",
+    "name": "Matchmaker",
+    "icon": "heart",
+    "color": "#a33a4a",
+    "on": true
+   },
+   {
+    "id": "plans",
+    "name": "Almanac",
+    "icon": "calendar",
+    "color": "#4a5d7a",
+    "on": true
+   },
+   {
+    "id": "journal",
+    "name": "Chronicle",
+    "icon": "book",
+    "color": "#5b4636",
+    "on": true
+   },
+   {
+    "id": "shop",
+    "name": "Market",
+    "icon": "wallet",
+    "color": "#6b8e3a",
+    "on": true
+   },
+   {
+    "id": "goals",
+    "name": "Ambitions",
+    "icon": "star",
+    "color": "#b8862f",
+    "on": true
+   }
+  ]
+ },
+ "mode": "lifesim"
+}

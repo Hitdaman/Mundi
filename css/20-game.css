@@ -1,0 +1,91 @@
+/* In game: top bar, HUD, map, scene */
+#mundi-root .mu-top { position: absolute; z-index: 20; top: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 14px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); max-width: calc(100% - 24px); }
+#mundi-root .mu-clock { display: grid; line-height: 1.1; }
+#mundi-root .mu-clock b { font-size: 18px; font-variant-numeric: tabular-nums; }
+#mundi-root .mu-clock small { font-size: 11px; white-space: nowrap; }
+#mundi-root .mu-where { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+#mundi-root .mu-tools { display: flex; gap: 6px; }
+#mundi-root .mu-tools button { width: 38px; height: 38px; padding: 0; font-size: 15px; }
+
+#mundi-root .mu-hud { position: absolute; z-index: 21; top: 12px; left: 12px; display: flex; gap: 10px; align-items: center; padding: 8px 12px 8px 8px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); transition: opacity .25s; }
+#mundi-root.hud-autohide .mu-hud { opacity: .1; }
+#mundi-root.hud-autohide .mu-hud:hover, #mundi-root.hud-autohide .mu-hud:focus-within { opacity: 1; }
+#mundi-root .mu-hud-face { width: 52px; height: 52px; border-radius: 14px; overflow: hidden; background: var(--bg2); display: grid; place-items: center; flex: none; }
+#mundi-root .mu-hud-face img { width: 100%; height: 100%; object-fit: cover; }
+#mundi-root .mu-hud-body { display: grid; gap: 4px; }
+#mundi-root .mu-hud-name { font-size: 13px; }
+#mundi-root .mu-gauges { display: flex; gap: 6px; }
+#mundi-root .mu-gauge { position: relative; display: grid; justify-items: center; gap: 1px; }
+#mundi-root .mu-gauge .ring { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--c) calc(var(--v) * 1%), rgba(127, 127, 127, .22) 0); }
+#mundi-root .mu-gauge .ring i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--bg2); font-style: normal; font-size: 12px; }
+#mundi-root .mu-gauge em { font-style: normal; font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+#mundi-root .mu-gauge.is-low .ring { animation: mu-low 1s infinite; }
+@keyframes mu-low { 50% { filter: brightness(1.6); } }
+#mundi-root .mu-cash { font-weight: 700; color: var(--good); font-size: 13px; }
+
+/* map */
+#mundi-root .mu-map { position: absolute; inset: 0; }
+#mundi-root .mu-stage { position: absolute; inset: 0; overflow: hidden; display: grid; place-items: center; touch-action: none; cursor: grab; container-type: size; background: #0b0f18; }
+#mundi-root .mu-stage.is-panning { cursor: grabbing; }
+#mundi-root .mu-mapimg { position: relative; width: min(100cqw, calc(100cqh * var(--r, 1.5))); aspect-ratio: var(--r, 1.5); background-size: 100% 100%; transform-origin: center; image-rendering: high-quality; user-select: none; }
+#mundi-root .mu-pin { position: absolute; z-index: 1; transform: translate(-50%, -50%) scale(var(--ik, 1)); display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0; background: none; border: 0; }
+#mundi-root .mu-pin:hover { z-index: 3; }
+#mundi-root .mu-pin .dot { width: 14px; height: 14px; border-radius: 50%; background: #10162a; border: 3px solid var(--accent); box-shadow: 0 0 0 2px rgba(0, 0, 0, .55); }
+#mundi-root .mu-pin.is-home .dot { width: 11px; height: 11px; border-radius: 3px; border-color: var(--accent2); }
+#mundi-root .mu-pin.is-you .dot { background: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 55%, transparent), 0 0 12px var(--accent); }
+#mundi-root .mu-pin .label { padding: 2px 8px; border-radius: 999px; background: rgba(8, 10, 22, .84); color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; border: 1px solid rgba(255, 255, 255, .18); }
+#mundi-root .mu-pin.is-sel .label, #mundi-root .mu-pin:hover .label { background: var(--accent); color: #04211f; border-color: #fff; }
+#mundi-root .mu-pin.is-home:not(.is-sel):not(:hover):not(.is-you) .label { display: none; }
+#mundi-root .mu-pin .faces { display: flex; align-items: center; }
+#mundi-root .mu-pin .faces img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); margin-left: -6px; }
+#mundi-root .mu-pin .faces img:first-child { margin-left: 0; }
+#mundi-root .mu-pin .faces i { font-size: 10px; font-style: normal; margin-left: 3px; color: #fff; text-shadow: 0 1px 3px #000; font-weight: 700; }
+#mundi-root .mu-zoom { position: absolute; left: 16px; bottom: 16px; z-index: 6; display: flex; gap: 6px; }
+#mundi-root .mu-zoom button { width: 38px; height: 38px; padding: 0; font-size: 19px; background: var(--panel); }
+#mundi-root .mu-side { position: absolute; z-index: 10; top: 80px; right: 12px; bottom: 12px; width: 300px; overflow: auto; display: grid; gap: 10px; align-content: start; }
+#mundi-root .mu-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 8px; box-shadow: var(--shadow); }
+#mundi-root .mu-card p { font-size: 13px; }
+#mundi-root .mu-badge { justify-self: start; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
+#mundi-root .mu-people { display: grid; gap: 8px; }
+#mundi-root .mu-person { display: flex; align-items: center; gap: 10px; }
+#mundi-root .mu-person img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-person span { display: grid; line-height: 1.2; }
+#mundi-root .mu-acts { display: grid; gap: 6px; }
+#mundi-root .mu-acts button { display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto; justify-items: start; text-align: left; column-gap: 8px; padding: 8px 10px; }
+#mundi-root .mu-acts button span { grid-row: span 2; font-size: 18px; align-self: center; }
+#mundi-root .mu-acts button small { font-size: 11px; }
+
+/* scene */
+#mundi-root .mu-scene { position: absolute; inset: 0; }
+#mundi-root .mu-scene-bg { position: absolute; inset: 0; background-color: #10141f; background-repeat: no-repeat; }
+#mundi-root .mu-scene-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .25), rgba(0, 0, 0, .05) 40%, rgba(0, 0, 0, .55)); }
+#mundi-root .mu-sprites { position: absolute; inset: 0 0 0 0; display: flex; justify-content: center; align-items: flex-end; gap: 2%; pointer-events: none; padding: 0 4%; }
+#mundi-root .mu-sprite { margin: 0; height: 88%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; max-width: calc(90% / var(--n, 1)); }
+#mundi-root .mu-sprite img { max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .45)); }
+#mundi-root .mu-sprite .is-avatar { height: 46%; max-height: 46%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 18px; margin-bottom: 36vh; border: 3px solid rgba(255, 255, 255, .7); }
+#mundi-root .mu-sprite figcaption { display: none; }
+#mundi-root .mu-dialog { position: absolute; z-index: 12; left: 50%; bottom: 12px; transform: translateX(-50%); width: min(980px, calc(100% - 24px)); height: min(44vh, 440px); display: grid; grid-template-rows: 1fr auto; border-radius: 18px; overflow: hidden; background: color-mix(in srgb, var(--bg) calc(var(--mu-dialog, .8) * 100%), transparent); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(6px); }
+#mundi-root .mu-log { overflow: auto; padding: 14px 18px; display: grid; gap: 12px; align-content: start; font-size: calc(15px * var(--mu-scene-text, 1)); }
+#mundi-root .mu-line { display: grid; gap: 3px; }
+#mundi-root .mu-line-head { display: flex; align-items: center; gap: 10px; min-height: 26px; }
+#mundi-root .mu-line-head b { color: var(--accent); }
+#mundi-root .mu-line.is-user .mu-line-head b { color: var(--accent2); }
+#mundi-root .mu-line-text p { line-height: 1.55; }
+#mundi-root .mu-line-text em { color: var(--muted); }
+#mundi-root .mu-line-text q { quotes: "“" "”"; }
+#mundi-root .mu-line.is-live .mu-line-text::after { content: "▍"; animation: mu-blink 1s infinite; color: var(--accent); }
+@keyframes mu-blink { 50% { opacity: 0; } }
+#mundi-root .mu-line-tools { margin-left: auto; display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+#mundi-root .mu-line:hover .mu-line-tools, #mundi-root .mu-line:focus-within .mu-line-tools { opacity: 1; }
+#mundi-root .mu-line-tools button, #mundi-root .mu-swipes button { padding: 2px 8px; font-size: 12px; }
+#mundi-root .mu-line-ask { margin-left: auto; display: flex; gap: 6px; align-items: center; font-size: 13px; }
+#mundi-root .mu-swipes { display: inline-flex; align-items: center; gap: 4px; }
+#mundi-root .mu-swipes small { font-variant-numeric: tabular-nums; }
+#mundi-root .mu-composer { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--panel); }
+#mundi-root .mu-composer textarea { min-height: 46px; max-height: 140px; }
+#mundi-root .mu-composer-tools { display: flex; gap: 6px; align-items: flex-end; }
+#mundi-root .mu-composer-tools button:not(.mu-primary):not(.mu-danger) { width: 40px; padding: 8px 0; }
+/* pins never move when pressed (the generic button "press" shift would replace their positioning) */
+#mundi-root .mu-pin, #mundi-root .mu-pin:active, #mundi-root .mu-pin:hover { transform: translate(-50%, -50%) scale(var(--ik, 1)) !important; transition: none !important; }
+#mundi-root .mu-pin, #mundi-root .mu-pin * { user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
+#mundi-root .mu-mapimg { user-select: none; -webkit-user-select: none; }
