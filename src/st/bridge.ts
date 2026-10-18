@@ -517,7 +517,7 @@ export async function fullCharacter(avatar: string) {
 export interface CardPatch {
     name?: string; description?: string; personality?: string; scenario?: string; first_mes?: string; mes_example?: string;
     creator_notes?: string; system_prompt?: string; post_history_instructions?: string; talkativeness?: number;
-    depth_prompt?: { prompt: string; depth: number; role: string }; tags?: string[];
+    depth_prompt?: { prompt: string; depth: number; role: string }; tags?: string[]; alternate_greetings?: string[];
 }
 // Saves card fields with SillyTavern's own merge endpoint (the card file keeps its name and image).
 export async function saveCharacter(avatar: string, p: CardPatch) {
@@ -525,6 +525,7 @@ export async function saveCharacter(avatar: string, p: CardPatch) {
     for (const k of ['name', 'description', 'personality', 'scenario', 'first_mes', 'mes_example', 'tags'] as const) if (p[k] !== undefined) { top[k] = p[k]; data[k] = p[k]; }
     if (p.creator_notes !== undefined) { top.creatorcomment = p.creator_notes; data.creator_notes = p.creator_notes; }
     if (p.system_prompt !== undefined) data.system_prompt = p.system_prompt;
+    if (p.alternate_greetings !== undefined) data.alternate_greetings = p.alternate_greetings;   // the list is replaced as a whole
     if (p.post_history_instructions !== undefined) data.post_history_instructions = p.post_history_instructions;
     if (p.talkativeness !== undefined) { top.talkativeness = p.talkativeness; ext.talkativeness = p.talkativeness; }
     if (p.depth_prompt !== undefined) ext.depth_prompt = p.depth_prompt;

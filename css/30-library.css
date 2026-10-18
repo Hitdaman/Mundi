@@ -136,3 +136,9 @@
 #mundi-root .mu-folder-list .is-on em { background: var(--accent); border-color: var(--accent); }
 #mundi-root .mu-folder-list .is-some em { background: var(--muted); border-color: var(--muted); }
 #mundi-root .mu-lib-head > .mu-lib-headbtns { display: flex; }
+/* the card's other greetings, while editing */
+#mundi-root .mu-altg { display: grid; gap: 8px; }
+#mundi-root .mu-altg-item { display: grid; gap: 4px; padding: 8px 10px 10px; border-radius: 12px; background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .08); }
+#mundi-root .mu-altg-item header { display: flex; align-items: center; justify-content: space-between; }
+#mundi-root .mu-altg-item header b { font-size: 12px; opacity: .75; }
+#mundi-root .mu-altg > .mu-btn, #mundi-root .mu-altg > button { justify-self: start; }

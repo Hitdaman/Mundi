@@ -592,6 +592,8 @@ export async function saveCharacter(avatar, p) {
     }
     if (p.system_prompt !== undefined)
         data.system_prompt = p.system_prompt;
+    if (p.alternate_greetings !== undefined)
+        data.alternate_greetings = p.alternate_greetings; // the list is replaced as a whole
     if (p.post_history_instructions !== undefined)
         data.post_history_instructions = p.post_history_instructions;
     if (p.talkativeness !== undefined) {

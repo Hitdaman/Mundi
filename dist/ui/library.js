@@ -188,6 +188,7 @@ function charDetail(avatar) {
         ${field('Personality', 'personality', c.personality, 'area', { rows: 4 })}
         ${field('Scenario', 'scenario', c.scenario, 'area', { rows: 4 })}
         ${field('Greeting', 'first_mes', c.first_mes, 'area', { rows: 5, hint: 'In Mundi, they say it when you meet for the first time.' })}
+        ${altGreetingsHtml(c)}
         ${L.adv ? `${advHead()}
             ${field('Example dialogue', 'mes_example', c.mes_example, 'area', { rows: 6 })}
             ${field('Main prompt override', 'system_prompt', d.system_prompt, 'area', { rows: 3 })}
@@ -219,6 +220,16 @@ function charToolsHtml(avatar) {
 </div>
         ${saves.length ? `<small class="mu-muted">In: ${saves.map(e => esc(e.title)).join(', ')}</small>` : ''}</section>`;
 }
+// Editing: the card's other greetings (SillyTavern's "alternate greetings"), one box each, add or remove.
+const altOf = (c) => (Array.isArray(L.draft.alt) ? L.draft.alt : (c.data?.alternate_greetings ?? []).map((x) => String(x ?? '')));
+function altGreetingsHtml(c) {
+    const list = altOf(c);
+    return `<section class="mu-field mu-altg"><span>Other greetings (${list.length})</span>
+        <small class="mu-muted">SillyTavern lets you swipe between them at the start of a chat, and "Start with this" opens a chat with one of them.</small>
+        ${list.map((t, k) => `<div class="mu-altg-item"><header><b>#${k + 2}</b><button class="mu-ibtn mu-ghost" data-act="lib-alt-del" data-k="${k}" title="Remove this greeting">${icon('trash')}</button></header>
+            <textarea rows="4" data-input="lib-alt" data-k="${k}" data-focus="lib-alt-${k}" placeholder="Another way the story can begin…">${esc(t)}</textarea></div>`).join('')}
+        ${btn('lib-alt-add', 'plus', 'Add a greeting', 'mu-ghost')}</section>`;
+}
 // All the greetings of the card, side by side; one can start a new chat (32).
 function greetingsHtml(c, avatar) {
     const list = [c.first_mes, ...(c.data?.alternate_greetings ?? [])].filter((x) => String(x ?? '').trim());
@@ -245,6 +256,8 @@ async function saveChar(avatar) {
             p[k] = String(L.draft[k]);
     if (has('name') && !String(L.draft.name).trim())
         throw new Error('The name cannot be empty.');
+    if (has('alt'))
+        p.alternate_greetings = L.draft.alt.map(t => String(t ?? '')).filter(t => t.trim());
     if (has('talk'))
         p.talkativeness = Math.min(1, Math.max(0, num('talk', 0.5)));
     if (has('tags'))
@@ -955,6 +968,16 @@ Object.assign(ACT, {
     'lib-entry': (el) => { const uid = el.dataset.uid; if (!guard())
         return; L.entry = L.entry === uid ? null : uid; state.modal = null; notify(); },
     'lib-discard': () => { L.draft = {}; notify(); },
+    'lib-alt-add': () => {
+        const c = L.sel ? charOf(L.sel) : null;
+        if (!c)
+            return;
+        L.draft.alt = [...altOf(c), ''];
+        notify();
+        requestAnimationFrame(() => document.querySelector(`#mundi-root [data-focus="lib-alt-${L.draft.alt.length - 1}"]`)?.focus());
+    },
+    'lib-alt-del': (el) => { const c = L.sel ? charOf(L.sel) : null; if (!c)
+        return; const l = [...altOf(c)]; l.splice(Number(el.dataset.k), 1); L.draft.alt = l; notify(); },
     'lib-save': async () => {
         if (!dirty()) {
             toast('Nothing to save.');
@@ -1189,6 +1212,17 @@ Object.assign(INPUT, {
         state.modal.name = el.value; },
     'lib-dlg-desc': (el) => { if (state.modal)
         state.modal.desc = el.value; },
+    'lib-alt': (el) => {
+        const c = L.sel ? charOf(L.sel) : null;
+        if (!c)
+            return;
+        const first = !dirty();
+        const l = [...altOf(c)];
+        l[Number(el.dataset.k)] = el.value;
+        L.draft.alt = l;
+        if (first)
+            notify(); // shows "Unsaved changes"
+    },
     'lib-f': (el) => {
         const kind = el.dataset.kind;
         L.draft[el.dataset.k] = kind === 'check' ? el.checked : el.value;
