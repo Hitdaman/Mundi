@@ -19,8 +19,14 @@ export function feed(g: Save): Feed {
     f.posts ??= []; f.last ??= 0;
     return f;
 }
-export type FeedMode = 'auto' | 'open' | 'react';
-export const feedPrefs = () => { const s = settings() as any; s.social ??= {}; s.social.mode ??= 'open'; s.social.images ??= false; return s.social as { mode: FeedMode; images: boolean }; };
+export type FeedMode = 'button' | 'auto' | 'open' | 'react';
+// Default: new posts only when you tap "New posts". (Saves from before had "open" as the default: moved once.)
+export const feedPrefs = () => {
+    const s = settings() as any; s.social ??= {};
+    if (!s.social.v2) { if (!s.social.mode || s.social.mode === 'open') s.social.mode = 'button'; s.social.v2 = true; }
+    s.social.mode ??= 'button'; s.social.images ??= false;
+    return s.social as { mode: FeedMode; images: boolean };
+};
 
 const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 const handle = (name: string) => `@${name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '')}`;

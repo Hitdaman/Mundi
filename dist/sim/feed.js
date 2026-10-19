@@ -16,7 +16,19 @@ export function feed(g) {
     f.last ??= 0;
     return f;
 }
-export const feedPrefs = () => { const s = settings(); s.social ??= {}; s.social.mode ??= 'open'; s.social.images ??= false; return s.social; };
+// Default: new posts only when you tap "New posts". (Saves from before had "open" as the default: moved once.)
+export const feedPrefs = () => {
+    const s = settings();
+    s.social ??= {};
+    if (!s.social.v2) {
+        if (!s.social.mode || s.social.mode === 'open')
+            s.social.mode = 'button';
+        s.social.v2 = true;
+    }
+    s.social.mode ??= 'button';
+    s.social.images ??= false;
+    return s.social;
+};
 const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
     h = Math.imul(h, 16777619);
