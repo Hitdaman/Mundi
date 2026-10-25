@@ -57,14 +57,32 @@ export const cfg = (g) => (g.cfg ??= {});
 export const clockMode = (g) => cfg(g).clock ?? 'action';
 // The tutorial's practice world: a save kept only in memory (no chat, no group, nothing written to SillyTavern).
 export const TUT = { save: null };
+// Save safety (core/saves.ts): the first time a save is seen it is checked once (migrated to the current format,
+// backed up first, and its links to the world repaired). A save from a newer Mundi is never written: the game plays
+// a detached copy of it (`SAVE.shadow`), so nothing, not even SillyTavern saving the chat, can overwrite the original.
+export const SAVE = {
+    hooks: [],
+    seen: new WeakSet(),
+    shadow: new WeakMap(),
+    readOnly: false,
+};
 export function game() {
     if (TUT.save)
         return TUT.save;
     const m = ctx().chatMetadata;
-    return m?.mundi?.v === 1 ? m.mundi : null;
+    const g = m?.mundi?.v === 1 ? m.mundi : null;
+    if (!g)
+        return null;
+    if (!SAVE.seen.has(g)) {
+        SAVE.seen.add(g);
+        SAVE.readOnly = false;
+        for (const h of SAVE.hooks)
+            h(g);
+    }
+    return SAVE.shadow.get(g) ?? g;
 }
 export function setGame(s) { ctx().chatMetadata.mundi = s; }
-export const saveGame = () => { if (!TUT.save)
+export const saveGame = () => { if (!TUT.save && !SAVE.readOnly)
     ctx().saveMetadataDebounced(); };
 export const nowAbs = (g) => g.day * 1440 + g.minutes;
 export const state = {
