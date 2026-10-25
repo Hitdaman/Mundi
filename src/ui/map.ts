@@ -157,7 +157,7 @@ function mapsPickerHtml(g: Save, w: WorldDef, shown: string) {
     const order = top.flatMap(t => [t, ...w.maps.filter(m => m.parent === t.id), ...w.maps.filter(m => m.parent && m.parent !== t.id && w.maps.find(x => x.id === m.parent)?.parent === t.id)]);
     const list = [...order, ...w.maps.filter(m => !order.includes(m))];
     return `<div class="mu-worlds-veil" data-act="maps-pick"><section class="mu-worlds mh-glass" role="dialog" aria-label="Maps" data-keep="maps">
-        <header><h3>${icon('home')} ${esc(w.realm?.name ?? w.name)}</h3><button class="mu-ibtn mu-ghost" data-act="maps-pick" title="Close">${icon('x')}</button></header>
+        <header><h3>${icon('home')} ${esc(w.name)}</h3><button class="mu-ibtn mu-ghost" data-act="maps-pick" title="Close">${icon('x')}</button></header>
         <div class="mu-worlds-grid">${list.map(m => `<button class="mu-world-dot ${m.id === shown ? 'is-on' : ''}" data-act="maps-go" data-map="${esc(m.id)}">
             <i style="background-image:url('${esc(worldFile(w, pictureAt(w, g.minutes, m.image, m.images)!))}')">${m.id === here ? `<em>${icon('pin')} You</em>` : ''}</i>
             <b data-notr>${esc(m.name)}</b><small data-notr>${esc(m.area ?? (m.parent ? w.maps.find(x => x.id === m.parent)?.name ?? '' : 'Main map'))}${m.trip ? ` · ${m.trip} min` : ''}</small>${knownHtml(g, w, m.id)}</button>`).join('')}</div></section></div>`;
