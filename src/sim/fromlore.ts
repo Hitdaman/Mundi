@@ -113,14 +113,37 @@ Reply with ONE JSON object, nothing else:
 "perDollar": about how many of this money one US dollar is worth (dollars 1, euros 1, yen 150, won 1300, gold coins 0.1). "after": true if the symbol goes after the amount.`;
 }
 
-/** Reads a JSON object out of an AI answer (code fences, text around it and trailing commas are forgiven). */
+/** Reads a JSON object out of an AI answer (code fences, text around it and trailing commas are forgiven; an answer
+ *  cut off before its end keeps what came complete, and says so with `cutOff`). */
 export function parseJson(raw: string): any {
     let s = String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/```(?:json)?/gi, '');
     const a = s.indexOf('{'), b = s.lastIndexOf('}');
-    if (a < 0 || b <= a) throw new Error('The AI did not answer with JSON.');
-    s = s.slice(a, b + 1);
-    try { return JSON.parse(s); } catch { /* try the forgiving way */ }
-    return JSON.parse(s.replace(/,\s*([}\]])/g, '$1').replace(/[“”]/g, '"'));
+    if (a < 0) throw new Error('The AI did not answer with JSON.');
+    const tidy = (x: string) => x.replace(/,\s*([}\]])/g, '$1').replace(/[“”]/g, '"');
+    if (b > a) {
+        const whole = s.slice(a, b + 1);
+        try { return JSON.parse(whole); } catch { /* try the forgiving way */ }
+        try { return JSON.parse(tidy(whole)); } catch { /* maybe cut off */ }
+    }
+    s = s.slice(a);
+    const cut = mend(s);
+    if (cut) try { return Object.defineProperty(JSON.parse(tidy(cut)), 'cutOff', { value: true }); } catch { /* not even that */ }
+    throw new Error('The AI\'s answer was not complete JSON (it may have been cut off).');
+}
+// An answer cut off midway (the reply ran out of room): keeps it up to the last whole item, and closes what was
+// still open.
+function mend(s: string): string {
+    const stack: string[] = [];
+    let inStr = false, esc = false, best = '', i = 0;
+    for (; i < s.length; i++) {
+        const c = s[i];
+        if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+        if (c === '"') inStr = true;
+        else if (c === '{' || c === '[') stack.push(c === '{' ? '}' : ']');
+        else if (c === '}' || c === ']') { stack.pop(); if (!stack.length) return s.slice(0, i + 1); best = s.slice(0, i + 1) + [...stack].reverse().join(''); }
+        else if (c === ',' && stack.length) best = s.slice(0, i) + [...stack].reverse().join('');   // after a whole item or "key": value
+    }
+    return best;
 }
 
 const norm = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/^(the|a|an)\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
