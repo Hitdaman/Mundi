@@ -12,6 +12,7 @@ import { type WorldDef, type MapDef, type Place } from '../core/world.js';
 import { ctx, quiet } from '../st/bridge.js';
 import { saveWorld, uploadWorldPicture } from '../sim/creator.js';
 import { comfyUrl, loadWorkflow, runJob, workflowList } from './spritegen.js';
+import { stoppable, isStopped, stopCount } from './comfystop.js';
 import { CW } from './creator.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
@@ -22,6 +23,11 @@ interface Item { kind: Kind; id: string; name: string; state: 'wait' | 'busy' | 
 interface Prefs { v?: number; workflow: string; strength: number; loras: boolean; maps: boolean; bgs: boolean; cover: boolean; redo: boolean }
 
 export const WP = { open: false, busy: false, stop: false, items: [] as Item[], flows: [] as string[], last: '' };
+// The Stop button (comfystop.ts): the picture being painted ends and the rest wait.
+stoppable({
+    stop: () => { if (WP.busy) WP.stop = true; },
+    doing: () => (WP.busy && !WP.stop ? `Painting the world · ${WP.items.filter(i => i.state === 'done').length}/${WP.items.length}` : ''),
+});
 const prefs = (): Prefs => {
     const p = ((settings() as any).worldPaint ??= {}) as Prefs;
     p.workflow ??= meg().currentWorkflowName || 'Default_Comfy_Workflow.json';
@@ -258,6 +264,7 @@ ${part.map(p => `${p.id}: <${p.name}${p.desc ? `, ${p.desc}` : ''}>`).join('\n')
 async function run() {
     const w = CW.w; if (!w || WP.busy) return;
     WP.busy = true; WP.stop = false; notify();
+    const at = stopCount();
     const tags = await tagsFor(w, w.places.filter(p => WP.items.some(i => i.kind === 'bg' && i.id === p.id)));
     const look = tags.get('world') ?? '';
     for (const it of WP.items) {
@@ -282,11 +289,15 @@ async function run() {
             WP.last = URL.createObjectURL(pic);
             it.state = 'done';
             await saveWorld(w); CW.dirty = false;
-        } catch (e: any) { it.state = 'failed'; it.why = String(e?.message ?? e); console.warn('[Mundi] paint', it, e); }
+        } catch (e: any) {
+            if (isStopped(e)) it.state = 'wait';
+            else { it.state = 'failed'; it.why = String(e?.message ?? e); console.warn('[Mundi] paint', it, e); }
+        }
         notify();
     }
     WP.busy = false;
     const done = WP.items.filter(i => i.state === 'done').length, bad = WP.items.filter(i => i.state === 'failed').length;
+    if (stopCount() !== at) { notify(); return; }   // the Stop button says so itself; "Paint" carries on with the rest
     toast(`${done} picture${done === 1 ? '' : 's'} painted${bad ? `, ${bad} failed` : ''}.`, bad ? 'warn' : 'success');
     notify();
 }

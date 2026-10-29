@@ -25,6 +25,7 @@ import { lookPrefs, stateTags, stateNames, matchOutfit, RULE_LABELS, STATES, typ
 import { isMinor } from '../sim/family.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
+import { Stopped, isStopped, stopCount, checkStop, stoppable, jobStarted, jobEnded, cancelJobs } from './comfystop.js';
 
 type Mode = 'off' | 'ask' | 'auto';
 interface Sheet {
@@ -241,29 +242,37 @@ export function cgBlocked(k: string): string {
     return '';
 }
 
+// Stop (comfystop.ts) takes it off ComfyUI and makes it throw Stopped.
 export async function runJob(graph: Graph, onStep?: () => void): Promise<Record<string, Blob>> {
-    const url = comfyUrl();
+    const url = comfyUrl(), at = stopCount();
     const res = await fetch(`${url}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: graph, client_id: `mundi-${Date.now()}` }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.prompt_id) {
         const why = Object.values(data.node_errors ?? {}).flatMap((n: any) => (n.errors ?? []).map((e: any) => `${n.class_type}: ${e.details || e.message}`))[0] || data.error?.message || res.statusText;
         throw new Error(`ComfyUI refused the workflow (${why}).`);
     }
-    const until = Date.now() + 20 * 60_000;
-    while (Date.now() < until) {
-        await new Promise(r => setTimeout(r, 2000)); onStep?.();
-        const h = await (await fetch(`${url}/history/${data.prompt_id}`)).json().catch(() => ({}));
-        const run = h[data.prompt_id]; if (!run) continue;
-        if (run.status?.status_str === 'error') throw new Error('ComfyUI stopped with an error (see its console).');
-        const out: Record<string, Blob> = {};
-        for (const [id, o] of Object.entries(run.outputs ?? {}) as [string, any][]) {
-            const img = o.images?.[0]; if (!img) continue;
-            const r = await fetch(`${url}/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder ?? '')}&type=${encodeURIComponent(img.type ?? 'output')}`);
-            if (r.ok) out[id] = await r.blob();
+    const pid = String(data.prompt_id);
+    // Stop pressed while it was being sent: it never ran as far as Mundi is concerned
+    if (stopCount() !== at) { await cancelJobs(url, [pid]); throw new Stopped(); }
+    jobStarted(pid, url);
+    try {
+        const until = Date.now() + 20 * 60_000;
+        while (Date.now() < until) {
+            await new Promise(r => setTimeout(r, 2000)); checkStop(at); onStep?.();
+            const h = await (await fetch(`${url}/history/${pid}`)).json().catch(() => ({}));
+            checkStop(at);
+            const run = h[pid]; if (!run) continue;
+            if (run.status?.status_str === 'error') throw new Error('ComfyUI stopped with an error (see its console).');
+            const out: Record<string, Blob> = {};
+            for (const [id, o] of Object.entries(run.outputs ?? {}) as [string, any][]) {
+                const img = o.images?.[0]; if (!img) continue;
+                const r = await fetch(`${url}/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder ?? '')}&type=${encodeURIComponent(img.type ?? 'output')}`);
+                if (r.ok) out[id] = await r.blob();
+            }
+            return out;
         }
-        return out;
-    }
-    throw new Error('ComfyUI took more than 20 minutes.');
+        throw new Error('ComfyUI took more than 20 minutes.');
+    } finally { jobEnded(pid); }
 }
 
 /* ---------- the look, written by the AI ---------- */
@@ -341,9 +350,18 @@ interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: 
 // A look the scene asked for: an outfit by name ('' the usual one) with a condition or none, saved in `folder`.
 interface Variant { outfit: string; state: string; folder: string }
 // Session only: who is waiting, being drawn, done or skipped (a failure is not tried again until asked).
-const S = { queue: [] as Order[], busy: null as Order | null, step: '', now: '', status: new Map<string, 'none' | 'has' | 'queued' | 'busy' | 'failed'>() };
+// `at`: the stopCount() when the order being drawn began (Stop ends it before its next picture).
+const S = { queue: [] as Order[], busy: null as Order | null, step: '', now: '', at: 0, status: new Map<string, 'none' | 'has' | 'queued' | 'busy' | 'failed'>() };
 export const spriteStatus = (k: string) => S.status.get(k);
 const waiting = (k: string) => S.busy?.who === k || S.queue.some(o => o.who === k);
+// Stop: the waiting orders go (not drawn again by themselves: "Try drawing again" shows); the one being drawn ends.
+stoppable({
+    stop: () => {
+        for (const o of S.queue) { if (o.variant) S.status.delete(o.who); else S.status.set(o.who, 'failed'); }
+        S.queue = []; notify();
+    },
+    doing: () => (S.busy && stopCount() === S.at ? `Drawing ${nameOf(S.busy.who)}${S.step ? ` · ${S.step}` : ''}${S.queue.length ? ` (+${S.queue.length} waiting)` : ''}` : ''),
+});
 
 async function hasSprites(k: string) {
     const known = S.status.get(k); if (known) return known !== 'none';
@@ -385,7 +403,7 @@ export function enqueue(o: Order) {
 async function pump() {
     if (S.busy) return;
     const o = S.queue.shift(); if (!o) return;
-    S.busy = o; S.status.set(o.who, 'busy'); S.step = 'Writing the look'; S.now = ''; notify();
+    S.busy = o; S.at = stopCount(); S.status.set(o.who, 'busy'); S.step = 'Writing the look'; S.now = ''; notify();
     const name = nameOf(o.who);
     try {
         const n = await draw(o);
@@ -397,7 +415,7 @@ async function pump() {
         // a look that failed leaves their own sprites as they were
         S.status.set(o.who, o.variant && (await fetchSprites(o.who, '').catch(() => [])).length ? 'has' : 'failed');
         if (o.variant) S.queue = S.queue.filter(x => !(x.who === o.who && x.variant?.folder === o.variant!.folder));
-        toast(`Could not draw ${name}: ${String(e?.message ?? e)}`, 'error');
+        if (!isStopped(e)) toast(`Could not draw ${name}: ${String(e?.message ?? e)}`, 'error');
     } finally {
         S.busy = null; S.step = ''; S.now = ''; notify();
         void pump();
@@ -419,7 +437,7 @@ async function draw(o: Order): Promise<number> {
     saveSettings();
     await writeKeeps(o.who, sheet).catch(() => {});   // asked once; drawing goes on without it
     if (o.restyle) {   // a new style: every outfit written again in it, then drawn
-        for (const x of sheet.outfits) { S.now = `writing the ${x.name} outfit in their style`; notify(); x.tags = await writeOutfit(o.who, sheet, x.name, true); }
+        for (const x of sheet.outfits) { checkStop(S.at); S.now = `writing the ${x.name} outfit in their style`; notify(); x.tags = await writeOutfit(o.who, sheet, x.name, true); }
         saveSettings();
     }
     if (o.lookOnly) return 0;
@@ -440,6 +458,7 @@ async function draw(o: Order): Promise<number> {
         const sub = t.i === 0 ? '' : sheet.outfits[t.i].name;
         S.step = `${done}/${todo.length}`; S.now = `${sub || sheet.outfits[0]?.name || ''} · ${t.l}`; notify();
         const { graph, save } = job(base, p, sheet, t.i, t.l);
+        checkStop(S.at);
         const png = (await runJob(graph))[save];
         if (!png) throw new Error('ComfyUI gave no picture.');
         await uploadSprite(o.who, t.l, png, t.l, sub);
@@ -466,6 +485,7 @@ async function drawCg(o: Order, base: Graph, p: Parts, sheet: Sheet, before = 0)
         const pos = p.cg.positions[i].name;
         S.step = `${before + done}/${before + todo.length}`; S.now = `CG · ${pos}`; notify();
         const { graph, save } = cgJob(base, p, sheet, i);
+        checkStop(S.at);
         const png = (await runJob(graph))[save];
         if (!png) throw new Error('ComfyUI gave no picture.');
         await uploadSprite(o.who, pos, png, pos, CG_FOLDER);
@@ -496,6 +516,7 @@ async function drawVariant(o: Order, v: Variant, base: Graph, p: Parts, sheet: S
     for (const l of todo) {
         S.step = `${done}/${todo.length}`; S.now = `${v.folder} · ${l}`; notify();
         const { graph, save } = job(base, p, sheet, i, l, tags);
+        checkStop(S.at);
         const png = (await runJob(graph))[save];
         if (!png) throw new Error('ComfyUI gave no picture.');
         await uploadSprite(o.who, l, png, l, v.folder);
