@@ -243,11 +243,12 @@ export function cgBlocked(k: string): string {
     return '';
 }
 
+// One job on ComfyUI, with the LoRAs picked in Settings for this kind of picture. Returns each Save node's picture.
 // Stop (comfystop.ts) takes it off ComfyUI and makes it throw Stopped.
 export async function runJob(graph: Graph, kind: Kind, onStep?: () => void): Promise<Record<string, Blob>> {
     const url = comfyUrl(), at = stopCount();
-    const res = await fetch(`${url}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: graph, client_id: `mundi-${Date.now()}` }) });
     graph = withLoras(graph, kind);
+    const res = await fetch(`${url}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: graph, client_id: `mundi-${Date.now()}` }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.prompt_id) {
         const why = Object.values(data.node_errors ?? {}).flatMap((n: any) => (n.errors ?? []).map((e: any) => `${n.class_type}: ${e.details || e.message}`))[0] || data.error?.message || res.statusText;
@@ -348,7 +349,7 @@ Answer with one line of comma-separated tags for the clothes only (garments, col
 /* ---------- the queue ---------- */
 
 // What to draw: some outfits (indexes in the look; all the chosen ones when left out) and labels, or only the missing.
-interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: boolean; lookOnly?: boolean; variant?: Variant; cg?: 'only' | 'also'; restyle?: boolean }
+interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: boolean; lookOnly?: boolean; variant?: Variant; cg?: 'only' | 'also'; restyle?: boolean; positions?: string[] }
 // A look the scene asked for: an outfit by name ('' the usual one) with a condition or none, saved in `folder`.
 interface Variant { outfit: string; state: string; folder: string }
 // Session only: who is waiting, being drawn, done or skipped (a failure is not tried again until asked).
@@ -480,7 +481,7 @@ async function draw(o: Order): Promise<number> {
 async function drawCg(o: Order, base: Graph, p: Parts, sheet: Sheet, before = 0): Promise<number> {
     if (!p.cg) throw new Error('the workflow has no CG section ("Position N (…)" nodes and a "Save CG" node).');
     const why = cgBlocked(o.who); if (why) throw new Error(`no CG pictures: ${why}.`);
-    let todo = p.cg.positions.map((x, i) => i).filter(i => !sprPrefs().cgOff.includes(p.cg!.positions[i].name));
+    let todo = p.cg.positions.map((x, i) => i).filter(i => o.positions ? o.positions.includes(p.cg!.positions[i].name) : !sprPrefs().cgOff.includes(p.cg!.positions[i].name));
     if (o.missing) { const have = new Set((await fetchSprites(o.who, CG_FOLDER)).map(s => String(s.label))); todo = todo.filter(i => !have.has(p.cg!.positions[i].name)); }
     let done = 0;
     for (const i of todo) {
@@ -602,6 +603,10 @@ const outfitIndex = (s: Sheet | undefined, outfit: string) => (!outfit ? 0 : s ?
 export function spriteLookHtml(k: string, outfit: string): string {
     const s = sprPrefs().sheets[k];
     const busy = waiting(k), oi = outfitIndex(s, outfit);
+    // the CG pictures: their own page, with the CG buttons only
+    if (s && outfit === CG_FOLDER) return `<section class="mu-sprlook"><h4>CG pictures</h4>
+        <p class="mu-muted">One picture per position of the workflow's CG section, with this look's appearance, usual outfit (for the face) and seed. They are not an outfit: the scene never puts them on.</p>
+        ${cgRow(k, busy)}${busy ? `<p class="mu-sprgen-state">${icon('image')} ${esc(progress(k))}</p>` : ''}</section>`;
     const b = (act: string, label: string, cls = '', extra = '') => `<button class="${cls}" data-act="${act}" data-who="${esc(k)}" data-o="${oi}" ${busy ? 'aria-disabled="true"' : ''} ${extra}>${label}</button>`;
     const state1 = busy ? `<p class="mu-sprgen-state">${icon('image')} ${esc(progress(k))}</p>` : '';
     if (!s) return `<section class="mu-sprlook"><h4>Draw with ComfyUI</h4>
@@ -636,6 +641,8 @@ function cgRow(k: string, busy: boolean): string {
 // The button on one expression's tile.
 export function spriteTileButton(k: string, label: string, outfit: string): string {
     const s = sprPrefs().sheets[k], oi = outfitIndex(s, outfit);
+    if (s && outfit === CG_FOLDER) return waiting(k) || cgBlocked(k) || !cgPositions().includes(label) ? ''
+        : `<button class="mu-ibtn mu-ghost" data-act="spr-draw-cg-one" data-who="${esc(k)}" data-l="${esc(label)}" title="Draw this one on ComfyUI">${icon('image')}</button>`;
     if (oi < 0 || waiting(k)) return '';
     return `<button class="mu-ibtn mu-ghost" data-act="spr-draw-one" data-who="${esc(k)}" data-o="${oi}" data-l="${esc(label)}" title="Draw this one on ComfyUI">${icon('image')}</button>`;
 }
@@ -648,6 +655,10 @@ export async function spritePhotos(k: string): Promise<{ url: string; caption: s
     // in each outfit, neutral first
     return lists.flatMap(l => l.sort((a, b) => Number(b.label === 'neutral') - Number(a.label === 'neutral'))).map(({ url, caption }) => ({ url, caption }));
 }
+// The workflow's CG positions (empty while it is read, or when it has no CG section).
+export function cgPositions(): string[] { readWorkflow(); return WF.parts?.cg?.positions.map(x => x.name) ?? []; }
+// A "CG" page on someone's Expressions: when they have a look and the workflow a CG section.
+export const hasCgPage = (k: string) => !!sprPrefs().sheets[k] && cgPositions().length > 0;
 // The CG pictures of a character or persona, for the Gallery (an album of their own).
 export async function spriteCgPhotos(k: string): Promise<{ url: string; caption: string }[]> {
     if (!sprPrefs().sheets[k]) return [];
@@ -675,7 +686,7 @@ export function spritesSettingsHtml(): string {
     const lmode = Array.isArray(p.labels) ? 'pick' : p.labels;
     const others = all.filter(l => !own.includes(l));
     const looks = Object.entries(p.sheets);
-    return `<section><h3>Sprites</h3><p class="mu-muted">Draws Expressions sprites on your ComfyUI: from the scene for people who have none, and for anyone from the Library (a character or persona › Expressions). The model, LoRAs and quality settings are the workflow's own.</p>
+    return `<section><h3>Sprites</h3><p class="mu-muted">Draws Expressions sprites on your ComfyUI: from the scene for people who have none, and for anyone from the Library (a character or persona › Expressions). The model and quality settings are the workflow's own; LoRAs can be added below.</p>
         <label class="mu-field"><span>In the scene, for people with no sprites</span><select data-input="spr-mode">${([['off', 'Do nothing'], ['ask', 'Ask first (a "Draw sprite" button on them)'], ['auto', 'Draw them automatically']] as const).map(([v, l]) => `<option value="${v}" ${p.mode === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label class="mu-field"><span>Workflow (API format, in SillyTavern's workflows)</span><select data-input="spr-wf">${files.map(f => `<option value="${esc(f)}" ${f === p.workflow ? 'selected' : ''} data-notr>${esc(f)}</option>`).join('')}</select></label>
         <label class="mu-field"><span>ComfyUI address · now ${esc(comfyUrl())}</span><input type="text" placeholder="Empty: Megumin Suite's, else Image Generation's" value="${esc(p.url)}" data-input="spr-url"></label>
@@ -735,6 +746,7 @@ Object.assign(ACT, {
     'spr-restyle': (el) => enqueue(orderOf(el, { restyle: true })),
     'spr-draw-cg': (el) => enqueue(orderOf(el, { cg: 'only' })),
     'spr-draw-cg-missing': (el) => enqueue(orderOf(el, { cg: 'only', missing: true })),
+    'spr-draw-cg-one': (el) => enqueue(orderOf(el, { cg: 'only', positions: [el.dataset.l!] })),
     'spr-newface': (el) => { const s = sprPrefs().sheets[el.dataset.who!]; if (s) { s.seed = newSeed(); saveSettings(); } enqueue(orderOf(el)); },
     'spr-open': async (el) => { const m = await import('./library.js'); m.openExpressions(el.dataset.who!); },
 });

@@ -27,7 +27,7 @@ import { pickAndCrop, pickFile } from './cropper.js';
 import { toggleTrait } from './traits.js';
 import { nativeHost } from './native.js';
 import { presetsTabHtml } from './castpresets.js';
-import { spriteLookHtml, spriteTileButton, checkSprites, spriteStatus, drawEveryone, personaKey } from './spritegen.js';
+import { spriteLookHtml, spriteTileButton, checkSprites, spriteStatus, drawEveryone, personaKey, CG_FOLDER, cgPositions, hasCgPage } from './spritegen.js';
 
 const L = state.lib;
 type Tab = 'characters' | 'personas' | 'lorebooks' | 'backgrounds' | 'presets' | 'save' | 'world' | 'st-characters' | 'st-personas' | 'st-worldinfo';
@@ -335,6 +335,7 @@ function outfitBar(avatar: string) {
     return `<div class="mu-outfits"><small class="mu-muted">Outfit</small><div class="mu-chips">
         <button class="mu-chip ${EO.outfit ? '' : 'is-on'}" data-act="lib-outfit" data-o="">Usual</button>
         ${list.map(o => `<span class="mu-chip-wrap"><button class="mu-chip ${EO.outfit.toLowerCase() === o.toLowerCase() ? 'is-on' : ''}" data-act="lib-outfit" data-o="${esc(o)}">${esc(outfitLabel(o))}</button>${saved.includes(o) ? `<button class="mu-ghost mu-ibtn" data-act="lib-outfit-del" data-o="${esc(o)}" title="Forget this outfit (the pictures stay)">${icon('x')}</button>` : ''}</span>`).join('')}</div>
+        ${hasCgPage(avatar) ? `<button class="mu-chip ${EO.outfit === CG_FOLDER ? 'is-on' : ''}" data-act="lib-outfit" data-o="${CG_FOLDER}">CG</button>` : ''}
         <div class="mu-lib-searchrow"><input type="text" placeholder="New outfit (a folder name, like pajamas)" value="${esc(EO.name)}" data-input="lib-outfit-name" data-focus="lib-outfit-name">${btn('lib-outfit-add', 'plus', 'Add')}</div>
         <small class="mu-muted">An outfit is a subfolder of their Expressions folder${EO.outfit ? ` (<span data-notr>${esc(baseSpriteFolder(avatar))}/${esc(EO.outfit)}</span>)` : ''}. Upload its pictures here; in the game, click their sprite to change clothes.</small></div>`;
 }
@@ -350,9 +351,10 @@ function exprHtml(avatar: string) {
     }
     const byLabel = new Map<string, any[]>();
     for (const s of L.sprites) { const k = String(s.label); if (!byLabel.has(k)) byLabel.set(k, []); byLabel.get(k)!.push(s); }
-    const labels = [...new Set([...expressionLabels(), ...byLabel.keys()])];
+    const cg = EO.outfit === CG_FOLDER;
+    const labels = [...new Set([...(cg ? cgPositions() : expressionLabels()), ...byLabel.keys()])];
     const done = labels.filter(l => byLabel.has(l)).length;
-    return `${back}${outfitBar(avatar)}${look}<p class="mu-muted">${done} / ${labels.length} expressions have a picture. The character shows the picture of the emotion of each line; “neutral” is used when there is none.</p>
+    return `${back}${outfitBar(avatar)}${look}<p class="mu-muted">${cg ? `${done} / ${labels.length} CG pictures drawn.` : `${done} / ${labels.length} expressions have a picture. The character shows the picture of the emotion of each line; “neutral” is used when there is none.`}</p>
         <div class="mu-expr-grid">${labels.map(l => {
             const files = byLabel.get(l) ?? [];
             const f = files[0];
