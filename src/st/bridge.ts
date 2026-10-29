@@ -509,14 +509,16 @@ export async function expressionOf(text: string): Promise<string | null> {
     try { return (await exprMod.getExpressionLabel(text)) || null; } catch { return null; }
 }
 
-// Sprites in the character's Expressions folder (and its outfit subfolders).
+// Sprites in the character's Expressions folder (and its outfit subfolders). A persona ("persona:<file>") has
+// the folder of its name, which a card of that name (Play as) shares.
 export const spriteFolder = (avatar: string) => {
+    if (avatar.startsWith('persona:')) return personaName(avatar.slice(8));
     const key = avatar.replace(/\.png$/i, '');
     const o = ctx().extensionSettings?.expressionOverrides?.find((e: any) => e.name == key);
     return o?.path || charOf(avatar)?.name || key;
 };
 // The character's own Expressions folder (without the outfit worn now).
-export const baseSpriteFolder = (avatar: string) => String(charOf(avatar)?.name || avatar.replace(/\.png$/i, ''));
+export const baseSpriteFolder = (avatar: string) => (avatar.startsWith('persona:') ? personaName(avatar.slice(8)) : String(charOf(avatar)?.name || avatar.replace(/\.png$/i, '')));
 // Outfits: subfolders of the Expressions folder ("Frieren/pajamas"). Wearing one is SillyTavern's own costume
 // override (what /costume sets), so the Expressions extension shows it too.
 export function outfitOf(avatar: string): string {
