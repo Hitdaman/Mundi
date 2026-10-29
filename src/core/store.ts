@@ -98,7 +98,7 @@ export interface Resident {
 export interface Save {
     v: 1; world: string; lang: string; day: number; minutes: number; speed: number; asleep?: boolean;
     player: {
-        loc: string; home: { zone: string; kind: string; x: number; y: number; n?: number };
+        loc: string; home: { zone: string; kind: string; x: number; y: number; n?: number; /** a home inside a building (a place id): its pin, its floors; `room` names it ("Floor 9, Room 918") */ in?: string; room?: string };
         stats: Record<string, number>; money: number; traits: Record<string, string[]>; attrs?: Record<string, number>; origin: string;
         job: { id: string; rank: number; shifts: number; path?: string[]; referral?: string } | null; rentPaidDay: number;
     };

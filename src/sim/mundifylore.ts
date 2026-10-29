@@ -8,7 +8,7 @@ import { lorebooks, loadLore, saveNewLorebook, quiet } from '../st/bridge.js';
 import { settings, saveSettings } from '../core/store.js';
 import { parseJson } from './fromlore.js';
 
-export interface LoreMundified { from: string; at: number; ai: boolean; off: number; rewritten: number }
+export interface LoreMundified { from: string; at: number; ai: boolean; off: number; rewritten: number; persona?: boolean }
 const marks = () => (settings().mundifiedLore ??= {});
 
 /** The mark on a mundified copy (who it was made from, when, what changed), or null. */
@@ -28,6 +28,8 @@ interface Entry { id: string; title: string; keys: string[]; text: string; const
 
 // Titles that name an instruction or the setup (not "Rules of the Guild", "System Lords" or "Emergency Response").
 const HEAD = /^\s*\[?(ooc|instructions?|format(ting)?|jailbreak|guidelines?|scenario|opening( scene)?|first message|tracker)\b|\b(system (prompt|note|instructions?)|(ai|narrator|gm|game ?master|roleplay|rp|response|reply|writing|formatting) (instructions?|rules|guidelines?|style|format)|style guide|out of character|status (block|panel|bar|tracker)|stat ?block)\b|\{\{user\}\}'?s? (role|character|persona|background|backstory)\b|^\s*\{\{user\}\}\s*$/i;
+// A persona's lorebook is about {{user}}: entries on who {{user}} is stay, only the instructions go.
+const HEAD_PERSONA = /^\s*\[?(ooc|instructions?|format(ting)?|jailbreak|guidelines?|scenario|opening( scene)?|first message|tracker)\b|\b(system (prompt|note|instructions?)|(ai|narrator|gm|game ?master|roleplay|rp|response|reply|writing|formatting) (instructions?|rules|guidelines?|style|format)|style guide|out of character|status (block|panel|bar|tracker)|stat ?block|hud|bookkeeping)\b/i;
 const SENTENCE = [
     /^\s*\[?(system|ooc|note to (the )?ai|instructions?|rule)\]?\s*:/i,
     /\byou (are|will|must|should|shall|may not|can ?not|never|always) (be |act |play |write |respond |reply |describe |narrate |portray |roleplay |speak |control )?(the )?(narrator|game ?master|gm|ai|assistant|storyteller|dm)?\b.*\b(narrat|respond|repl|writ|describ|portray|roleplay|play|act|speak|control|continue)/i,
@@ -39,8 +41,8 @@ const SENTENCE = [
 const sentences = (t: string) => t.split(/(?<=[.!?])\s+|\n+/).map(x => x.trim()).filter(x => x.length > 3);
 /** The verdict for an entry without asking the AI: off when its title says it is an instruction, or when most of it
  *  reads like one; otherwise kept (only the AI can rewrite an entry that mixes both). */
-export function plainVerdict(e: { title: string; text: string }): Verdict {
-    if (HEAD.test(e.title)) return 'off';
+export function plainVerdict(e: { title: string; text: string }, persona = false): Verdict {
+    if (persona ? HEAD_PERSONA.test(e.title) : HEAD.test(e.title)) return 'off';
     const s = sentences(e.text);
     if (!s.length) return 'keep';
     const n = s.filter(x => SENTENCE.some(re => re.test(x))).length;
@@ -50,13 +52,31 @@ export function plainVerdict(e: { title: string; text: string }): Verdict {
 /* ---------- with the AI ---------- */
 
 const PART = 4500, CUT = 3000;
-function prompt(list: Entry[]): string {
-    return `Below are entries of a roleplay lorebook. It will be used in a life-simulation game. The game already runs the story: it sets the scene, the time, where people are, who the player is and what happens next, and it tells the AI how to write. So the lorebook must only hold facts about the world.
+function prompt(list: Entry[], persona = false): string {
+    return persona ? personaPrompt(list) : `Below are entries of a roleplay lorebook. It will be used in a life-simulation game. The game already runs the story: it sets the scene, the time, where people are, who the player is and what happens next, and it tells the AI how to write. So the lorebook must only hold facts about the world.
 
 For each entry, decide:
 - "keep": it is about the world: places, people, groups, history, technology, magic, creatures, customs, laws, how things work. Dark, strange or unusual settings are fine; keep them.
 - "off": it is only instructions to the AI or the player (how to reply, writing style, format, rules for the narrator or game master, trackers, status blocks, out-of-character notes), the starting scenario or opening scene, or what {{user}} is and how others relate to {{user}}.
 - "rewrite": it mixes both. Give "text": the entry with only its facts about the world, keeping every fact (and the wording where you can), without the instructions, the opening scenario or {{user}}'s role. Plain prose. Never for an entry marked (cut).
+When unsure, "keep".
+
+Reply with ONE JSON object, nothing else (no code fences):
+{"entries":[{"id":"the entry's id","verdict":"keep|off|rewrite","text":"only for rewrite"}]}
+Every entry id must appear once.
+
+Entries:
+${list.map(e => `### id ${e.id}: ${e.title}${e.keys.length ? ` (keys: ${e.keys.slice(0, 6).join(', ')})` : ''}${e.constant ? ' [always on]' : ''}${e.text.length > CUT ? ' (cut)' : ''}\n${e.text.slice(0, CUT)}`).join('\n\n')}`;
+}
+// A persona's lorebook: everything about {{user}} (who they are, their powers and how those work, their limits,
+// secrets, belongings and the people they know) is what it is for; the instructions to the AI go.
+function personaPrompt(list: Entry[]): string {
+    return `Below are entries of a roleplay lorebook that belongs to the player's own character ({{user}}). It will be used in a life-simulation game. The game already runs the story: it sets the scene, the time and where people are, it keeps its own status panel, and it tells the AI how to write. So the lorebook must only hold facts: about {{user}} and about the world.
+
+For each entry, decide:
+- "keep": facts about {{user}} (who they are, their past, their nature and secrets, their powers or abilities and how those work, costs, limits, resources and how they refill, ranks and growth, belongings, the people they know and where they stand with them) or about the world. Dark, strange or unusual content is fine; keep it.
+- "off": it is only instructions to the AI (how to reply, writing style, format, status panels, HUD or tracker layouts, bookkeeping rules for the status panel, window layouts, out-of-character notes) or the opening scene of a chat.
+- "rewrite": it mixes both. Give "text": the entry with only its facts, keeping every fact (and the wording where you can), without the instructions about writing, panels or format. Plain prose. Never for an entry marked (cut).
 When unsure, "keep".
 
 Reply with ONE JSON object, nothing else (no code fences):
@@ -78,7 +98,7 @@ function parts(list: Entry[]): Entry[][] {
     return out;
 }
 /** The AI's verdicts for one part (an entry it skipped, or a rewrite it may not do, is decided without it). */
-export function readVerdicts(raw: any, list: Entry[]): Map<string, { v: Verdict; text?: string }> {
+export function readVerdicts(raw: any, list: Entry[], persona = false): Map<string, { v: Verdict; text?: string }> {
     const out = new Map<string, { v: Verdict; text?: string }>();
     for (const x of Array.isArray(raw?.entries) ? raw.entries : []) {
         const e = list.find(y => y.id === String(x?.id ?? '').replace(/^id\s*/i, '').trim());
@@ -89,13 +109,14 @@ export function readVerdicts(raw: any, list: Entry[]): Map<string, { v: Verdict;
         else if (v === 'rewrite' && text && e.text.length <= CUT) out.set(e.id, { v: 'rewrite', text });
         else out.set(e.id, { v: 'keep' });
     }
-    for (const e of list) if (!out.has(e.id)) out.set(e.id, { v: plainVerdict(e) });
+    for (const e of list) if (!out.has(e.id)) out.set(e.id, { v: plainVerdict(e, persona) });
     return out;
 }
 
 /** Makes the mundified copy of a lorebook and returns its name. `ai`: the AI sorts the entries (and rewrites mixed
- *  ones); without it only entries that plainly are instructions are switched off. `step` tells how far it got. */
-export async function mundifyLore(name: string, ai: boolean, step: (done: number, of: number) => void = () => {}): Promise<{ name: string; off: number; rewritten: number; kept: number }> {
+ *  ones); without it only entries that plainly are instructions are switched off. `step` tells how far it got.
+ *  `persona`: the lorebook of a persona (facts about {{user}} stay). */
+export async function mundifyLore(name: string, ai: boolean, step: (done: number, of: number) => void = () => {}, persona = false): Promise<{ name: string; off: number; rewritten: number; kept: number }> {
     if (!lorebooks().includes(name)) throw new Error(`The lorebook “${name}” no longer exists.`);
     if (loreMundifiedOf(name)) throw new Error(`“${name}” is a mundified copy already.`);
     const data = structuredClone(await loadLore(name));
@@ -109,11 +130,11 @@ export async function mundifyLore(name: string, ai: boolean, step: (done: number
         let failed = 0;
         for (const [i, p] of ps.entries()) {
             step(i, ps.length);
-            try { for (const [k, v] of readVerdicts(parseJson(await quiet(prompt(p), 4000)), p)) verdicts.set(k, v); }
-            catch (e) { console.warn('[Mundi] mundify lorebook, part', i, e); failed++; for (const x of p) verdicts.set(x.id, { v: plainVerdict(x) }); }
+            try { for (const [k, v] of readVerdicts(parseJson(await quiet(prompt(p, persona), 4000)), p, persona)) verdicts.set(k, v); }
+            catch (e) { console.warn('[Mundi] mundify lorebook, part', i, e); failed++; for (const x of p) verdicts.set(x.id, { v: plainVerdict(x, persona) }); }
         }
         if (failed === ps.length) throw new Error(`The AI did not answer in the expected form for “${name}”. Try again, or mundify without the AI.`);
-    } else for (const x of all) verdicts.set(x.id, { v: plainVerdict(x) });
+    } else for (const x of all) verdicts.set(x.id, { v: plainVerdict(x, persona) });
     let off = 0, rewritten = 0;
     for (const [id, { v, text }] of verdicts) {
         const e = data.entries[id];
@@ -124,7 +145,7 @@ export async function mundifyLore(name: string, ai: boolean, step: (done: number
     let copy = `${name} (Mundi)`;
     for (let n = 2; lorebooks().includes(copy); n++) copy = `${name} (Mundi ${n})`;
     await saveNewLorebook(copy, data);
-    marks()[copy] = { from: name, at: Date.now(), ai, off, rewritten };
+    marks()[copy] = { from: name, at: Date.now(), ai, off, rewritten, ...(persona ? { persona } : {}) };
     saveSettings();
     return { name: copy, off, rewritten, kept: all.length - off - rewritten };
 }

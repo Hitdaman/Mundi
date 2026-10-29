@@ -34,7 +34,7 @@ function source(c: any): string {
 // Clothes set people apart (and the sprites are drawn from them): every mundified card gets its own section, written
 // from the card, or chosen to fit who they are where the card says little.
 export const STYLE_HEAD = 'Clothing and style';
-const CLOTHING = (name: string) => `${name}'s clothing and style: their personal style in a few words (streetwear, preppy, gothic, practical workwear…), the clothes they usually wear (garments, colors, shoes), what they wear for work or going out if it differs, and anything they always wear whatever the outfit (a hijab, glasses, a necklace or keepsake they never take off). Take what the card says; where it says little, choose what fits who ${name} is, their age, job, personality and the world.`;
+export const CLOTHING = (name: string) => `${name}'s clothing and style: their personal style in a few words (streetwear, preppy, gothic, practical workwear…), the clothes they usually wear (garments, colors, shoes), what they wear for work or going out if it differs, and anything they always wear whatever the outfit (a hijab, glasses, a necklace or keepsake they never take off). Take what the card says; where it says little, choose what fits who ${name} is, their age, job, personality and the world.`;
 /** Whether a card has its own clothing and style section (mundified copies made before it existed do not). */
 export const hasStyle = (c: any) => new RegExp(`(^|\\n)${STYLE_HEAD}:`, 'i').test(String(c?.description ?? ''));
 
@@ -64,7 +64,7 @@ ${card || name}`, 400);
     await saveCharacter(avatar, { description });
 }
 
-function ask(name: string, src: string): string {
+export function ask(name: string, src: string): string {
     return `Below is a roleplay character card for ${name}. It will be used in a life simulation game. The game already decides the setting, the scene, the time, where people are, how they met the player and what happens next, so the card must only describe who ${name} is.
 
 Rewrite the card into these five sections:
@@ -86,7 +86,7 @@ The card:
 ${src}`;
 }
 
-function parse(out: string): Parts | null {
+export function parse(out: string): Parts | null {
     const parts: Parts = { APPEARANCE: '', CLOTHING: '', BACKSTORY: '', PERSONALITY: '', DETAILS: '' };
     const re = /\[(APPEARANCE|CLOTHING|BACKSTORY|PERSONALITY|DETAILS)\]\s*:?/gi;
     const hits = [...out.matchAll(re)];

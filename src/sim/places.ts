@@ -18,6 +18,9 @@ export function homeAddress(w: WorldDef, h: { zone: string; x: number; y: number
 export function placeOf(g: Save, w: WorldDef, id: string): (Place & { home?: boolean; owner?: string }) | null {
     if (id === playerHomeId) {
         const h = g.player.home, kind = w.homes.kinds[h.kind];
+        // a home inside a building (a room in a guild tower): one of its floors, at its pin
+        const b = h.in ? [...w.places, ...addedPlaces(g)].find(p => p.id === h.in) : null;
+        if (b) return { id, name: 'My home', map: b.map, x: b.x, y: b.y, tags: ['home'], desc: `${h.room || 'A room'} in ${b.name}, where {{user}} lives`, home: true, in: b.id, floor: h.room || 'Your room' };
         const zone = w.homes.zones.find(z => z.id === h.zone);
         return { id, name: 'My home', map: zone?.map ?? w.maps[0].id, x: h.x, y: h.y, tags: ['home'], desc: `${homeAddress(w, h)}: ${kind?.desc ?? ''}`, home: true };
     }
@@ -64,7 +67,8 @@ export function lockedNow(g: Save | null | undefined, w: WorldDef, p: Place): st
     return b && b.id !== p.id && b.restricted && !open.includes(b.id) ? b.restricted : '';
 }
 /** The floors of a building that this game knows of (in the world's order). */
-export const floorsOf = (g: Save, w: WorldDef, id: string): Place[] => [...w.places, ...addedPlaces(g)].filter(p => p.in === id && p.id !== id && !hiddenNow(g, w, p));
+export const floorsOf = (g: Save, w: WorldDef, id: string): Place[] => [...[...w.places, ...addedPlaces(g)].filter(p => p.in === id && p.id !== id && !hiddenNow(g, w, p)),
+    ...(g.player?.home?.in === id ? [placeOf(g, w, playerHomeId)!] : [])];   // your home, when it is in this building
 /** The building a place is part of: its own id when it has floors, the building's for a floor, else ''. */
 export function buildingOf(g: Save, w: WorldDef, id: string): string {
     const p = placeOf(g, w, id);
