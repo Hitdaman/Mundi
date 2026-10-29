@@ -12,7 +12,7 @@ import { RPG_SYSTEMS } from '../core/systems.js';
 import { TIE_TYPES, TIE_TONES } from '../sim/living.js';
 import { GOVERNMENTS, POWERS } from '../sim/realm.js';
 import { state, notify, esc, toast, busy, settings, saveSettings } from '../core/store.js';
-import { getWorld, shortDesc, WORLD_DESC_MAX, worldFile, worlds, styleOf, isCustom, gameMode, GAME_MODES, SYSTEMS, systemOn, appSystem, isScenario, worldTags, allTags, WORLD_TAGS, RPG_LOCKED, RPG_NOTE, worldLocked, type WorldDef, type GameMode } from '../core/world.js';
+import { getWorld, shortDesc, WORLD_DESC_MAX, worldFile, worlds, styleOf, isCustom, gameMode, GAME_MODES, SYSTEMS, systemOn, appSystem, isScenario, worldTags, allTags, WORLD_TAGS, RPG_LOCKED, RPG_NOTE, worldLocked, madeFor, type WorldDef, type GameMode } from '../core/world.js';
 import { STYLES, inWorld } from './styles.js';
 import { SKINS } from './skins.js';
 
@@ -58,7 +58,7 @@ export const txt = (label: string, p: string, ph = '') => `<label class="mu-fiel
 export const area = (label: string, p: string, rows = 3, ph = '') => `<label class="mu-field"><span>${label}</span><textarea rows="${rows}" data-input="cw" data-path="${esc(p)}" data-focus="${esc(p)}" placeholder="${esc(ph)}">${val(p)}</textarea></label>`;
 export const num = (label: string, p: string, min = 0, step = 1) => `<label class="mu-field"><span>${label}</span><input type="number" min="${min}" step="${step}" data-input="cw" data-type="num" data-path="${esc(p)}" data-focus="${esc(p)}" value="${val(p)}"></label>`;
 export const chk = (label: string, p: string, hint = '', inverse = false) => `<label class="mu-check"><input type="checkbox" data-input="cw" data-type="${inverse ? 'nbool' : 'bool'}" data-path="${esc(p)}" ${(inverse ? getPath(p) !== false : !!getPath(p)) ? 'checked' : ''}><span>${label}${hint ? `<small>${hint}</small>` : ''}</span></label>`;
-export const sel = (label: string, p: string, opts: [string, string][], type = '') => `<label class="mu-field"><span>${label}</span><select data-input="cw" data-path="${esc(p)}" ${type ? `data-type="${esc(type)}"` : ''}>${opts.map(([v, l]) => `<option value="${esc(v)}" ${String(getPath(p) ?? '') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+export const sel = (label: string, p: string, opts: [string, string][], type = '', cur: unknown = getPath(p)) => `<label class="mu-field"><span>${label}</span><select data-input="cw" data-path="${esc(p)}" ${type ? `data-type="${esc(type)}"` : ''}>${opts.map(([v, l]) => `<option value="${esc(v)}" ${String(cur ?? '') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
 const time = (label: string, p: string) => `<label class="mu-field"><span>${label}</span><input type="time" data-input="cw" data-type="time" data-path="${esc(p)}" value="${hm(Number(getPath(p) ?? 0))}"></label>`;
 const csv = (label: string, p: string, hint = '') => `<label class="mu-field"><span>${label}</span><input data-input="cw" data-type="csv" data-path="${esc(p)}" data-focus="${esc(p)}" value="${esc((getPath(p) ?? []).join(', '))}">${hint ? `<small class="mu-muted">${hint}</small>` : ''}</label>`;
 const color = (label: string, p: string) => `<label class="mu-field mu-cw-color"><span>${label}</span><input type="color" data-input="cw" data-path="${esc(p)}" value="${val(p) || '#888888'}"></label>`;
@@ -82,7 +82,7 @@ const traitOptions = (w: WorldDef) => (w.sheet.traits ?? []).flatMap(t => t.opti
 
 function tabGeneral(w: WorldDef) {
     return `<div class="mu-cw-grid">
-        <section class="mu-cw-sec"><h4>About this ${isScenario(w) ? 'Home' : 'world'}</h4>${txt('Name', 'name')}${sel('Made for (the tag on its card)', 'madeFor', RPG_LOCKED ? [['lifesim', 'Life-Sim']] : [['lifesim', 'Life-Sim'], ['rpg', 'RPG']])}<label class="mu-field"><span>Short description (shown when choosing a world)</span><textarea rows="3" maxlength="${WORLD_DESC_MAX}" data-input="cw" data-path="description" data-focus="description">${val('description')}</textarea><small class="mu-muted">Up to ${WORLD_DESC_MAX} characters. Only you see it: it is not sent to the AI (the setting below is).</small></label>
+        <section class="mu-cw-sec"><h4>About this ${isScenario(w) ? 'Home' : 'world'}</h4>${txt('Name', 'name')}${sel('Made for (the tag on its card)', 'madeFor', RPG_LOCKED ? [['lifesim', 'Life-Sim']] : [['lifesim', 'Life-Sim'], ['rpg', 'RPG']], '', w.madeFor ?? madeFor(w))}<label class="mu-field"><span>Short description (shown when choosing a world)</span><textarea rows="3" maxlength="${WORLD_DESC_MAX}" data-input="cw" data-path="description" data-focus="description">${val('description')}</textarea><small class="mu-muted">Up to ${WORLD_DESC_MAX} characters. Only you see it: it is not sent to the AI (the setting below is).</small></label>
             ${area('Setting (what the AI always knows about this world)', 'setting', 5)}
             ${isScenario(w) ? `${area('Premise (how the story starts: shown when the game begins, and told to the AI)', 'scenario.premise', 5)}
                 <label class="mu-check"><input type="checkbox" data-input="cw-alltabs" ${CW.allTabs ? 'checked' : ''}><span>Show every tab<small>A Home hides Realm, Economy and RPG (a Home is always Life-Sim). Jobs and courses happen off-screen.</small></span></label>` : ''}</section>
@@ -876,7 +876,7 @@ Object.assign(ACT, {
     'cw-start-preset': (el) => { const w = getWorld(el.dataset.id!); if (!w || !CW.start) return; Object.assign(CW.start, { base: w.id, mode: 'copy' }); setWorldDicts(w.id, w.i18n ?? {}); notify(); },
     'cw-start-type': (el) => { const s = CW.start; if (!s) return; s.scenario = !!el.dataset.v; s.base = presetsOf(s.style, s.scenario)[0]?.id ?? s.base; s.mode = 'copy'; notify(); },
     'cw-start-game': (el) => { if (!CW.start || GAME_MODES.find(m => m.id === el.dataset.v)?.soon) return; CW.start.game = el.dataset.v as GameMode; notify(); },
-    'cw-mode': (el) => { const w = CW.w; if (!w || GAME_MODES.find(m => m.id === el.dataset.v)?.soon) return; w.mode = el.dataset.v as GameMode; CW.dirty = true; notify(); },
+    'cw-mode': (el) => { const w = CW.w; if (!w || GAME_MODES.find(m => m.id === el.dataset.v)?.soon) return; const auto = (m?: GameMode): 'lifesim' | 'rpg' => (m === 'rpg' ? 'rpg' : 'lifesim'); const next = el.dataset.v as GameMode; if (w.madeFor === undefined || w.madeFor === auto(w.mode)) w.madeFor = auto(next); w.mode = next; CW.dirty = true; notify(); },
     'cw-start-empty': () => { if (!CW.start) return; CW.start.mode = 'empty'; CW.start.base = presetsOf(CW.start.style, !!CW.start.scenario).find(w => !isCustom(w.id))?.id ?? CW.start.base; notify(); },
     'cw-start-lore': () => { if (!CW.start) return; CW.start.mode = 'lore'; CW.start.base = presetsOf(CW.start.style, false).find(w => !isCustom(w.id))?.id ?? CW.start.base; notify(); },
     'cw-start-cancel': () => close(),
