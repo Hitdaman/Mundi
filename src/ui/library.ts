@@ -16,6 +16,7 @@ import {
 } from '../st/bridge.js';
 import { currentEntry, heroDescription, initialsAvatar } from '../sim/game.js';
 import { mundify, mundifiedOf, madeForMundi, mundiCopies } from '../sim/mundify.js';
+import { mundifyLore, loreMundifiedOf, loreCopies } from '../sim/mundifylore.js';
 import { sceneText } from '../sim/prompt.js';
 import { ACT, INPUT } from './reg.js';
 import { leaveHtml } from './creator.js';
@@ -99,8 +100,8 @@ function items(tab: ListTab): Item[] {
     if (tab === 'characters') list = characters().map(c => ({ id: c.avatar, name: String(c.name ?? ''), img: thumb(c.avatar), fav: isFav(c), mfy: !!mundifiedOf(c) }));
     else if (tab === 'personas') { const d = defaultPersona(); list = personas().map(p => ({ id: p.file, name: p.name, img: personaThumb(p.file), fav: FAV.is(tab, p.file), crown: p.file === d })); }
     else if (tab === 'backgrounds') { if (!B()) { loadBgs(); return []; } list = B()!.images.map(f => ({ id: f, name: f.replace(/\.[^.]+$/, ''), img: bgThumb(f), fav: false })); }
-    else list = lorebooks().map(n => ({ id: n, name: n, img: '', fav: FAV.is(tab, n) }));
-    list = list.filter(i => match(i.name) && (!L.favOnly || i.fav) && (!MF.on || tab !== 'characters' || i.mfy));
+    else list = lorebooks().map(n => ({ id: n, name: n, img: '', fav: FAV.is(tab, n), mfy: !!loreMundifiedOf(n) }));
+    list = list.filter(i => match(i.name) && (!L.favOnly || i.fav) && (!MF.on || (tab !== 'characters' && tab !== 'lorebooks') || i.mfy));
     if (NS.on && (tab === 'characters' || tab === 'personas')) {
         const key = (i: Item) => (tab === 'personas' ? personaKey(i.id) : i.id);
         checkSprites(list.map(key));
@@ -110,7 +111,7 @@ function items(tab: ListTab): Item[] {
 }
 // The "No sprites" filter: only the characters (or personas) whose Expressions folder is empty.
 const NS = { on: false };
-// The "Mundified" filter: only the mundified copies (characters).
+// The "Mundified" filter: only the mundified copies (characters and lorebooks).
 const MF = { on: false };
 const sprKey = (tab: ListTab, id: string) => (tab === 'personas' ? personaKey(id) : id);
 
@@ -465,8 +466,9 @@ function entryForm(e: any) {
 
 function loreDetail(name: string) {
     const bound = chatLore() === name;
-    const head = `${headHtml('lorebooks', name, name, '', '', bound ? '<span class="mu-tag">This save\'s lorebook</span>' : '')}
-        ${actionBar({ save: false, dup: 'lib-dup', del: 'lib-del-one' }).replace('<div class="mu-lib-savebar">', `<div class="mu-lib-savebar is-top">${L.edit ? btn('lib-new-entry', 'plus', 'New entry') : ''}`)}`;
+    const head = `${headHtml('lorebooks', name, name, '', '', bound ? '<span class="mu-tag">This save\'s lorebook</span>' : loreMundifiedOf(name) ? '<span class="mu-tag is-mfy">Mundified</span>' : '')}
+        ${actionBar({ save: false, dup: 'lib-dup', del: 'lib-del-one' }).replace('<div class="mu-lib-savebar">', `<div class="mu-lib-savebar is-top">${L.edit ? btn('lib-new-entry', 'plus', 'New entry') : ''}`)}
+        ${L.edit ? '' : mfyLoreHtml(name)}`;
     if (!L.lore || L.lore.name !== name) return `${head}<p class="mu-muted">Loading the lorebook…</p>`;
     const list = entries();
     if (!list.length) return `${head}<p class="mu-muted">This lorebook is empty.</p>`;
@@ -478,6 +480,20 @@ function loreDetail(name: string) {
             ${open ? (L.edit ? entryForm(e) : `<div class="mu-entry-body" data-notr>${esc(e.content ?? '')}</div>`) : ''}
         </li>`;
     }).join('')}</ul>`;
+}
+
+// Mundify for a lorebook: on a mundified copy, where it came from and what changed; on any other lorebook, the button
+// to make one, with the copies already made.
+function mfyLoreHtml(name: string) {
+    const m = loreMundifiedOf(name);
+    if (m) {
+        const orig = lorebooks().includes(m.from);
+        return `<section class="mu-lib-read mu-mfy"><small class="mu-muted">${icon('sparkles')} Mundified copy of ${orig ? btn('lib-mfy-go', 'book', esc(m.from), 'mu-ghost', `data-id="${esc(m.from)}"`) : `<b data-notr>${esc(m.from)}</b> (the original was deleted)`}, ${m.ai ? 'sorted by the AI' : 'sorted without the AI'} on ${new Date(m.at).toLocaleDateString()}: ${m.off} entr${m.off === 1 ? 'y' : 'ies'} switched off${m.rewritten ? `, ${m.rewritten} rewritten with the facts only` : ''}. Switched-off entries are greyed out below: switch one back on in its form if it should stay.</small></section>`;
+    }
+    const copies = loreCopies(name);
+    return `<section class="mu-lib-read mu-mfy"><div class="mu-row">${btn('lib-mfylore', 'sparkles', copies.length ? 'Mundify again' : 'Mundify', copies.length ? '' : 'mu-primary')}
+            ${copies.map((x, i) => btn('lib-mfy-go', 'sparkles', `Open the copy${copies.length > 1 ? ` (${new Date(loreMundifiedOf(x)!.at).toLocaleDateString()})` : ''}`, i ? 'mu-ghost' : '', `data-id="${esc(x)}"`)).join('')}</div>
+        <small class="mu-muted">Mundify makes a copy for Mundi worlds with only the facts about the world. Entries that tell the AI how to reply, set up the opening scene or say who {{user}} is are switched off, because the world does that. This lorebook stays as it is.</small></section>`;
 }
 
 async function saveEntry() {
@@ -628,7 +644,7 @@ function listPane(tab: ListTab) {
                 ${ibtn('lib-picking', 'select', 'Select several (or Ctrl+click, Shift+click)', L.picking ? 'is-on' : '')}
                 ${ibtn('lib-search', 'search', 'Search', L.searching || L.q ? 'is-on' : '')}
                 ${tab === 'backgrounds' ? '' : ibtn('lib-favonly', L.favOnly ? 'starFill' : 'star', 'Only favorites', `mu-favbtn ${L.favOnly ? 'is-on' : ''}`)}
-                ${tab === 'characters' ? ibtn('lib-mfyonly', 'sparkles', 'Only mundified copies', `mu-mfybtn ${MF.on ? 'is-on' : ''}`) : ''}
+                ${tab === 'characters' || tab === 'lorebooks' ? ibtn('lib-mfyonly', 'sparkles', 'Only mundified copies', `mu-mfybtn ${MF.on ? 'is-on' : ''}`) : ''}
                 ${tab === 'characters' || tab === 'personas' ? ibtn('lib-nospr', 'image', 'Only those with no sprites', NS.on ? 'is-on' : '') : ''}
                 ${sortBtn(tab)}${tab === 'backgrounds' ? '' : ibtn('lib-view', grid() ? 'list' : 'grid', grid() ? 'Show as a list' : 'Show as a grid')}
             </div>
@@ -710,6 +726,12 @@ function dialogHtml() {
             <p class="mu-muted"><b>Kept:</b> appearance, backstory, personality and other details about the character.<br><b>Removed:</b> scenario, greetings, example dialogue, main prompt override, post-history instructions and Character's note. The world handles all of these. Linked lorebooks stay linked.</p>
             <label class="mu-check"><input type="checkbox" data-input="lib-mfy-ai" ${m.ai ? 'checked' : ''}><span>Clean up with the AI<small>The AI sorts the card into appearance, backstory, personality and details, and saves facts about the character hidden in the scenario, greetings or notes. Without it, the description and personality are copied word for word.</small></span></label>
             <div class="mu-row mu-dlg-btns"><button data-act="lib-dlg-close">Cancel</button>${btn('lib-mfy-yes', 'sparkles', 'Mundify', 'mu-primary')}</div>`;
+    } else if (m.type === 'lib-dlg-mfylore') {
+        body = `<h3>Mundify “${esc(m.id)}”?</h3>
+            <p>Mundi makes a copy of the lorebook for its worlds. The original is not changed.</p>
+            <p class="mu-muted"><b>Kept:</b> everything about the world: places, people, groups, history, technology, magic, creatures, customs.<br><b>Switched off:</b> instructions to the AI (how to reply, style, format, narrator rules, trackers), the opening scene, and who {{user}} is. The world handles all of these. Switched-off entries stay in the copy, so you can switch one back on.</p>
+            <label class="mu-check"><input type="checkbox" data-input="lib-mfy-ai" ${m.ai ? 'checked' : ''}><span>Sort with the AI<small>The AI reads every entry (a few at a time), and rewrites entries that mix facts and instructions so only the facts stay. Without it, only entries that plainly are instructions are switched off.</small></span></label>
+            <div class="mu-row mu-dlg-btns"><button data-act="lib-dlg-close">Cancel</button>${btn('lib-mfylore-yes', 'sparkles', 'Mundify', 'mu-primary')}</div>`;
     } else if (m.type === 'lib-dlg-newfolder') {
         body = `<h3>New folder</h3><input type="text" placeholder="New folder name" value="${esc(m.name ?? '')}" data-input="lib-dlg-name" data-focus="lib-dlg-name">
             ${L.picked.length ? `<p class="mu-muted">${L.picked.length} selected items go into it.</p>` : ''}
@@ -914,6 +936,17 @@ async function doMundify() {
     if (made.length) { clearPicks(); await select(made[0]); } else notify();
 }
 
+async function doMundifyLore() {
+    const m = state.modal; if (m?.type !== 'lib-dlg-mfylore') return;
+    const name: string = m.id, ai = !!m.ai;
+    state.modal = null;
+    try {
+        const r = await busy(`Mundifying ${name}`, () => mundifyLore(name, ai, (i, n) => { if (n > 1) { state.busy = `Mundifying ${name}: part ${i + 1} of ${n}`; notify(); } }));
+        toast(`Mundified copy made: ${r.off} entr${r.off === 1 ? 'y' : 'ies'} switched off${r.rewritten ? `, ${r.rewritten} rewritten` : ''}, ${r.kept} kept as they were. The original is unchanged.`, 'success');
+        await select(r.name);
+    } catch (e: any) { toast(String(e?.message ?? e), 'error'); notify(); }
+}
+
 async function doDuplicate() {
     const tab = listTab(); const id = L.sel;
     if (!tab || !id || !guard()) return;
@@ -1036,6 +1069,8 @@ Object.assign(ACT, {
     },
     'lib-mfy-go': (el) => { if (guard()) void select(el.dataset.id!); },
     'lib-mfy-yes': () => void doMundify(),
+    'lib-mfylore': () => { if (L.sel && guard()) { state.modal = { type: 'lib-dlg-mfylore', id: L.sel, ai: true }; notify(); } },
+    'lib-mfylore-yes': () => void doMundifyLore(),
     'lib-nospr-draw': () => {
         const tab = listTab(); if (!tab) return;
         const n = drawEveryone(items(tab).map(i => sprKey(tab, i.id)));
@@ -1137,7 +1172,7 @@ Object.assign(INPUT, {
     'lib-dlg-name': (el) => { if (state.modal) state.modal.name = el.value; },
     'lib-outfit-name': (el) => { EO.name = el.value; },
     'lib-tag-text': (el) => { TG.text = el.value; },
-    'lib-mfy-ai': (el) => { if (state.modal?.type === 'lib-dlg-mfy') state.modal.ai = (el as HTMLInputElement).checked; },
+    'lib-mfy-ai': (el) => { if (state.modal?.type === 'lib-dlg-mfy' || state.modal?.type === 'lib-dlg-mfylore') state.modal.ai = (el as HTMLInputElement).checked; },
     'lib-dlg-desc': (el) => { if (state.modal) state.modal.desc = el.value; },
     'lib-alt': (el) => {
         const c = L.sel ? charOf(L.sel) : null; if (!c) return;

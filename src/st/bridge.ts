@@ -922,6 +922,12 @@ export async function createLorebook(name: string): Promise<string> {
     if (ok === false) throw new Error('A lorebook with this name already exists.');
     return clean;
 }
+// A new lorebook holding `data` (a copy Mundi made); the name must be free.
+export async function saveNewLorebook(name: string, data: any) {
+    if (lorebooks().includes(name)) throw new Error(`A lorebook named “${name}” exists already.`);
+    await saveWorldInfo(name, data, true);
+    await updateWorldInfoList();
+}
 export async function duplicateLorebook(name: string): Promise<string> {
     const data = await loadLore(name);
     let copy = `${name} (2)`; let n = 2;
