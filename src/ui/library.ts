@@ -335,7 +335,7 @@ function outfitBar(avatar: string) {
     const list = outfitsOf(avatar) ?? []; const saved = savedOutfits(avatar);
     return `<div class="mu-outfits"><small class="mu-muted">Outfit</small><div class="mu-chips">
         <button class="mu-chip ${EO.outfit ? '' : 'is-on'}" data-act="lib-outfit" data-o="">Usual</button>
-        ${hasCgPage(avatar) ? `<button class="mu-chip ${EO.outfit === CG_FOLDER ? 'is-on' : ''}" data-act="lib-outfit" data-o="${CG_FOLDER}">CG</button>` : ''}
+        ${hasCgPage(avatar) ? `<button class="mu-chip ${EO.outfit === CG_FOLDER ? 'is-on' : ''}" data-act="lib-outfit" data-o="${esc(CG_FOLDER)}">CG</button>` : ''}
         ${list.map(o => `<span class="mu-chip-wrap"><button class="mu-chip ${EO.outfit.toLowerCase() === o.toLowerCase() ? 'is-on' : ''}" data-act="lib-outfit" data-o="${esc(o)}">${esc(outfitLabel(o))}</button>${saved.includes(o) ? `<button class="mu-ghost mu-ibtn" data-act="lib-outfit-del" data-o="${esc(o)}" title="Forget this outfit (the pictures stay)">${icon('x')}</button>` : ''}</span>`).join('')}</div>
         <div class="mu-lib-searchrow"><input type="text" placeholder="New outfit (a folder name, like pajamas)" value="${esc(EO.name)}" data-input="lib-outfit-name" data-focus="lib-outfit-name">${btn('lib-outfit-add', 'plus', 'Add')}</div>
         <small class="mu-muted">An outfit is a subfolder of their Expressions folder${EO.outfit ? ` (<span data-notr>${esc(baseSpriteFolder(avatar))}/${esc(EO.outfit)}</span>)` : ''}. Upload its pictures here; in the game, click their sprite to change clothes.</small></div>`;

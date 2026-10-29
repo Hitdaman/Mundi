@@ -89,7 +89,7 @@ function booksHtml(): string {
         ${mfyHtml()}
         ${r.books.length ? `<h3>What to read</h3>
         <p class="mu-muted">Sorted by each entry's title and keys. Untick what does not describe the world itself. Everything stays switched on as a lorebook of the world either way.</p>
-        <div class="mu-fl-buckets">${BUCKETS.map(b => `<label class="mu-check"><input type="checkbox" data-act="fl-bucket" data-id="${b.id}" ${r.skip.includes(b.id) ? '' : 'checked'}><span>${b.name} (${count(b.id)})<small>${b.desc}</small></span></label>`).join('')}</div>
+        <div class="mu-fl-buckets">${BUCKETS.map(b => `<label class="mu-check"><input type="checkbox" data-act="fl-bucket" data-id="${esc(b.id)}" ${r.skip.includes(b.id) ? '' : 'checked'}><span>${b.name} (${count(b.id)})<small>${b.desc}</small></span></label>`).join('')}</div>
         <p class="${parts > MAX_CALLS ? 'mu-warn' : 'mu-muted'}">${chosen().length} entries in ${parts} part${parts === 1 ? '' : 's'}: ${parts} AI call${parts === 1 ? '' : 's'}, plus one to sum up.${parts > MAX_CALLS ? ` That is a lot (over ${MAX_CALLS}): untick some kinds or lorebooks, or it will take a long time and many tokens.` : ''}</p>` : ''}
         <div class="mu-row mu-cw-new-go"><span class="mu-muted">${r.books.length} lorebook${r.books.length === 1 ? '' : 's'} chosen</span>
             <button class="mu-primary mu-big" data-act="fl-read" ${parts ? '' : 'aria-disabled="true"'}>${icon('sparkles')}<span>Read the lorebooks</span></button></div>`;
@@ -151,14 +151,14 @@ function reviewHtml(): string {
         : FL.tab === 'groups' ? [x.kind, x.hq ? `HQ: ${x.hq}` : '', x.ranks?.length ? `ranks: ${x.ranks.join(' → ')}` : '', x.secret ? 'secret' : ''].filter(Boolean).join(' · ')
         : [x.place ? `at ${x.place}` : '', x.ranks?.length ? x.ranks.join(' → ') : ''].filter(Boolean).join(' · ');
     return reviewShell(`${kept > CAPS[FL.tab] ? `<p class="mu-warn">Only the first ${CAPS[FL.tab]} are used. Untick the ones that matter least.</p>` : ''}
-        <div class="mu-fl-list">${list.map((x, i) => `<div class="mu-fl-row ${x.keep === false ? 'is-off' : ''}"><input type="checkbox" data-act="fl-keep" data-i="${i}" ${x.keep === false ? '' : 'checked'} title="Keep">
-            <input class="mu-fl-name" data-input="fl-name" data-i="${i}" data-focus="fl-${FL.tab}-${i}" value="${esc(x.name)}" data-notr><small class="mu-muted" data-notr>${esc(detail(x))}</small></div>`).join('') || '<p class="mu-muted">Nothing found.</p>'}</div>`);
+        <div class="mu-fl-list">${list.map((x, i) => `<div class="mu-fl-row ${x.keep === false ? 'is-off' : ''}"><input type="checkbox" data-act="fl-keep" data-i="${esc(i)}" ${x.keep === false ? '' : 'checked'} title="Keep">
+            <input class="mu-fl-name" data-input="fl-name" data-i="${esc(i)}" data-focus="fl-${FL.tab}-${i}" value="${esc(x.name)}" data-notr><small class="mu-muted" data-notr>${esc(detail(x))}</small></div>`).join('') || '<p class="mu-muted">Nothing found.</p>'}</div>`);
 }
 function reviewShell(body: string): string {
     const r = R(), sk = r.sketch;
     const on = (r.details ?? []).length;
     return `<p class="mu-muted">Untick what should not be in the world, and fix names if you like. Maps are the areas: a city, its districts, a building with floors. Places sit on them.${r.failed.length ? ` ${r.failed.length} part${r.failed.length === 1 ? '' : 's'} could not be read: <button class="mu-ghost" data-act="fl-retry">Try them again</button>` : ''}</p>
-        <nav class="mu-tabs mu-fl-tabs">${TABS.map(([id, l]) => `<button class="${FL.tab === id ? 'is-on' : ''}" data-act="fl-tab" data-tab="${id}">${l} (${sk[id].filter((x: any) => x.keep !== false).length})</button>`).join('')}<button class="${FL.tab === 'basics' ? 'is-on' : ''}" data-act="fl-tab" data-tab="basics">Basics (${FL.basics ? '…' : (sk.basics ?? []).filter(x => x.keep !== false).length})</button><button class="${FL.tab === 'details' ? 'is-on' : ''}" data-act="fl-tab" data-tab="details">Details (${on})</button></nav>
+        <nav class="mu-tabs mu-fl-tabs">${TABS.map(([id, l]) => `<button class="${FL.tab === id ? 'is-on' : ''}" data-act="fl-tab" data-tab="${esc(id)}">${l} (${sk[id].filter((x: any) => x.keep !== false).length})</button>`).join('')}<button class="${FL.tab === 'basics' ? 'is-on' : ''}" data-act="fl-tab" data-tab="basics">Basics (${FL.basics ? '…' : (sk.basics ?? []).filter(x => x.keep !== false).length})</button><button class="${FL.tab === 'details' ? 'is-on' : ''}" data-act="fl-tab" data-tab="details">Details (${on})</button></nav>
         ${body}
         <div class="mu-row mu-cw-new-go"><button data-act="fl-books">← Lorebooks</button><span class="mu-grow"></span>
             <button class="mu-primary mu-big" data-act="fl-build" ${sk.places.length + sk.areas.length && !FL.basics ? '' : 'aria-disabled="true"'}>${icon('map')}<span>Build the world</span></button></div>`;
@@ -169,8 +169,8 @@ function basicsHtml(): string {
     const intro = `<p class="mu-muted">Every town needs a few everyday places so life works there: somewhere to heal, buy food, eat and drink, sleep, find work, the law… These are the ones the lorebooks did not mention, named for this world by your AI (or none, where a place would not have one). Untick the ones you do not want; each comes with its job.</p>`;
     const again = `<button class="mu-ghost" data-act="fl-basics" ${FL.basics ? 'aria-disabled="true"' : ''}>${icon('sparkles')}<span>${FL.basics ? 'Asking your AI…' : sk.basics ? 'Ask again' : 'Ask your AI'}</span></button><small class="mu-muted">Ask again after changing which places and maps you keep.</small>`;
     if (FL.basics && !list.length) return `${intro}<p class="mu-muted">Your AI is naming them…</p>`;
-    const rows = list.map((x, i) => `<div class="mu-fl-row ${x.keep === false ? 'is-off' : ''}"><input type="checkbox" data-act="fl-keep" data-i="${i}" ${x.keep === false ? '' : 'checked'} title="Keep">
-        <input class="mu-fl-name" data-input="fl-name" data-i="${i}" data-focus="fl-basics-${i}" value="${esc(x.name)}" data-notr><small class="mu-muted" data-notr>${esc([fnName(x.fn), x.area ? `in ${x.area}` : 'the top map', x.job ? `job: ${x.job}` : '', x.desc, x.guess ? '(the usual one: your AI did not name it)' : ''].filter(Boolean).join(' · '))}</small></div>`).join('');
+    const rows = list.map((x, i) => `<div class="mu-fl-row ${x.keep === false ? 'is-off' : ''}"><input type="checkbox" data-act="fl-keep" data-i="${esc(i)}" ${x.keep === false ? '' : 'checked'} title="Keep">
+        <input class="mu-fl-name" data-input="fl-name" data-i="${esc(i)}" data-focus="fl-basics-${i}" value="${esc(x.name)}" data-notr><small class="mu-muted" data-notr>${esc([fnName(x.fn), x.area ? `in ${x.area}` : 'the top map', x.job ? `job: ${x.job}` : '', x.desc, x.guess ? '(the usual one: your AI did not name it)' : ''].filter(Boolean).join(' · '))}</small></div>`).join('');
     return `${intro}<div class="mu-row mu-fl-redo">${again}</div>
         <div class="mu-fl-list">${rows || `<p class="mu-muted">${sk.basics ? 'Nothing missing: the lorebooks cover the basics.' : 'Not asked yet.'}</p>`}</div>`;
 }
@@ -190,7 +190,7 @@ async function askBasics() {
 // The other World creator tabs: filled from the lorebooks after the map is built, one AI call per group.
 function detailsHtml(): string {
     const r = R(), on = r.details ?? [];
-    const rows = DETAILS.filter(d => d.id !== 'rpg' || r.game !== 'lifesim').map(d => `<label class="mu-check"><input type="checkbox" data-act="fl-detail" data-id="${d.id}" ${on.includes(d.id) ? 'checked' : ''}><span>${d.name}${r.got?.[d.id] ? ' ✓' : ''}<small>${d.tabs}</small></span></label>`).join('');
+    const rows = DETAILS.filter(d => d.id !== 'rpg' || r.game !== 'lifesim').map(d => `<label class="mu-check"><input type="checkbox" data-act="fl-detail" data-id="${esc(d.id)}" ${on.includes(d.id) ? 'checked' : ''}><span>${d.name}${r.got?.[d.id] ? ' ✓' : ''}<small>${d.tabs}</small></span></label>`).join('');
     return `<p class="mu-muted">Once the map is built, your AI reads the lorebooks again (rules and history too) for each group ticked here, and fills those World creator tabs with what it finds: one AI call each${on.includes('rpg') ? ', two for the RPG' : ''}. Untick a group to keep the style's usual entries there. Anything the lorebooks do not mention keeps the style's entries either way, and each tab has a "Redo from the lorebooks" button later.</p>
         <div class="mu-fl-buckets">${rows}</div>`;
 }
@@ -309,7 +309,7 @@ export function redoHtml(w: WorldDef, tab: string): string {
     if (!g || !w.lorebooks?.length) return '';
     const d = DETAILS.find(x => x.id === g)!;
     const on = FL.redo === g;
-    return `<div class="mu-row mu-fl-redo"><button class="mu-ghost" data-act="fl-redo" data-id="${g}" ${FL.redo ? 'aria-disabled="true"' : ''}>${icon('sparkles')}<span>${on ? 'Reading the lorebooks…' : 'Redo from the lorebooks'}</span></button>
+    return `<div class="mu-row mu-fl-redo"><button class="mu-ghost" data-act="fl-redo" data-id="${esc(g)}" ${FL.redo ? 'aria-disabled="true"' : ''}>${icon('sparkles')}<span>${on ? 'Reading the lorebooks…' : 'Redo from the lorebooks'}</span></button>
         <small class="mu-muted">Your AI reads ${w.lorebooks.map(b => `<span data-notr>${esc(b)}</span>`).join(', ')} again and fills ${esc(d.tabs)}. What the lorebooks do not mention stays as it is.</small></div>`;
 }
 async function redo(g: DetailGroup) {

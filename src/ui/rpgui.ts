@@ -93,7 +93,7 @@ export function questsApp(g: Save, w: WorldDef, head: string): string {
     };
     const order = ['offered', 'active', 'done', 'failed'];
     const p = questPrefs(); const waitingN = questPool(g).length;
-    const chk = (k: string, on: boolean, label: string) => `<label class="mu-check"><input type="checkbox" data-input="rpg-q-pref" data-k="${k}" ${on ? 'checked' : ''}><span>${label}</span></label>`;
+    const chk = (k: string, on: boolean, label: string) => `<label class="mu-check"><input type="checkbox" data-input="rpg-q-pref" data-k="${esc(k)}" ${on ? 'checked' : ''}><span>${label}</span></label>`;
     const how = `<p class="mu-muted">${esc(lex(w, 'quests'))} are found, not handed out: read a quest board (a guild hall, a notice board), ask around where people are, or listen when someone has a favor to ask. The story can give you some too.${waitingN ? ` ${waitingN} from your lorebooks ${waitingN === 1 ? 'is' : 'are'} waiting to be found.` : ''}</p>`;
     const tools = `<details class="mu-quest-tools"><summary>Where quests come from</summary>${chk('story', p.story, 'The story can give and finish quests (one more AI check after each reply)')}${chk('lore', p.lore, 'Quests from the lorebooks (the world\'s, the characters\' and your persona\'s)')}
         <button class="mu-ghost" data-act="rpg-q-lore" ${QS.busy ? 'aria-disabled="true"' : ''}>${QS.busy ? 'Reading the lorebooks…' : 'Read the lorebooks for quests again'}</button></details>`;
@@ -104,7 +104,7 @@ export function questsApp(g: Save, w: WorldDef, head: string): string {
 export function questActs(g: Save, w: WorldDef): string {
     if (!isRpg(w) || !sheetOf(g) || inCombat(g)) return '';
     const out: string[] = [];
-    const row = (act: string, ic: string, title: string, small: string, extra = '') => `<button class="mh-act is-quest mh-glass" data-act="${act}" ${extra}><i>${ic}</i><b>${title}</b><small>${small}</small></button>`;
+    const row = (act: string, ic: string, title: string, small: string, extra = '') => `<button class="mh-act is-quest mh-glass" data-act="${esc(act)}" ${extra}><i>${ic}</i><b>${title}</b><small>${small}</small></button>`;
     for (const q of questsHere(g)) out.push(row('quest-step', '📜', `<span data-notr>${esc(q.steps[q.step].what)}</span>`, `<span data-notr>${esc(q.title)}</span>`, `data-id="${esc(q.id)}"`));
     for (const q of offersHere(g, w)) out.push(row('rpg-q-yes', '📜', `Take on: <span data-notr>${esc(q.title)}</span>`, `${giverOf(g, q) ? `<span data-notr>${esc(giverOf(g, q))}</span> · ` : ''}${q.reward.xp} XP${q.reward.money ? ` · ${money(w, q.reward.money)}` : ''}`, `data-id="${esc(q.id)}"`));
     if (roomForMore(g)) {

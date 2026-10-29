@@ -607,7 +607,7 @@ export function spriteLookHtml(k: string, outfit: string): string {
     if (s && outfit === CG_FOLDER) return `<section class="mu-sprlook"><h4>CG pictures</h4>
         <p class="mu-muted">One picture per position of the workflow's CG section, with this look's appearance, usual outfit (for the face) and seed. They are not an outfit: the scene never puts them on.</p>
         ${cgRow(k, busy)}${busy ? `<p class="mu-sprgen-state">${icon('image')} ${esc(progress(k))}</p>` : ''}</section>`;
-    const b = (act: string, label: string, cls = '', extra = '') => `<button class="${cls}" data-act="${act}" data-who="${esc(k)}" data-o="${oi}" ${busy ? 'aria-disabled="true"' : ''} ${extra}>${label}</button>`;
+    const b = (act: string, label: string, cls = '', extra = '') => `<button class="${cls}" data-act="${esc(act)}" data-who="${esc(k)}" data-o="${esc(oi)}" ${busy ? 'aria-disabled="true"' : ''} ${extra}>${label}</button>`;
     const state1 = busy ? `<p class="mu-sprgen-state">${icon('image')} ${esc(progress(k))}</p>` : '';
     if (!s) return `<section class="mu-sprlook"><h4>Draw with ComfyUI</h4>
         <p class="mu-muted">The AI writes their look as tags from the ${personaOf(k) ? 'persona\'s description' : 'card'}, then ComfyUI draws every expression and outfit with the same face.</p>
@@ -617,7 +617,7 @@ export function spriteLookHtml(k: string, outfit: string): string {
         <label class="mu-field"><span>Style (every outfit written for them follows it)</span><input type="text" data-input="spr-sheet" data-who="${esc(k)}" data-k="style" value="${esc(s.style ?? '')}" placeholder="streetwear, dark colors · preppy · practical workwear…"></label>
         ${s.style ? `<div class="mu-row">${b('spr-restyle', 'Rewrite outfits in this style and redraw', 'mu-ghost')}<small class="mu-muted">New outfits follow the style by themselves; this redoes the ones they have.</small></div>` : ''}
         <label class="mu-field"><span>Always wears, whatever the outfit (a hijab, glasses, a necklace…)</span><input type="text" data-input="spr-sheet" data-who="${esc(k)}" data-k="keeps" value="${esc(s.keeps ?? '')}" placeholder="${s.keeps === undefined ? 'Asked from the card the next time they are drawn' : 'Nothing'}"></label>
-        ${oi >= 0 && s.outfits[oi] ? `<label class="mu-field"><span>Outfit: <span data-notr>${esc(s.outfits[oi].name)}</span></span><textarea rows="2" data-input="spr-sheet" data-who="${esc(k)}" data-k="${oi}">${esc(s.outfits[oi].tags)}</textarea></label>`
+        ${oi >= 0 && s.outfits[oi] ? `<label class="mu-field"><span>Outfit: <span data-notr>${esc(s.outfits[oi].name)}</span></span><textarea rows="2" data-input="spr-sheet" data-who="${esc(k)}" data-k="${esc(oi)}">${esc(s.outfits[oi].tags)}</textarea></label>`
             : `<p class="mu-muted">The look has no outfit called “${esc(outfit)}”: these pictures can be uploaded, not drawn.</p>`}
         <div class="mu-row">
             ${oi >= 0 ? `${b('spr-draw-missing', 'Draw missing', 'mu-primary')}${b('spr-draw-outfit', 'Redraw this outfit')}` : ''}
@@ -634,7 +634,7 @@ function cgRow(k: string, busy: boolean): string {
     if (!n) return '';
     const why = cgBlocked(k);
     if (why) return `<small class="mu-muted">No CG pictures: ${esc(why)}.</small>`;
-    const b = (act: string, label: string, cls = '') => `<button class="${cls}" data-act="${act}" data-who="${esc(k)}" ${busy ? 'aria-disabled="true"' : ''}>${label}</button>`;
+    const b = (act: string, label: string, cls = '') => `<button class="${cls}" data-act="${esc(act)}" data-who="${esc(k)}" ${busy ? 'aria-disabled="true"' : ''}>${label}</button>`;
     return `<div class="mu-row">${b('spr-draw-cg-missing', `Draw missing CG`, 'mu-primary')}${b('spr-draw-cg', `Redraw CG (${n})`)}
         <small class="mu-muted">CG pictures go in their “${CG_FOLDER}” folder and show in the Gallery${sprPrefs().cg ? ', and “Draw all” draws them too' : ''}.</small></div>`;
 }
@@ -644,7 +644,7 @@ export function spriteTileButton(k: string, label: string, outfit: string): stri
     if (s && outfit === CG_FOLDER) return waiting(k) || cgBlocked(k) || !cgPositions().includes(label) ? ''
         : `<button class="mu-ibtn mu-ghost" data-act="spr-draw-cg-one" data-who="${esc(k)}" data-l="${esc(label)}" title="Draw this one on ComfyUI">${icon('image')}</button>`;
     if (oi < 0 || waiting(k)) return '';
-    return `<button class="mu-ibtn mu-ghost" data-act="spr-draw-one" data-who="${esc(k)}" data-o="${oi}" data-l="${esc(label)}" title="Draw this one on ComfyUI">${icon('image')}</button>`;
+    return `<button class="mu-ibtn mu-ghost" data-act="spr-draw-one" data-who="${esc(k)}" data-o="${esc(oi)}" data-l="${esc(label)}" title="Draw this one on ComfyUI">${icon('image')}</button>`;
 }
 // Every sprite of a character or persona, for the Gallery: the usual outfit first, then the outfits of their look.
 export async function spritePhotos(k: string): Promise<{ url: string; caption: string }[]> {
@@ -679,7 +679,7 @@ function readWorkflow() {
 export function spritesSettingsHtml(): string {
     const p = sprPrefs(); readWorkflow();
     const parts = WF.parts;
-    const chk = (act: string, v: string, on: boolean, label: string) => `<label class="mu-check"><input type="checkbox" data-input="${act}" data-v="${esc(v)}" ${on ? 'checked' : ''}><span>${esc(label)}</span></label>`;
+    const chk = (act: string, v: string, on: boolean, label: string) => `<label class="mu-check"><input type="checkbox" data-input="${esc(act)}" data-v="${esc(v)}" ${on ? 'checked' : ''}><span>${esc(label)}</span></label>`;
     const files = [...new Set([p.workflow, ...(WF.list ?? [])])];
     const own = parts?.expr.map(e => e.label) ?? [];
     const all = [...new Set([...own, ...expressionLabels()])];
@@ -710,13 +710,13 @@ export function spritesSettingsHtml(): string {
 // Scene looks: what people wear and how they look change with the scene and the story (sim/looks.ts).
 function looksSettingsHtml(): string {
     const lp = lookPrefs();
-    const chk = (act: string, on: boolean, label: string, hint = '') => `<label class="mu-check"><input type="checkbox" data-input="${act}" ${on ? 'checked' : ''}><span>${esc(label)}${hint ? `<small>${esc(hint)}</small>` : ''}</span></label>`;
+    const chk = (act: string, on: boolean, label: string, hint = '') => `<label class="mu-check"><input type="checkbox" data-input="${esc(act)}" ${on ? 'checked' : ''}><span>${esc(label)}${hint ? `<small>${esc(hint)}</small>` : ''}</span></label>`;
     const rule = (r: (typeof lp.rules)[number], i: number) => `<div class="mu-lookrule">
-        <label class="mu-check"><input type="checkbox" data-input="look-rule-on" data-i="${i}" ${r.on ? 'checked' : ''}><span>${esc(RULE_LABELS[r.id] ?? r.id)}</span></label>
-        ${r.places !== undefined ? `<input type="text" data-input="look-rule-places" data-i="${i}" value="${esc(r.places)}" title="Words in the place's name, separated by commas">` : ''}
+        <label class="mu-check"><input type="checkbox" data-input="look-rule-on" data-i="${esc(i)}" ${r.on ? 'checked' : ''}><span>${esc(RULE_LABELS[r.id] ?? r.id)}</span></label>
+        ${r.places !== undefined ? `<input type="text" data-input="look-rule-places" data-i="${esc(i)}" value="${esc(r.places)}" title="Words in the place's name, separated by commas">` : ''}
         ${r.state !== undefined
-            ? `<span class="mu-muted">→ condition</span><select data-input="look-rule-state" data-i="${i}">${stateNames().map(n => `<option value="${esc(n)}" ${n === r.state ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`
-            : `<span class="mu-muted">→ outfit</span><input type="text" data-input="look-rule-outfit" data-i="${i}" value="${esc(r.outfit ?? '')}" maxlength="30" placeholder="outfit name">`}</div>`;
+            ? `<span class="mu-muted">→ condition</span><select data-input="look-rule-state" data-i="${esc(i)}">${stateNames().map(n => `<option value="${esc(n)}" ${n === r.state ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`
+            : `<span class="mu-muted">→ outfit</span><input type="text" data-input="look-rule-outfit" data-i="${esc(i)}" value="${esc(r.outfit ?? '')}" maxlength="30" placeholder="outfit name">`}</div>`;
     return `<h4>Scene looks</h4>
         <p class="mu-muted">People change clothes with the scene and the story: a swimsuit at the pool, pajamas at night, soaked after the rain, a kimono when the story puts one on. Mundi wears the outfit folder that fits (synonyms count: a "bikini" folder is a swimsuit), and draws the ones they don't have yet. The AI is told how everyone here looks.</p>
         ${chk('look-on', lp.on, 'Change how people look with the scene')}

@@ -115,12 +115,12 @@ export function lorasSettingsHtml(): string {
     const p = loraPrefs(); readLoras(); readOwn();
     const list = L.list;
     const row = (l: Lora, i: number) => `<div class="mu-lora ${l.on ? '' : 'is-off'}">
-        <label class="mu-check" title="${esc(l.name)}"><input type="checkbox" data-input="lora-on" data-i="${i}" ${l.on ? 'checked' : ''}><span data-notr>${esc(short(l.name))}</span></label>
+        <label class="mu-check" title="${esc(l.name)}"><input type="checkbox" data-input="lora-on" data-i="${esc(i)}" ${l.on ? 'checked' : ''}><span data-notr>${esc(short(l.name))}</span></label>
         ${list && list.length && !list.includes(l.name) ? `<span class="mu-addon-state is-warn">Not in ComfyUI</span>` : ''}
-        <label class="mu-lora-num" title="Strength on the model"><span>Model</span><input type="number" min="-4" max="4" step="0.05" value="${l.strength}" data-input="lora-str" data-i="${i}"></label>
-        <label class="mu-lora-num" title="Strength on the text encoder (CLIP)"><span>CLIP</span><input type="number" min="-4" max="4" step="0.05" value="${l.clip}" data-input="lora-clip" data-i="${i}"></label>
-        <span class="mu-lora-for">${KINDS.map(([k, n]) => `<label class="mu-check"><input type="checkbox" data-input="lora-for" data-i="${i}" data-v="${k}" ${l.for.includes(k) ? 'checked' : ''}><span>${n}</span></label>`).join('')}</span>
-        <button class="mu-ibtn mu-ghost" data-act="lora-del" data-i="${i}" title="Remove">${icon('x')}</button></div>`;
+        <label class="mu-lora-num" title="Strength on the model"><span>Model</span><input type="number" min="-4" max="4" step="0.05" value="${l.strength}" data-input="lora-str" data-i="${esc(i)}"></label>
+        <label class="mu-lora-num" title="Strength on the text encoder (CLIP)"><span>CLIP</span><input type="number" min="-4" max="4" step="0.05" value="${l.clip}" data-input="lora-clip" data-i="${esc(i)}"></label>
+        <span class="mu-lora-for">${KINDS.map(([k, n]) => `<label class="mu-check"><input type="checkbox" data-input="lora-for" data-i="${esc(i)}" data-v="${esc(k)}" ${l.for.includes(k) ? 'checked' : ''}><span>${n}</span></label>`).join('')}</span>
+        <button class="mu-ibtn mu-ghost" data-act="lora-del" data-i="${esc(i)}" title="Remove">${icon('x')}</button></div>`;
     const own = L.own ?? [];
     return `<section><h3>LoRAs</h3><p class="mu-muted">LoRAs from your ComfyUI (<b data-notr>${esc(comfyUrl())}</b>) added to what Mundi draws: sprites, CG pictures and world maps, each as you pick. They go after the workflow's own LoRAs. A LoRA's trigger words still belong in the prompt or the look's tags.</p>
         <div class="mu-field"><span>Add a LoRA ${list ? `· ${list.length} in ComfyUI` : '· asking ComfyUI…'}</span>
@@ -134,8 +134,8 @@ export function lorasSettingsHtml(): string {
             <p class="mu-muted">Set in <span data-notr>${esc(sprPrefs().workflow)}</span>. Turn one off or change its strength for Mundi's pictures, without editing the workflow.</p>
             <div class="mu-loras">${own.map(o => {
                 const s = p.own[o.name]; const on = s ? s.on : o.on; const str = s?.strength ?? o.strength;
-                return `<div class="mu-lora ${on ? '' : 'is-off'}"><label class="mu-check" title="${esc(o.name)}"><input type="checkbox" data-input="lora-own-on" data-v="${esc(o.name)}" data-was="${o.on}" ${on ? 'checked' : ''}><span data-notr>${esc(short(o.name))}</span></label>
-                    <label class="mu-lora-num"><span>Strength</span><input type="number" min="-4" max="4" step="0.05" value="${str}" data-input="lora-own-str" data-v="${esc(o.name)}" data-was="${o.strength}"></label></div>`;
+                return `<div class="mu-lora ${on ? '' : 'is-off'}"><label class="mu-check" title="${esc(o.name)}"><input type="checkbox" data-input="lora-own-on" data-v="${esc(o.name)}" data-was="${esc(o.on)}" ${on ? 'checked' : ''}><span data-notr>${esc(short(o.name))}</span></label>
+                    <label class="mu-lora-num"><span>Strength</span><input type="number" min="-4" max="4" step="0.05" value="${str}" data-input="lora-own-str" data-v="${esc(o.name)}" data-was="${esc(o.strength)}"></label></div>`;
             }).join('')}</div></details>` : ''}
     </section>`;
 }

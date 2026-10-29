@@ -216,7 +216,7 @@ export function aiTestHtml(): string {
         <p class="mu-muted">Runs the steps that need your AI with the model selected in SillyTavern right now: a world from a lorebook (maps, places, people), its floors and hidden places, the World creator tabs and the RPG system. Mundi checks each answer. No world is saved.</p>
         <input class="mu-search" type="search" data-input="at-bq" data-focus="atbq" placeholder="Search lorebooks" value="${esc(T.bq)}">
         <div class="mu-chips mu-situation-books">${books.slice(0, 60).map(b => `<button class="mu-chip ${T.books.includes(b) ? 'is-on' : ''}" data-act="at-book" data-name="${esc(b)}" data-notr>${esc(b)}</button>`).join('') || '<span class="mu-muted">No lorebooks.</span>'}</div>
-        <div class="mu-chips">${([['quick', `Quick (first ${QUICK_ENTRIES} entries, 2 tabs)`], ['full', 'Full (the whole lorebook, every tab)']] as const).map(([id, l]) => `<button class="mu-chip ${T.mode === id ? 'is-on' : ''}" data-act="at-mode" data-v="${id}">${l}</button>`).join('')}</div>
+        <div class="mu-chips">${([['quick', `Quick (first ${QUICK_ENTRIES} entries, 2 tabs)`], ['full', 'Full (the whole lorebook, every tab)']] as const).map(([id, l]) => `<button class="mu-chip ${T.mode === id ? 'is-on' : ''}" data-act="at-mode" data-v="${esc(id)}">${l}</button>`).join('')}</div>
         ${estimateLine()}
         <div class="mu-row">${T.busy ? `<span class="mu-muted">${esc(T.step)}…</span><button data-act="at-stop">${icon('x')}<span>Stop</span></button>`
             : `<button class="mu-primary" data-act="at-run" ${T.books.length ? '' : 'aria-disabled="true"'}>${icon('sparkles')}<span>Run the AI tests</span></button>`}</div></section>

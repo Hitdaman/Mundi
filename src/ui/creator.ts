@@ -375,7 +375,7 @@ function tabCustoms(w: WorldDef) {
 
 // The world's RPG: attributes, skills, classes and subclasses, schools of magic, spells, titles.
 const rpgSystemList = () => [...RPG_SYSTEMS, ...(settings().rpgSystems ?? [])];
-const rpgSystemButtons = (act = 'cw-rpg-preset') => rpgSystemList().map(x => `<button class="${act === 'cw-rpg-preset' ? 'mu-primary' : 'mu-ghost'}" data-act="${act}" data-v="${esc(x.id)}" title="${esc(x.desc)}">${icon('sparkles')}<span>${esc(x.name)}</span></button>`).join('');
+const rpgSystemButtons = (act = 'cw-rpg-preset') => rpgSystemList().map(x => `<button class="${act === 'cw-rpg-preset' ? 'mu-primary' : 'mu-ghost'}" data-act="${esc(act)}" data-v="${esc(x.id)}" title="${esc(x.desc)}">${icon('sparkles')}<span>${esc(x.name)}</span></button>`).join('');
 function tabRpg(w: WorldDef) {
     const r = w.rpg;
     if (!r) return `<div class="mu-cw-grid"><section class="mu-cw-sec mu-cw-wide"><h4>RPG</h4>
