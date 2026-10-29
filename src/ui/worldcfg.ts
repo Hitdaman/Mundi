@@ -28,6 +28,7 @@ import { openCreatorEdit, CW as CREATOR } from './creator.js';
 import { tabAiContext } from './aictx.js';
 import { warningsBanner } from './warnings.js';
 import { ACT, INPUT } from './reg.js';
+import { storyListButton, storyListHtml } from './storypeople.js';
 
 type Tab = 'people' | 'homes' | 'house' | 'needs' | 'save' | 'lore' | 'ai' | 'rules';
 const TABS: [Tab, string][] = [['people', 'People'], ['homes', 'Households'], ['house', 'The house'], ['needs', 'Needs'], ['save', "Author's Note"], ['lore', 'Lorebooks'], ['ai', 'AI context'], ['rules', 'World']];
@@ -99,13 +100,14 @@ function tabPeople(g: Save, w: WorldDef): string {
     return `<div class="mu-wc-people">
         <aside class="mu-wc-list" data-keep="wc-list">
             <button class="mu-primary" data-act="wc-add-open">${icon('plus')}<span>Add someone</span></button>
+            ${storyListButton(g)}
             <div class="mu-wc-row is-you"><img src="${esc(personaThumb())}" alt=""><span><b data-notr>${esc(personaName())}</b><small>You · ${esc(homeAddress(w, g.player.home))}</small></span></div>
             ${ordered.map(([k, rs]) => `<h5 class="mu-wc-addr">${k === mine ? `${icon('home')} ` : ''}${esc(homeAddress(w, rs[0].home))}${k === mine ? ' · with you' : ''}</h5>
                 ${rs.map(r => `<button class="mu-wc-row ${WC.who === r.avatar ? 'is-on' : ''}" data-act="wc-who" data-who="${esc(r.avatar)}"><img src="${esc(thumb(r.avatar))}" alt="">
                 <span><b data-notr>${esc(r.name)}</b><small>${esc(isScenario(w) ? homeJobOf(r).name || '' : w.occupations.find(o => o.id === r.occupation)?.name ?? 'No job')}</small></span></button>`).join('')}`).join('')}
         </aside>
         <section class="mu-wc-form" data-keep="wc-form">${personForm(g, w)}</section>
-    </div>${WC.adding ? addPicker(g) : ''}`;
+    </div>${WC.adding ? addPicker(g) : ''}${storyListHtml(g)}`;
 }
 
 /* ---------- a Home: the house itself ---------- */
