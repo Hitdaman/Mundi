@@ -50,6 +50,8 @@ export function applyTimedRules(g: Save, w: WorldDef): string[] {
     g.tick ??= {};   // (a Home game that never had needs on)
     if ((g as any).mortal?.dead) return out;   // the dead need nothing
     const mortal = mortalOn(g, w);
+    // the risen (a ghost, undead) neither eat nor drink
+    if ((g as any).mortal?.form) for (const id of ['hunger', 'thirst']) { const st = w.statuses.find(x => x.id === id); if (st) g.player.stats[id] = st.max; }
     for (const s of activeStatuses(w, g)) {
         if (s.decay) {
             const n = periods(g, `decay:${s.id}`, s.decay.everyMinutes);
@@ -131,7 +133,7 @@ export function actionsHere(g: Save, w: WorldDef): ActionDef[] {
     const homeMode = isScenario(w);
     const earns = (a: ActionDef) => a.cost < 0 || ((a.roll as any)?.success?.money ?? 0) > 0 || !!a.outing;
     // barely standing (death being real): nothing that earns money or works the body (sport, training)
-    const hurt = !!tooHurt(g, w);
+    const hurt = !!tooHurt(g, w) || (g as any).mortal?.form === 'ghost';   // (a ghost cannot hold a tool)
     const strains = (a: ActionDef) => earns(a) || (a.tags ?? []).some(t => t === 'sport' || t === 'work') || !!a.hobby;
     const base = w.actions.filter(useful).filter(a => !homeMode || !earns(a)).filter(a => !isBlocked(g, a, w)).filter(a => a.id !== 'fix' || broken)
         .filter(a => homeMode || !a.needsItem || hasItem(g, a.needsItem)).filter(a => chosen || !(a.notTags ?? []).some(t => tags.includes(t))).filter(a => chosen ? (a.anywhere || chosen.includes(a.id)) : (a.home && atHome)

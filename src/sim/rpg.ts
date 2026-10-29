@@ -247,7 +247,9 @@ export function syncLife(g: Save, w: WorldDef) {
 export function longRest(g: Save, w: WorldDef, share = 1) {
     const s = sheetOf(g); if (!s) return;
     const starving = ['hunger', 'thirst'].some(id => w.statuses.some(x => x.id === id) && (g.player.stats[id] ?? 1) <= 0);
-    const hpShare = mortalOn(g, w) ? (starving ? 0 : share < 1 ? 0.1 : 0.2) : share;
+    // the risen heal as the dead do: a ghost gathers itself again, the undead barely mend
+    const form = (g as any).mortal?.form as string | undefined;
+    const hpShare = mortalOn(g, w) ? (form ? (form === 'undead' ? 0.1 : 0.2) : starving ? 0 : share < 1 ? 0.1 : 0.2) : share;
     s.hp = Math.min(hpMax(w, s), s.hp + Math.ceil(hpMax(w, s) * hpShare)); s.focus = Math.min(focusMax(w, s), s.focus + Math.ceil(focusMax(w, s) * share)); s.prepOpen = true;
     syncLife(g, w);
 }

@@ -11,3 +11,9 @@
 #mundi-root .mu-death-btns button { display: grid; gap: 2px; padding: 12px 14px; text-align: left; border-radius: 12px; }
 #mundi-root .mu-death-btns button small { font-weight: 400; opacity: .75; }
 #mundi-root .mu-pkb-sprite.is-dead { filter: grayscale(1) brightness(.45); opacity: .25; transform: rotate(-90deg) translateY(20%); }
+#mundi-root .mu-death-heirs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin: 14px 0; }
+#mundi-root .mu-death-heirs button { display: grid; justify-items: center; gap: 4px; padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05); color: inherit; cursor: pointer; }
+#mundi-root .mu-death-heirs button:hover { border-color: rgba(255, 200, 200, .45); background: rgba(255, 255, 255, .09); }
+#mundi-root .mu-death-heirs img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-death-heirs small { opacity: .7; font-size: 11px; }
+#mundi-root .mu-death-rise { border-color: rgba(170, 190, 255, .55) !important; background: linear-gradient(180deg, rgba(120, 140, 220, .28), rgba(40, 50, 90, .35)) !important; }

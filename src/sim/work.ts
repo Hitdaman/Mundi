@@ -132,6 +132,7 @@ export function workShift(g: Save, w: WorldDef, mode: WorkMode = 'normal', hours
     const j = g.player.job; const o = jobDef(w, j?.id);
     if (!j || !o) return [];
     { const hurt = tooHurt(g, w); if (hurt) return [hurt]; }
+    if ((g as any).mortal?.form === 'ghost') return ['You are a ghost: your hands pass through the work.'];
     const h = Math.max(1, Math.min(o.shift, Math.round(hours ?? o.shift)));
     const part = h / o.shift;
     const out = advance(g, w, h * 60);

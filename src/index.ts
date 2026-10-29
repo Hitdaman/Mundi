@@ -45,6 +45,21 @@ async function storyLooks() {
         if (state.open) notify();
     } catch { /* the AI is offline: the looks stay as they are */ }
 }
+// RPG, death being real: what the story did to you and your companions costs hit points
+async function storyHarm() {
+    const { game, saveGame, state, notify, toast } = await import('./core/store.js');
+    const { getWorld } = await import('./core/world.js');
+    const g = game(); const w = g && getWorld(g.world);
+    if (!g || !w) return;
+    try {
+        const lines = await (await import('./sim/storyharm.js')).storyHarm(g, w);
+        if (!lines.length || game() !== g) return;
+        saveGame();
+        (await import('./sim/prompt.js')).refreshPrompt();
+        toast(lines.join(' '), 'warn');
+        if (state.open) notify();
+    } catch { /* the AI is offline: nothing is counted */ }
+}
 // The checks after a reply ask the AI one at a time (their own calls end a generation too, and queue behind).
 let afterReply: Promise<void> = Promise.resolve();
 function emptyReply() {
@@ -124,7 +139,7 @@ function follow() {
         }
         redraw();
     };
-    on('GENERATION_ENDED', () => { emptyReply(); done(); void import('./ui/relui.js').then(m => m.checkAsk()); void import('./ui/events.js').then(m => m.checkEventEnd()); afterReply = afterReply.then(storyPlaces).then(storyLooks).catch(() => {}); });
+    on('GENERATION_ENDED', () => { emptyReply(); done(); void import('./ui/relui.js').then(m => m.checkAsk()); void import('./ui/events.js').then(m => m.checkEventEnd()); afterReply = afterReply.then(storyPlaces).then(storyLooks).then(storyHarm).catch(() => {}); });
     on('GENERATION_STOPPED', done);
     on('GROUP_WRAPPER_FINISHED', done);
     on('STREAM_TOKEN_RECEIVED', () => { if (state.open && state.view === 'scene') patchLastLine(); });
