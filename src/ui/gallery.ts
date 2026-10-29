@@ -9,7 +9,7 @@ import { listSaves, type SaveRow } from '../sim/game.js';
 import { ACT, INPUT } from './reg.js';
 import { icon } from './icons.js';
 import { thumbCanvas } from './thumbs.js';
-import { spritePhotos, personaKey } from './spritegen.js';
+import { spritePhotos, spriteCgPhotos, personaKey } from './spritegen.js';
 
 const G = state.gal;
 interface Photo { url: string; caption: string; who: string; at: number }
@@ -72,6 +72,9 @@ async function spriteAlbums(): Promise<Album[]> {
             const pics = await spritePhotos(w.key);
             if (pics.length) out.push({ key: `spr/${w.key}`, row: { kind: 'chat', groupId: '__sprites', avatar: w.avatar || undefined, chatId: w.name, title: w.avatar ? 'Sprites' : 'Persona sprites', world: '', last: 0, count: 0, current: false } as SaveRow,
                 photos: pics.map(p => ({ url: p.url, caption: p.caption, who: w.name, at: 0 })) });
+            const cg = await spriteCgPhotos(w.key);
+            if (cg.length) out.push({ key: `cg/${w.key}`, row: { kind: 'chat', groupId: '__sprites', avatar: w.avatar || undefined, chatId: w.name, title: 'CG pictures', world: '', last: 0, count: 0, current: false } as SaveRow,
+                photos: cg.map(p => ({ url: p.url, caption: p.caption, who: w.name, at: 0 })) });
         } catch { /* no sprites */ }
         return next();
     };
