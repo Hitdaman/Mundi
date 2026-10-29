@@ -28,9 +28,11 @@ import { newGameHtml } from './newgame.js';
 import { mapHtml, applyMapView, mapInput, journeyHtml } from './map.js';
 import { rpgOverlays } from './rpgui.js';
 import { combatHtml } from './combatui.js';
+import { deathHtml } from './deathui.js';
 import { audienceHtml } from './factionsui.js';
 import { diceHtml } from './dice.js';
 import { arrestHtml } from './adventureui.js';
+import { discoveryHtml } from './discoveryui.js';
 import { sceneHtml, afterScene, chatHtml } from './scene.js';
 import { worldCfgHtml } from './worldcfg.js';
 import { styleOf } from '../core/world.js';
@@ -139,7 +141,7 @@ export function render() {
     const keep = {};
     main.querySelectorAll('[data-keep]').forEach(el => { keep[el.dataset.keep] = { top: el.scrollTop, h: el.scrollHeight, atEnd: el.scrollHeight - el.scrollTop - el.clientHeight < 40 }; });
     // only what changed is redrawn (morph), so nothing else on screen "resets"
-    morph(main, `${body()}${inGame() ? hudHtml() + phoneHtml() + helpHtml() + coursesHtml() + journeyHtml() + rpgOverlays() + combatHtml() + audienceHtml() + arrestHtml() + diceHtml() : ''}${updateHtml()}${whatsNewHtml()}${tutorialHtml()}${state.busy ? `<div class="mu-busy"><i></i><span>${state.busy}…</span></div>` : ''}`);
+    morph(main, `${body()}${inGame() ? hudHtml() + phoneHtml() + helpHtml() + coursesHtml() + journeyHtml() + discoveryHtml() + rpgOverlays() + combatHtml() + deathHtml() + audienceHtml() + arrestHtml() + diceHtml() : ''}${updateHtml()}${whatsNewHtml()}${tutorialHtml()}${state.busy ? `<div class="mu-busy"><i></i><span>${state.busy}…</span></div>` : ''}`);
     {
         const g = game();
         rainAmbience(!!g && inGame() && (state.view === 'map' || state.view === 'scene') && weatherHere(g, getWorld(g.world)).rain);
@@ -300,6 +302,10 @@ function attach(r) {
         if (t.dataset?.focus === 'lib-dlg-name' && e.key === 'Enter' && !e.isComposing && state.modal?.type === 'lib-dlg-newfolder') {
             e.preventDefault();
             ACT['lib-newfolder-yes']?.(t, e);
+        }
+        if (t.dataset?.enter && e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            ACT[t.dataset.enter]?.(t, e);
         }
         if (t.dataset?.focus === 'lib-tag-text' && e.key === 'Enter' && !e.isComposing) {
             e.preventDefault();

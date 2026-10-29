@@ -7,6 +7,7 @@ import { note } from './facts.js';
 import { book } from './ledger.js';
 import { priceOf } from './bills.js';
 import { playerHomeId, placeOf } from './places.js';
+import { tooHurt } from './rpg.js';
 export const coursesOf = (w) => (systemOn(w, 'courses') ? w.catalogs.courses ?? [] : []);
 export function learning(g) {
     const p = g.player;
@@ -63,6 +64,11 @@ export function studySession(g, w) {
     const c = courseOf(w, l.current);
     if (!c)
         return [];
+    {
+        const hurt = tooHurt(g, w);
+        if (hurt)
+            return [hurt];
+    }
     if (studiedToday(g, c.id))
         return ['You already studied today. Come back tomorrow.'];
     l.lastDay[c.id] = g.day;

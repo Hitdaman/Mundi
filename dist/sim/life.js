@@ -13,7 +13,7 @@ import { addStatus, money, usualPay } from './needs.js';
 import { book } from './ledger.js';
 import { social, bondOf, isPartner } from './social.js';
 import { note } from './facts.js';
-import { placeOf, playerHomeId } from './places.js';
+import { placeOf, playerHomeId, lockedNow, floorName } from './places.js';
 import { whereNow, residents } from './people.js';
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const rnd = (g, salt) => { let h = 2166136261; const s = `${g.world}|${g.day}|${g.minutes}|${salt}`; for (let i = 0; i < s.length; i++) {
@@ -177,6 +177,13 @@ export function afterAction(g, w, a, success) {
 }
 /* ---------- who lets you in ---------- */
 export function doorAnswer(g, w, loc) {
+    // a restricted place (or a floor of one) turns you away until the story, its rules or you open it
+    {
+        const p = !loc.startsWith('home:') ? placeOf(g, w, loc) : null;
+        const why = p && loc !== g.player.loc ? lockedNow(g, w, p) : '';
+        if (why)
+            return { ok: false, text: `${floorName(p)}: ${why}.` };
+    }
     if (!loc.startsWith('home:') || loc === playerHomeId)
         return { ok: true, text: '' };
     const r = g.cast[loc.slice(5)];

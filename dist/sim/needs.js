@@ -6,7 +6,7 @@ import { nowAbs, cfg } from '../core/store.js';
 import { billNews, cutReason, priceOf } from './bills.js';
 import { priceHere } from './worldstate.js';
 import { openNow } from './daynight.js';
-import { sheetOf, isRpg, changeHp, hpMax } from './rpg.js';
+import { sheetOf, isRpg, changeHp, hpMax, mortalOn, tooHurt } from './rpg.js';
 import { activeStatuses, systemOn, isScenario } from '../core/world.js';
 import { presentAt } from './people.js';
 import { approve } from './living.js';
@@ -52,6 +52,16 @@ function periods(g, key, every) {
 export function applyTimedRules(g, w) {
     const out = [];
     g.tick ??= {}; // (a Home game that never had needs on)
+    if (g.mortal?.dead)
+        return out; // the dead need nothing
+    const mortal = mortalOn(g, w);
+    // the risen (a ghost, undead) neither eat nor drink
+    if (g.mortal?.form)
+        for (const id of ['hunger', 'thirst']) {
+            const st = w.statuses.find(x => x.id === id);
+            if (st)
+                g.player.stats[id] = st.max;
+        }
     for (const s of activeStatuses(w, g)) {
         if (s.decay) {
             const n = periods(g, `decay:${s.id}`, s.decay.everyMinutes);
@@ -61,17 +71,29 @@ export function applyTimedRules(g, w) {
         }
         const v = g.player.stats[s.id] ?? s.start;
         // (Home: an empty need only shows, and the AI is told; nobody faints)
+        // (the drain's clock starts again too: it would otherwise charge every hour since the need was last empty)
         if (v > 0 || !s.zero || isScenario(w)) {
             delete g.tick[`zero:${s.id}`];
             delete g.tick[`crisis0:${s.id}`];
+            delete g.tick[`drain:${s.id}`];
             continue;
         }
         out.push(...crisisCheck(g, w, s));
         if (s.zero.drain) {
             const n = periods(g, `drain:${s.id}`, s.zero.drain.everyMinutes);
-            if (n > 0)
-                addStatus(g, w, s.zero.drain.status, -s.zero.drain.amount * n);
+            // when death is real, starving eats your hit points slowly and thirst about three times as fast
+            const toLife = /^(life|health)$/.test(s.zero.drain.status);
+            const amount = mortal && toLife && (s.id === 'hunger' || s.id === 'thirst') ? (s.id === 'thirst' ? 6 : 2) * (s.zero.drain.everyMinutes / 60) : s.zero.drain.amount;
+            if (n > 0) {
+                if (mortal && toLife)
+                    g._hurtBy = s.id;
+                addStatus(g, w, s.zero.drain.status, -amount * n);
+                delete g._hurtBy;
+            }
         }
+        // at zero life when death is real, there is no waking up at the hospital: sim/mortal.ts decides
+        if (mortal && /^(life|health)$/.test(s.id))
+            continue;
         if ((s.zero.place || s.zero.text) && g.tick[`zero:${s.id}`] === undefined) {
             g.tick[`zero:${s.id}`] = nowAbs(g);
             const cost = s.zero.cost ?? 0;
@@ -104,6 +126,10 @@ function crisisCheck(g, w, s) {
     const saw = presentAt(g, w, where).filter(r => r.met);
     if (c.shame && !saw.length)
         return []; // a crisis about what people think (the smell) needs someone to see it
+    // when death is real, nobody hands you food or water unless somebody is actually there
+    const alone = mortalOn(g, w) && (s.id === 'hunger' || s.id === 'thirst') && !presentAt(g, w, where).length && !(g.party?.members ?? []).length;
+    if (alone)
+        return [];
     g.tick[`crisisDone:${s.id}`] = start;
     g.tick[`crisisDay:${s.id}`] = g.day;
     const cost = priceOf(g, c.cost ?? 0);
@@ -145,10 +171,13 @@ export function actionsHere(g, w) {
     // Home: no money, so nothing to earn or pay, and going out has its own button (Go out)
     const homeMode = isScenario(w);
     const earns = (a) => a.cost < 0 || (a.roll?.success?.money ?? 0) > 0 || !!a.outing;
+    // barely standing (death being real): nothing that earns money or works the body (sport, training)
+    const hurt = !!tooHurt(g, w) || g.mortal?.form === 'ghost'; // (a ghost cannot hold a tool)
+    const strains = (a) => earns(a) || (a.tags ?? []).some(t => t === 'sport' || t === 'work') || !!a.hobby;
     const base = w.actions.filter(useful).filter(a => !homeMode || !earns(a)).filter(a => !isBlocked(g, a, w)).filter(a => a.id !== 'fix' || broken)
         .filter(a => homeMode || !a.needsItem || hasItem(g, a.needsItem)).filter(a => chosen || !(a.notTags ?? []).some(t => tags.includes(t))).filter(a => chosen ? (a.anywhere || chosen.includes(a.id)) : (a.home && atHome)
         || (a.place && a.place === g.player.loc)
-        || (!a.home && !a.place && (a.anywhere || (a.tags ?? []).some(t => tags.includes(t))))).filter(a => !closed || a.anywhere);
+        || (!a.home && !a.place && (a.anywhere || (a.tags ?? []).some(t => tags.includes(t))))).filter(a => !closed || a.anywhere).filter(a => !hurt || !strains(a));
     // prices after the difficulty; at home, what a cut-off service stops is left out
     // out and about, what you buy costs what it costs in this region now (the living world)
     const here = atHome ? 1 : priceHere(g, w);

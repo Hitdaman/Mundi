@@ -16,6 +16,12 @@ const ensure = (g) => (g.swap ??= { avatar: '', orig: persona(), origName: perso
 export const selfAvatar = (g) => { const s = swapOf(g); return s ? (s.avatar || s.origCard || '') : ''; };
 export const roster = (g) => (ensure(g).roster ??= []);
 export const playing = (g) => swapOf(g)?.avatar ?? '';
+/** Someone you played died (RPG, death being real): '' for your original character. */
+export function markGone(g, who) { const s = ensure(g); (s.gone ??= []).push(who || ORIG); if (!s.avatar) {
+    s.orig = s.orig || persona();
+    s.origName = s.origName || personaName();
+} }
+export const isGone = (g, who) => !!swapOf(g)?.gone?.includes(who || ORIG);
 /* ---------- each one's own view of the world ---------- */
 function takeOut(g) {
     const x = g;
@@ -73,6 +79,8 @@ function mirror(from, fromCard, to, toCard) {
 async function origCardOf(g, w, s) {
     if (s.origCard && g.cast[s.origCard] && charOf(s.origCard))
         return s.origCard;
+    if (s.gone?.includes(ORIG))
+        return ''; // dead: not a person of the world any more
     const row = personas().find(p => p.file === s.orig);
     let img;
     try {
@@ -98,6 +106,8 @@ export async function switchTo(g, w, target) {
     const fromKey = s.avatar || ORIG, toKey = target || ORIG;
     if (fromKey === toKey)
         return '';
+    if (s.gone?.includes(toKey))
+        throw new Error('They are dead.');
     if (target && !charOf(target))
         throw new Error('That character is not in SillyTavern anymore.');
     // an event or a night over ends when you leave the person you are

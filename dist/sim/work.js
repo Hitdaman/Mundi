@@ -13,6 +13,7 @@ import { career, systemOn, getWorld } from '../core/world.js';
 import { advance, hour } from './time.js';
 import { addStatus, money } from './needs.js';
 import { book } from './ledger.js';
+import { tooHurt } from './rpg.js';
 export { ledger, book } from './ledger.js';
 export const jobDef = (w, id) => w.occupations.find(o => o.id === id) ?? null;
 export const traitsOf = (g) => Object.values(g.player.traits ?? {}).flat();
@@ -150,6 +151,13 @@ export function workShift(g, w, mode = 'normal', hours) {
     const o = jobDef(w, j?.id);
     if (!j || !o)
         return [];
+    {
+        const hurt = tooHurt(g, w);
+        if (hurt)
+            return [hurt];
+    }
+    if (g.mortal?.form === 'ghost')
+        return ['You are a ghost: your hands pass through the work.'];
     const h = Math.max(1, Math.min(o.shift, Math.round(hours ?? o.shift)));
     const part = h / o.shift;
     const out = advance(g, w, h * 60);

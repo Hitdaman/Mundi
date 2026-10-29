@@ -33,6 +33,8 @@ export function cast(g, w, id) {
         return { ok: false, text: '', msgs: [] };
     if (!s.prepared.includes(id))
         return { ok: false, text: `${sp.name} is not prepared.`, msgs: [] };
+    if (sp.effect.kind === 'revive')
+        return { ok: false, text: `${sp.name} only works in the minute after someone dies: it is cast for you then, if you have it prepared and the ${rpgOf(w)?.focusName?.toLowerCase() ?? 'focus'} for it.`, msgs: [] };
     if (s.focus < sp.cost)
         return { ok: false, text: `Not enough ${rpgOf(w)?.focusName?.toLowerCase() ?? 'focus'} (${sp.name} takes ${sp.cost}).`, msgs: [] };
     const fizzle = spellFails(g, w);

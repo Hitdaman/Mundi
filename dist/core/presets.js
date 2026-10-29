@@ -1,4 +1,5 @@
 import { MEDIEVAL_RPG, MODERN_RPG } from './rpgdef.js';
+import { upgradeTraits } from './traitlib.js';
 const roll = (dc, traits, ok, okFx, okMoney, bad, badFx) => ({ dc, traits, success: { text: ok, ...(okMoney ? { money: okMoney } : {}), ...(okFx ? { effects: okFx } : {}) }, fail: { text: bad, effects: badFx } });
 // What happens when a need stays at zero (the same idea in every style; only the words change).
 const CRISES = (helper, water) => ({
@@ -22,6 +23,7 @@ export const PRESETS = {
             { id: 'scrap', name: 'Scrap metal', icon: '⚙️', price: 6, kind: 'ore', cheap: ['industrial'], dear: ['finance'] },
             { id: 'supplies', name: 'Medical supplies', icon: '🧴', price: 10, kind: 'goods', cheap: ['hospital'], dear: ['industrial'] },
             { id: 'medkit', name: 'First aid kit', icon: '🩹', price: 30, kind: 'potion', cures: true },
+            { id: 'aed', name: 'Defibrillator (AED)', icon: '⚡', price: 400, kind: 'gear', revive: 'helper', dear: ['industrial'] },
             { id: 'scope', name: 'Red-dot sight', icon: '🎯', price: 90, kind: 'arms', socket: { slot: 'weapon', kind: 'attack', amount: 1 } },
             { id: 'weights', name: 'Weighted gloves', icon: '🥊', price: 70, kind: 'arms', socket: { slot: 'weapon', kind: 'damage', amount: 1 } },
             { id: 'kevlar', name: 'Kevlar plate', icon: '🦺', price: 120, kind: 'arms', socket: { slot: 'armor', kind: 'armor', amount: 1 } },
@@ -137,6 +139,7 @@ export const PRESETS = {
             { id: 'mead', name: 'Mead', icon: '🍯', price: 9, kind: 'drink', cheap: ['hrafnborg'], dear: ['solmira'] },
             { id: 'wine', name: 'Wine', icon: '🍷', price: 12, kind: 'drink', cheap: ['solmira'], dear: ['eskarn'] },
             { id: 'potion', name: 'Healing potion', icon: '🧪', price: 20, kind: 'potion', cheap: ['lumeria'], dear: ['vigilia', 'eskarn'] },
+            { id: 'phoenix', name: 'Phoenix feather', icon: '🪶', price: 500, kind: 'rare', revive: 'self', dear: ['vigilia', 'eskarn'] },
             { id: 'herbs', name: 'Herbs', icon: '🌿', price: 5, kind: 'herb', cheap: ['trigal'], dear: ['lumeria'] },
             { id: 'mandrake', name: 'Mandrake root', icon: '🥕', price: 25, kind: 'herb', dear: ['lumeria'] },
             { id: 'moonleaf', name: 'Moonleaf', icon: '🍃', price: 40, kind: 'contraband', cheap: ['areia'], dear: ['kingdom', 'eskarn'], illegal: true },
@@ -383,6 +386,18 @@ export function upgradeWorld(w) {
                     w.pets.push(structuredClone(x));
         w.presetAdventure = true;
     }
+    // death is real in the RPG: what can bring someone back (a phoenix feather, a defibrillator, Revivify), once
+    if (!w.presetRevive) {
+        if (w.goods)
+            for (const x of p.goods ?? [])
+                if (x.revive && !w.goods.some(y => y.id === x.id))
+                    w.goods.push(structuredClone(x));
+        if (w.rpg && p.rpg && (w.rpg.schools ?? []).some(sc => sc.id === 'restoration'))
+            for (const x of p.rpg.spells ?? [])
+                if (x.effect.kind === 'revive' && !w.rpg.spells.some(y => y.id === x.id))
+                    w.rpg.spells.push(structuredClone(x));
+        w.presetRevive = true;
+    }
     // crises at zero (an older world gets them once; one removed in the creator stays removed)
     if (!w.presetCrises) {
         for (const s of w.statuses ?? []) {
@@ -392,6 +407,28 @@ export function upgradeWorld(w) {
             s.zero = { ...(s.zero ?? {}), crisis: structuredClone(c) };
         }
         w.presetCrises = true;
+    }
+    // weapon skills, crafts and weapons to choose (any class can learn them): once for an RPG made before them
+    if (!w.presetSkills2) {
+        if (p.rpg && w.rpg) {
+            const attrs = new Set(w.rpg.attributes.map(a => a.id));
+            for (const k of p.rpg.skills)
+                if (attrs.has(k.attr) && !w.rpg.skills.some(x => x.id === k.id))
+                    w.rpg.skills.push({ ...k });
+            w.rpg.weapons ??= structuredClone(p.rpg.weapons ?? []).filter(x => attrs.has(x.attr));
+            for (const c of w.rpg.classes ?? []) {
+                const d = p.rpg.classes.find(x => x.id === c.id);
+                if (c.weapon && d?.weapon?.skill && c.weapon.name === d.weapon.name)
+                    c.weapon.skill ??= d.weapon.skill;
+            }
+        }
+        w.presetSkills2 = true;
+    }
+    // the bigger trait lists, Flaws, and no limit on how many you pick: once (the creator can change them after)
+    if (!w.presetTraits2) {
+        if (w.sheet)
+            w.sheet.traits = upgradeTraits(w.sheet.traits, p === PRESETS.medieval || (w.sheet.traits ?? []).some(g => g.options?.includes('Literate')));
+        w.presetTraits2 = true;
     }
     return w;
 }

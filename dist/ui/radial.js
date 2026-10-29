@@ -13,6 +13,7 @@ import { romanceButtons } from './relui.js';
 import { outfitOf, wearOutfit, charOf } from '../st/bridge.js';
 import { outfitsOf, outfitLabel } from './outfits.js';
 import { guestButtons } from './guestsui.js';
+import { spriteMenuButtons } from './spritegen.js';
 export const RAD = { who: '' };
 const btn = (act, who, ic, label, extra = '') => `<button data-act="${esc(act)}" data-who="${esc(who)}" ${extra}>${icon(ic)}<span>${esc(label)}</span></button>`;
 // The buttons of an HTML snippet (romance, stay), so they sit on the arc like the others.
@@ -53,7 +54,7 @@ export function radialHtml(avatar, r) {
     const w = g && getWorld(g.world);
     if (!g || !w)
         return '';
-    const right = r ? actions(g, w, r) : [], left = outfits(avatar);
+    const right = r ? actions(g, w, r) : [], left = [...outfits(avatar), ...spriteMenuButtons(avatar)];
     if (!right.length && !left.length)
         return '';
     return `<div class="mu-radial" role="menu" aria-label="${esc(r?.name ?? String(charOf(avatar)?.name ?? ''))}">

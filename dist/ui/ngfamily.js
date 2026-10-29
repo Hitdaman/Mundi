@@ -140,7 +140,8 @@ function homePicker(who, mapKey) {
         return `<button class="mu-nghome-spot ${on ? 'is-on' : ''} ${taken ? 'is-taken' : ''}" style="left:${x}%;top:${y}%" data-act="${act}-pick" data-zone="${esc(zn.id)}" data-k="${esc(k)}" ${taken ? 'aria-disabled="true"' : ''} title="${esc(zn.name)} · ${zn.kind === 'house' ? 'House' : 'Apartment'} ${k + 1} · rent ${zn.rent}${taken ? ' · taken' : ''}">${icon('home')}</button>`;
     }).join('')).join('')}</div>` : ''}`;
 }
-const homeLine = (h, none) => { const w = W(); const zone = h && w.homes.zones.find(zn => zn.id === h.zone); return zone && h ? `${icon('home')} <b>${esc(zone.name)}, ${esc(homeKindName(w, zone.kind))} ${h.n}</b> · ${esc(w.homes.kinds[zone.kind]?.name ?? zone.kind)} · rent ${zone.rent}` : `<span class="mu-muted">${none}</span>`; };
+const homeLine = (h, none) => { const w = W(); const b = h?.in ? w.places.find(p => p.id === h.in) : null; if (b)
+    return `${icon('home')} <b>${esc(h.room || 'A room')}</b> in <b data-notr>${esc(b.name)}</b> · no rent`; const zone = h && w.homes.zones.find(zn => zn.id === h.zone); return zone && h ? `${icon('home')} <b>${esc(zone.name)}, ${esc(homeKindName(w, zone.kind))} ${h.n}</b> · ${esc(w.homes.kinds[zone.kind]?.name ?? zone.kind)} · rent ${zone.rent}` : `<span class="mu-muted">${none}</span>`; };
 /* ---------- step: choosing your home ---------- */
 export function stepHome() {
     const w = W();
@@ -157,7 +158,29 @@ export function stepHome() {
     return `<h3>Choose your home</h3>
         <p class="mu-muted">Click a home on the map. The others are given to the people of the world after you choose.${familyOf().length ? ' Your household moves in with you.' : ''}</p>
         ${homePicker('you', 'homeMap')}
-        <p class="mu-nghome-pick">${homeLine(wz().home, 'No home chosen yet: one is given by your origin.')}</p>`;
+        <p class="mu-nghome-pick">${homeLine(wz().home, 'No home chosen yet: one is given by your origin.')}</p>
+        ${insideHtml()}`;
+}
+// Or a home inside a building (a room in a guild tower, a dorm, a barracks): the building's pin is your home's, and
+// your home is one of its floors.
+export const homeInside = (w, place, room) => {
+    const b = w.places.find(p => p.id === place);
+    if (!b)
+        return null;
+    const zone = w.homes.zones.find(z => z.map === b.map) ?? w.homes.zones[0];
+    if (!zone)
+        return null;
+    return { zone: zone.id, x: b.x, y: b.y, n: 0, in: b.id, room: room.trim().slice(0, 60) };
+};
+function insideHtml() {
+    const w = W(), z = wz(), cur = z.home?.in ? z.home : undefined;
+    const withFloors = new Set(w.places.map(p => p.in).filter(Boolean));
+    const list = w.places.filter(p => !p.link && !p.in && !p.hidden).sort((a, b) => Number(withFloors.has(b.id)) - Number(withFloors.has(a.id)) || a.name.localeCompare(b.name));
+    if (!list.length)
+        return '';
+    return `<section class="mu-panel mu-nghome-in"><h4>Or live inside a building</h4><p class="mu-muted">A room in a guild tower, a dorm, a barracks: your home becomes part of that building. No rent.</p>
+        <div class="mu-row"><label class="mu-field"><span>Building</span><select data-input="ngm-in"><option value="">Choose…</option>${list.map(p => `<option value="${esc(p.id)}" ${cur?.in === p.id ? 'selected' : ''}>${esc(p.name)}${withFloors.has(p.id) ? ' (has floors)' : ''}</option>`).join('')}</select></label>
+        <label class="mu-field"><span>Your room</span><input data-input="ngm-room" data-focus="ngmroom" maxlength="60" placeholder="Floor 9, Room 918" value="${esc(cur?.room ?? z.homeRoom ?? '')}"></label></div></section>`;
 }
 /* ---------- actions ---------- */
 Object.assign(ACT, {
@@ -280,6 +303,9 @@ Object.assign(ACT, {
     },
 });
 Object.assign(INPUT, {
+    'ngm-in': (el) => { const z = wz(); z.home = el.value ? homeInside(W(), el.value, z.home?.room ?? z.homeRoom ?? '') : null; notify(); },
+    'ngm-room': (el) => { const z = wz(); z.homeRoom = el.value; if (z.home?.in)
+        z.home.room = el.value.trim().slice(0, 60); },
     'ngj-set': (el) => { const z = wz(); const j = (z.jobs ??= {}); const a = el.dataset.who; if (el.value)
         j[a] = el.value;
     else

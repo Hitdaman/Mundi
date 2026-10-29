@@ -131,8 +131,9 @@ export function useGreeting(k) {
     saveChatDebounced();
 }
 // A scenario is any chat that is not a Mundi game: one character, or a group made from it.
+// (A one-on-one chat with a world attached is a game, not a scenario.)
 export const scenarioGroup = () => (selected_group && !ctx().chatMetadata?.mundi ? groupOf(selected_group) : null);
-export const scenarioOpen = () => !!(currentCharacter() || scenarioGroup());
+export const scenarioOpen = () => !!((currentCharacter() && !ctx().chatMetadata?.mundi) || scenarioGroup());
 export function scenarioCast() {
     const c = currentCharacter();
     if (c)
@@ -330,6 +331,14 @@ export async function setPresent(groupId, members, present) {
     if (dirty)
         await editGroup(g.id, true, false);
 }
+// Mutes exactly these members of a group again (a world detached from a group chat gives it back as it was).
+export async function setMuted(groupId, muted) {
+    const g = groupOf(groupId);
+    if (!g)
+        return;
+    g.disabled_members = (muted ?? []).filter(a => (g.members ?? []).includes(a));
+    await editGroup(g.id, true, false);
+}
 /* ---------- the open chat ---------- */
 export const chat = () => globalThis.__mundiTutChat ?? ctx().chat ?? []; // the tutorial has its own lines
 export const saveMeta = () => ctx().saveMetadata();
@@ -448,19 +457,41 @@ export async function narratorLine(text) {
 // a small length left nothing for the answer ("No message generated"). So the length asked is never small, the
 // answer is cut by Mundi afterwards, and an empty answer is tried once more with room to spare.
 export async function quiet(prompt, responseLength = 300, systemPrompt = '') {
+    const saved = QUIET_TAP.replay?.(prompt);
+    if (saved !== undefined) {
+        QUIET_TAP.seen?.(prompt, saved, 0);
+        return saved;
+    }
+    const t0 = Date.now();
     const ask = async (len) => String(await ctx().generateRaw({ prompt, systemPrompt, responseLength: len }) ?? '')
         .replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
+    const once = async () => {
+        try {
+            const out = await ask(Math.max(responseLength, 1000));
+            if (out)
+                return out;
+        }
+        catch (e) {
+            if (!/no message generated|empty/i.test(String(e?.message ?? e)))
+                throw e;
+        }
+        return ask(Math.min(Math.max(responseLength * 2, 3000), 4000)); // one more try, with more room (models that think first)
+    };
+    if (!QUIET_TAP.seen)
+        return once();
     try {
-        const out = await ask(Math.max(responseLength, 1000));
-        if (out)
-            return out;
+        const out = await once();
+        QUIET_TAP.seen(prompt, out, Date.now() - t0);
+        return out;
     }
     catch (e) {
-        if (!/no message generated|empty/i.test(String(e?.message ?? e)))
-            throw e;
+        QUIET_TAP.seen(prompt, '', Date.now() - t0, String(e?.message ?? e));
+        throw e;
     }
-    return ask(Math.min(Math.max(responseLength * 2, 3000), 4000)); // one more try, with more room (models that think first)
 }
+/** The real-AI tests (ui/aitest.ts): `seen` sees every call above and its answer; `replay` answers a call from a
+ *  saved run instead of the AI (undefined: ask the AI). Both unset outside a test. */
+export const QUIET_TAP = {};
 // Hides lines from the AI's prompt (SillyTavern's /hide: the messages stay in the chat).
 export async function hideMessages(start, end) {
     if (end < start)
@@ -470,6 +501,17 @@ export async function hideMessages(start, end) {
     }
     catch (e) {
         console.warn('[Mundi] hide', e);
+    }
+}
+// Shows hidden lines to the AI again (SillyTavern's /unhide).
+export async function unhideMessages(start, end) {
+    if (end < start)
+        return;
+    try {
+        await ctx().executeSlashCommandsWithOptions(`/unhide ${start}-${end}`);
+    }
+    catch (e) {
+        console.warn('[Mundi] unhide', e);
     }
 }
 // One line of dialogue. The prompt is a transcript that ends with "Name:", so any model (text completion
@@ -559,14 +601,17 @@ export async function expressionOf(text) {
         return null;
     }
 }
-// Sprites in the character's Expressions folder (and its outfit subfolders).
+// Sprites in the character's Expressions folder (and its outfit subfolders). A persona ("persona:<file>") has
+// the folder of its name, which a card of that name (Play as) shares.
 export const spriteFolder = (avatar) => {
+    if (avatar.startsWith('persona:'))
+        return personaName(avatar.slice(8));
     const key = avatar.replace(/\.png$/i, '');
     const o = ctx().extensionSettings?.expressionOverrides?.find((e) => e.name == key);
     return o?.path || charOf(avatar)?.name || key;
 };
 // The character's own Expressions folder (without the outfit worn now).
-export const baseSpriteFolder = (avatar) => String(charOf(avatar)?.name || avatar.replace(/\.png$/i, ''));
+export const baseSpriteFolder = (avatar) => (avatar.startsWith('persona:') ? personaName(avatar.slice(8)) : String(charOf(avatar)?.name || avatar.replace(/\.png$/i, '')));
 // Outfits: subfolders of the Expressions folder ("Frieren/pajamas"). Wearing one is SillyTavern's own costume
 // override (what /costume sets), so the Expressions extension shows it too.
 export function outfitOf(avatar) {
@@ -638,6 +683,8 @@ export async function saveCharacter(avatar, p) {
     }
     if (p.depth_prompt !== undefined)
         ext.depth_prompt = p.depth_prompt;
+    if (p.extensions)
+        Object.assign(ext, p.extensions);
     if (Object.keys(ext).length)
         data.extensions = ext;
     const res = await fetch('/api/characters/merge-attributes', { method: 'POST', headers: headers(), body: JSON.stringify({ avatar, ...top, data }) });
@@ -1073,6 +1120,25 @@ export function setDefaultPersona(file) {
     power_user.default_persona = file;
     ctx().saveSettingsDebounced();
 }
+// A persona's own settings entry (SillyTavern's persona_descriptions); `make`: created when missing.
+export function personaData(file, make = true) {
+    if (!make)
+        return power_user.persona_descriptions?.[file] ?? null;
+    power_user.persona_descriptions ??= {};
+    return (power_user.persona_descriptions[file] ??= { description: '', position: 0 });
+}
+export const savePersonaData = () => ctx().saveSettingsDebounced();
+// One chat's messages (a character's chat file, without the .jsonl): its first line is the chat's header.
+export async function readCharChat(avatar, file) {
+    const c = charOf(avatar);
+    if (!c)
+        throw new Error('This character no longer exists.');
+    const res = await fetch('/api/chats/get', { method: 'POST', headers: headers(), body: JSON.stringify({ ch_name: c.name, file_name: file.replace(/\.jsonl$/, ''), avatar_url: avatar }) });
+    if (!res.ok)
+        throw new Error('Could not read the chat.');
+    const data = await res.json();
+    return (Array.isArray(data) ? data : []).filter((m) => m && typeof m.mes === 'string');
+}
 // Mundi's own record inside a persona (the sheet it was made from).
 export const personaSheet = (file) => power_user.persona_descriptions?.[file]?.mundi ?? null;
 export function setPersonaSheet(file, sheet) {
@@ -1089,6 +1155,13 @@ export async function createLorebook(name) {
     if (ok === false)
         throw new Error('A lorebook with this name already exists.');
     return clean;
+}
+// A new lorebook holding `data` (a copy Mundi made); the name must be free.
+export async function saveNewLorebook(name, data) {
+    if (lorebooks().includes(name))
+        throw new Error(`A lorebook named “${name}” exists already.`);
+    await saveWorldInfo(name, data, true);
+    await updateWorldInfoList();
 }
 export async function duplicateLorebook(name) {
     const data = await loadLore(name);

@@ -29,14 +29,18 @@ export function breakOf(g, w, r, day) {
     let m = memo.get(g);
     if (!m)
         memo.set(g, m = new Map());
-    if (m.has(key))
-        return m.get(key);
-    const b = work(g, w, r, day, tense);
-    if (m.size > 5000)
-        m.clear();
-    m.set(key, b);
-    return b;
+    // sick and waiting for the medicine you went to get (sim/quests.ts): in bed until it comes; brought: up again
+    if (waitsForMedicine(g, r.avatar))
+        return { kind: 'sick', from: day * 1440, to: day * 1440 + 1440, place: homeOf(r), why: 'is home sick, waiting for medicine' };
+    const b = m.has(key) ? m.get(key) : work(g, w, r, day, tense);
+    if (!m.has(key)) {
+        if (m.size > 5000)
+            m.clear();
+        m.set(key, b);
+    }
+    return b?.kind === 'sick' && g.cured?.[r.avatar] === day ? null : b;
 }
+const waitsForMedicine = (g, a) => (g.quests ?? []).some((q) => q.kind === 'medicine' && (q.target ?? q.giver) === a && q.state === 'active');
 function work(g, w, r, day, tense) {
     const k = `${g.world}|${day}|${r.avatar}`;
     const roll = H(`${k}|brk`), at = (h) => day * 1440 + h * 60;

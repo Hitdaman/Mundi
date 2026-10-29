@@ -85,6 +85,7 @@ export function setGame(s) { ctx().chatMetadata.mundi = s; }
 export const saveGame = () => { if (!TUT.save && !SAVE.readOnly)
     ctx().saveMetadataDebounced(); };
 export const nowAbs = (g) => g.day * 1440 + g.minutes;
+export const hostOf = (g) => (g?.host ?? null);
 export const state = {
     open: false,
     view: 'menu',

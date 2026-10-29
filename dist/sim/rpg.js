@@ -4,13 +4,26 @@
 // the share of hit points left, so everything that hurt or healed "life" before still does.
 import { nowAbs } from '../core/store.js';
 import { gameMode } from '../core/world.js';
-import { rpgOf } from '../core/rpgdef.js';
+import { rpgOf, setRpgGame } from '../core/rpgdef.js';
 import { note } from './facts.js';
-import { checkMods, onRoll } from './hooks.js';
+import { checkMods, onRoll, onHurt } from './hooks.js';
+import { bandOf, BAND_WORD } from './wounds.js';
 export { checkMods };
-import { SAVE } from '../core/store.js';
+import { SAVE, game } from '../core/store.js';
+setRpgGame(() => game());
 import { getWorld } from '../core/world.js';
 export const isRpg = (w) => !!w && gameMode(w) === 'rpg' && !!rpgOf(w);
+// Death is real (the RPG): at 0 hit points you are dead unless something brings you back; a night heals only some
+// (sim/mortal.ts). On for every RPG save unless the save turns it off (cfg.mortal = false).
+export const mortalOn = (g, w) => !!g && isRpg(w) && !!sheetOf(g) && g.cfg?.mortal !== false;
+/** Barely standing (under 30% of your hit points, death being real): no work, no training, no picking a fight. '' when you can. */
+export function tooHurt(g, w) {
+    const s = sheetOf(g);
+    if (!s || !mortalOn(g, w))
+        return '';
+    const b = bandOf(s.hp, hpMax(w, s));
+    return b === 'critical' || b === 'out' ? `You are barely standing (${s.hp}/${hpMax(w, s)} HP). Rest, eat, or get yourself treated first.` : '';
+}
 export const sheetOf = (g) => (g?.rpg ?? null);
 export const classOf = (w, s) => rpgOf(w)?.classes.find(c => c.id === s.cls) ?? null;
 /* ---------- numbers ---------- */
@@ -50,14 +63,73 @@ export function trained(w, s) {
 export const xpFor = (w, level) => (rpgOf(w)?.xp ?? [])[level - 1] ?? Infinity; // to reach level+1
 export const maxLevel = (w) => (rpgOf(w)?.xp.length ?? 0) + 1;
 /* ---------- making a character ---------- */
-// Point buy (27 points, every attribute 8..15, like D&D): what a score costs.
+// Point buy (27 points, every attribute 8..15, like D&D): what a score costs. A system can buy flat instead (each
+// point +1 from its minimum: Solo-Leveling-like stats), with its own points and range.
 export const POINT_COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
 export const POINTS = 27;
-export const pointsUsed = (attrs) => Object.values(attrs).reduce((a, v) => a + (POINT_COST[v] ?? 0), 0);
+export const buyOf = (r) => r?.pointBuy ?? { points: POINTS, min: 8, max: 15, flat: false };
+export const scoreCost = (r, v) => { const b = buyOf(r); return b.flat ? Math.max(0, v - b.min) : (POINT_COST[v] ?? 0); };
+export const pointsUsed = (attrs, r) => Object.values(attrs).reduce((a, v) => a + scoreCost(r, v), 0);
+// Unlimited: any score from 3 to 18 (or the system's own wider range), no budget.
+export const freeRange = (r) => { const b = buyOf(r); return { min: Math.min(3, b.min), max: Math.max(18, b.max) }; };
 export function defaultAttrs(r, cls) {
     const order = [cls?.key, r.hpAttr, ...r.attributes.map(a => a.id)].filter((x, i, l) => !!x && l.indexOf(x) === i);
+    const b = buyOf(r);
+    if (b.flat) { // the points go to the class's key attribute and to hit points, half each
+        const out = Object.fromEntries(r.attributes.map(a => [a.id, b.min]));
+        let left = b.points;
+        for (const id of order) {
+            if (left <= 0)
+                break;
+            const add = Math.min(b.max - b.min, id === order[0] ? Math.ceil(b.points / 2) : left);
+            out[id] += add;
+            left -= add;
+        }
+        return out;
+    }
     const array = [15, 14, 13, 12, 10, 8];
-    return Object.fromEntries(r.attributes.map(a => [a.id, array[order.indexOf(a.id)] ?? 10]));
+    const out = Object.fromEntries(r.attributes.map(a => [a.id, Math.max(b.min, Math.min(b.max, array[order.indexOf(a.id)] ?? 10))]));
+    // a system with fewer points (or more attributes): take back from the least important first
+    for (let guard = 0; pointsUsed(out, r) > b.points && guard < 200; guard++) {
+        const id = [...order].reverse().find(k => out[k] > b.min);
+        if (!id)
+            break;
+        out[id]--;
+    }
+    return out;
+}
+// Starting skills: any skill of the RPG, from a budget (a class skill costs 1, any other 2). Unlimited: no budget.
+export const SKILL_POINTS = 6;
+export const skillBudget = (r) => r?.skillPoints ?? SKILL_POINTS;
+export const skillCost = (c, id) => (c?.skills.includes(id) ? 1 : 2);
+export const skillsUsed = (c, skills) => skills.reduce((a, id) => a + skillCost(c, id), 0);
+// The skills that fit the budget, in the order picked (what does not fit is dropped).
+export function fitSkills(r, c, skills, free = false) {
+    const ok = [...new Set(skills)].filter(x => r.skills.some(k => k.id === x));
+    if (free)
+        return ok;
+    const out = [];
+    let left = skillBudget(r);
+    for (const id of ok) {
+        const cost = skillCost(c, id);
+        if (cost <= left) {
+            out.push(id);
+            left -= cost;
+        }
+    }
+    return out;
+}
+// The class skills a new sheet starts with when none were picked (as many as the budget pays for).
+export const defaultSkills = (r, c) => fitSkills(r, c, c.skills);
+// The weapon you fight with: the one you chose, or your class's. You add your proficiency with your class's weapon,
+// and with any other one whose weapon skill you are trained in.
+export function weaponOf(w, s) {
+    const c = classOf(w, s);
+    const r = rpgOf(w);
+    const own = s.weapon ? r?.weapons?.find(x => x.id === s.weapon) : null;
+    if (own && !(c?.weapon && c.weapon.name === own.name))
+        return { ...own, trained: !own.skill || trained(w, s).includes(own.skill) };
+    return c?.weapon ? { ...c.weapon, trained: true } : null;
 }
 export function makeSheet(w, o) {
     const r = rpgOf(w);
@@ -65,9 +137,14 @@ export function makeSheet(w, o) {
     const attrs = { ...(o.attrs ?? defaultAttrs(r, c)) };
     for (const [k, v] of Object.entries(o.origin?.attributes ?? {}))
         attrs[k] = Math.min(20, (attrs[k] ?? 10) + v);
-    const picked = (o.skills ?? c.skills.slice(0, 2)).filter(x => c.skills.includes(x)).slice(0, 2);
+    const given = new Set(o.origin?.skills ?? []); // the background's skills are free
+    const picked = o.skills ? fitSkills(r, c, o.skills.filter(x => !given.has(x)), o.free) : defaultSkills(r, c);
     const s = { cls: c.id, level: 1, xp: 0, attrs, skills: [...new Set([...picked, ...(o.origin?.skills ?? [])])], hp: 0, focus: 0, points: 0, learn: 0,
         known: [], prepared: [], prepOpen: true, titles: [], renown: 0, counts: {} };
+    if (o.free)
+        s.free = true;
+    if (o.weapon && r.weapons?.some(x => x.id === o.weapon))
+        s.weapon = o.weapon;
     s.hp = hpMax(w, s);
     s.focus = focusMax(w, s);
     if (isCaster(w, s)) { // a caster starts with two first-level spells of the class's schools, prepared
@@ -105,12 +182,16 @@ export function addXp(g, w, n, why) {
         s.level++;
         s.hp += hpMax(w, s) - before;
         s.focus = focusMax(w, s);
-        if (s.level % 4 === 0)
-            s.points += 2;
+        const r = rpgOf(w);
+        const pts = r?.levelPoints ? r.levelPoints : s.level % 4 === 0 ? 2 : 0;
+        s.points += pts;
         if (isCaster(w, s))
             s.learn += 1;
+        const skill = s.level % 2 === 1 && (r?.skills.length ?? 0) > trained(w, s).length;
+        if (skill)
+            s.skillPicks = (s.skillPicks ?? 0) + 1;
         note(g, '{u} reached level {0}.', [String(s.level)], [], g.player.loc, 'goal');
-        out.push(`Level ${s.level}!${pendingSubclass(w, s) ? ' Choose your subclass on your character sheet.' : ''}${s.level % 4 === 0 ? ' You have 2 attribute points to spend.' : ''}${isCaster(w, s) ? ' You can learn a new spell.' : ''}`);
+        out.push(`Level ${s.level}!${pendingSubclass(w, s) ? ' Choose your subclass on your character sheet.' : ''}${pts ? ` You have ${pts} attribute point${pts === 1 ? '' : 's'} to spend.` : ''}${isCaster(w, s) ? ' You can learn a new spell.' : ''}${skill ? ' You can learn a new skill.' : ''}`);
     }
     out.push(...checkTitles(g, w));
     void why;
@@ -128,12 +209,22 @@ export function chooseSubclass(g, w, id) {
 }
 export function spendPoint(g, w, a) {
     const s = sheetOf(g);
-    if (!s || s.points <= 0 || attr(s, a) >= 20 || !rpgOf(w)?.attributes.some(x => x.id === a))
+    if (!s || s.points <= 0 || attr(s, a) >= attrCap(w) || !rpgOf(w)?.attributes.some(x => x.id === a))
         return false;
     const before = hpMax(w, s);
     s.attrs[a] = attr(s, a) + 1;
     s.points--;
     s.hp += Math.max(0, hpMax(w, s) - before);
+    return true;
+}
+export const attrCap = (w) => rpgOf(w)?.attrCap ?? 20;
+// A skill learned with a pick from levelling up (any skill of the RPG).
+export function learnSkill(g, w, id) {
+    const s = sheetOf(g);
+    if (!s || (s.skillPicks ?? 0) <= 0 || trained(w, s).includes(id) || !skillOf(w, id))
+        return false;
+    s.skills.push(id);
+    s.skillPicks = (s.skillPicks ?? 0) - 1;
     return true;
 }
 export function learnSpell(g, w, id) {
@@ -152,8 +243,20 @@ export function changeHp(g, w, delta) {
     const s = sheetOf(g);
     if (!s)
         return;
-    s.hp = Math.max(0, Math.min(hpMax(w, s), Math.round(s.hp + delta)));
+    const before = s.hp;
+    // a slow drain (starving: a fraction of a hit point an hour) adds up instead of rounding away
+    const raw = s.hp + delta + (s.carry ?? 0);
+    s.hp = Math.max(0, Math.min(hpMax(w, s), Math.round(raw)));
+    if (Math.abs(raw - s.hp) < 1)
+        s.carry = raw - s.hp;
+    else
+        delete s.carry;
+    if (!s.carry)
+        delete s.carry;
     syncLife(g, w);
+    if (s.hp < before)
+        for (const f of onHurt)
+            f(g, w);
 }
 export function syncLife(g, w) {
     const s = sheetOf(g);
@@ -164,11 +267,17 @@ export function syncLife(g, w) {
         g.player.stats[life.id] = Math.round((s.hp / hpMax(w, s)) * life.max);
 }
 // A long rest (a night's sleep, at home or at camp): hit points and focus back, spells can be prepared again.
+// When death is real, wounds heal slowly: a fifth of your hit points a night (half that at camp), and nothing
+// while you are starving or parched.
 export function longRest(g, w, share = 1) {
     const s = sheetOf(g);
     if (!s)
         return;
-    s.hp = Math.min(hpMax(w, s), s.hp + Math.ceil(hpMax(w, s) * share));
+    const starving = ['hunger', 'thirst'].some(id => w.statuses.some(x => x.id === id) && (g.player.stats[id] ?? 1) <= 0);
+    // the risen heal as the dead do: a ghost gathers itself again, the undead barely mend
+    const form = g.mortal?.form;
+    const hpShare = mortalOn(g, w) ? (form ? (form === 'undead' ? 0.1 : 0.2) : starving ? 0 : share < 1 ? 0.1 : 0.2) : share;
+    s.hp = Math.min(hpMax(w, s), s.hp + Math.ceil(hpMax(w, s) * hpShare));
     s.focus = Math.min(focusMax(w, s), s.focus + Math.ceil(focusMax(w, s) * share));
     s.prepOpen = true;
     syncLife(g, w);
@@ -241,7 +350,8 @@ export function sheetLine(g, w) {
     const sub = c?.subclasses.find(x => x.id === s.sub);
     const t = titleNames(w, s);
     const renown = s.renown >= 60 ? 'famous across the land' : s.renown >= 25 ? 'known in these parts' : s.renown >= 8 ? 'getting a name' : '';
-    return `{{user}} is a level ${s.level} ${sub ? `${sub.name} ` : ''}${c?.name.toLowerCase() ?? 'adventurer'}${t.length ? `, known as ${t.join(', ')}` : ''}${renown ? `; ${renown}` : ''}. Hit points ${s.hp}/${hpMax(w, s)}${s.hp <= hpMax(w, s) / 4 ? ' (badly hurt)' : ''}.`;
+    const sys = rpgOf(w)?.name;
+    return `${sys ? `RPG system: ${sys}. ` : ''}{{user}} is a level ${s.level} ${sub ? `${sub.name} ` : ''}${c?.name.toLowerCase() ?? 'adventurer'}${t.length ? `, known as ${t.join(', ')}` : ''}${renown ? `; ${renown}` : ''}. Hit points ${s.hp}/${hpMax(w, s)}${mortalOn(g, w) ? (bandOf(s.hp, hpMax(w, s)) === 'fine' ? '' : ` (${BAND_WORD[bandOf(s.hp, hpMax(w, s))]})`) : s.hp <= hpMax(w, s) / 4 ? ' (badly hurt)' : ''}.`;
 }
 void nowAbs;
 // a save of a world played as RPG that has no sheet yet gets one (with the first class), the first time it opens

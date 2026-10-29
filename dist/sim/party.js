@@ -8,7 +8,7 @@ import { onDay } from './hooks.js';
 import { social, bondOf } from './social.js';
 import { note } from './facts.js';
 import { book } from './ledger.js';
-import { isRpg, sheetOf } from './rpg.js';
+import { isRpg, sheetOf, mortalOn } from './rpg.js';
 export const MAX_FRIENDS = 3, MAX_MERCS = 2, JOIN_BOND = 40;
 const FOREVER = 10 ** 9;
 const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
@@ -119,8 +119,9 @@ onDay.push((g, w) => {
             out.push(`${m.merc.name} the sellsword leaves: you could not pay today.`);
         }
     }
-    for (const m of partyOf(g).members)
-        delete m.hp; // a night's rest heals their wounds
+    if (!mortalOn(g, w))
+        for (const m of partyOf(g).members)
+            delete m.hp; // a night's rest heals their wounds (when death is real, only some: sim/mortal.ts)
     for (const m of friends(g))
         follow(g, m.avatar);
     return out;

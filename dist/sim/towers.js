@@ -1,7 +1,7 @@
 import { systemOn } from '../core/world.js';
 import { rpgOf } from '../core/rpgdef.js';
 import { afterFight } from './hooks.js';
-import { isRpg, sheetOf } from './rpg.js';
+import { isRpg, sheetOf, tooHurt } from './rpg.js';
 import { startCombat, inCombat } from './combat.js';
 import { book } from './ledger.js';
 import { note } from './facts.js';
@@ -43,6 +43,11 @@ export function enterFloor(g, w, id, fromCheckpoint = false) {
         return `${t.name} is elsewhere.`;
     if (inCombat(g))
         return 'You are already fighting.';
+    {
+        const hurt = tooHurt(g, w);
+        if (hurt)
+            return hurt;
+    }
     const c = climbOf(g, id);
     if (fromCheckpoint)
         c.floor = c.checkpoint;

@@ -20,7 +20,7 @@ const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h = Math.imul(h, 16777619);
 } return h >>> 0; };
 // Outdoor places are the ones only for leisure (a park, a beach); a café or a mall has a roof.
-const outdoors = (w, id) => { const t = w.places.find(p => p.id === id)?.tags ?? []; return t.includes('leisure') && !t.some(x => ['food', 'shop', 'service', 'work', 'study'].includes(x)); };
+export const outdoors = (w, id) => { const t = w.places.find(p => p.id === id)?.tags ?? []; return t.includes('leisure') && !t.some(x => ['food', 'shop', 'service', 'work', 'study'].includes(x)); };
 // Her neighborhood: the map her home is on (the player's, for someone who lives with you).
 export const homeMapOf = (g, w, r) => {
     const h = r.homeWith === '__you' ? g.player.home : r.home;

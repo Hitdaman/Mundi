@@ -17,7 +17,9 @@ export function addOutfit(avatar, name) {
     return n;
 }
 export function removeOutfit(avatar, name) { store()[avatar] = savedOutfits(avatar).filter(x => x !== name); saveSettings(); }
-export const forgetOutfits = (avatar) => found.delete(avatar);
+export const forgetOutfits = (avatar) => { found.delete(avatar); for (const k of [...probed.keys()])
+    if (k.startsWith(`${avatar}|`))
+        probed.delete(k); };
 async function look(avatar) {
     found.set(avatar, null);
     const hits = [];

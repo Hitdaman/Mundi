@@ -14,3 +14,5 @@ export const closedByEvents = [];
 export const afterFight = [];
 // Every d20 check that is rolled (the screen can show the die).
 export const onRoll = [];
+// Hit points went down (RPG): falling unconscious or dying is handled where the rules of death live (sim/mortal.ts).
+export const onHurt = [];

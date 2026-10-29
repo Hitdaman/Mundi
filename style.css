@@ -1110,6 +1110,7 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-wc-life li.is-off { opacity: .7; }
 #mundi-root .mu-castmeter { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 8px 0; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 5%, transparent); }
 #mundi-root .mu-castmeter .is-too { color: #ff8f6b; } #mundi-root .mu-castmeter .is-works { color: #ffcf6b; } #mundi-root .mu-castmeter .is-pleasant, #mundi-root .mu-castmeter .is-lively { color: #7ddf8f; }
+#mundi-root .mu-ng-examples { display: grid; gap: 6px; margin: 8px 0 12px; }
 /* RPG: character sheet, quests, grimoire, the badge, creation */
 #mundi-root .mu-rpg-bar { display: block; height: 6px; border-radius: 99px; background: color-mix(in srgb, var(--text) 12%, transparent); overflow: hidden; margin: 2px 0 6px; }
 #mundi-root .mu-rpg-bar i { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
@@ -1324,6 +1325,58 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-outfits { display: grid; gap: 8px; margin: 4px 0 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .08); }
 #mundi-root .mu-outfits .mu-chip-wrap { display: inline-flex; align-items: center; }
 #mundi-root .mu-outfits .mu-chip-wrap .mu-ibtn { padding: 2px !important; min-width: 0; }
+/* Sprites drawn on ComfyUI (ui/spritegen.ts): the button or progress under a card shown in place of a sprite. */
+#mundi-root .mu-sprite .mu-sprgen { position: absolute; left: 50%; bottom: 36vh; transform: translate(-50%, calc(100% + 8px)); z-index: 3; pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: 13px; white-space: nowrap; background: color-mix(in srgb, var(--bg) 85%, transparent); border: 1px solid var(--line); color: var(--fg, #fff); box-shadow: var(--shadow); backdrop-filter: blur(6px); }
+#mundi-root .mu-sprite button.mu-sprgen { cursor: pointer; }
+#mundi-root .mu-sprite button.mu-sprgen:hover { border-color: var(--accent); }
+#mundi-root .mu-sprite .mu-sprgen.is-busy { opacity: .9; }
+#mundi-root .mu-sprite .mu-sprgen svg { width: 15px; height: 15px; }
+#mundi-root[data-layout="classic"] .mu-sprite .mu-sprgen { bottom: 20vh; }
+#mundi-root .mu-sprsheet { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; }
+#mundi-root .mu-sprsheet summary { cursor: pointer; font-weight: 600; }
+#mundi-root .mu-sprsheet textarea { width: 100%; font-family: inherit; font-size: 13px; }
+/* The Library's Expressions page: the look and the drawing buttons above the pictures. */
+#mundi-root .mu-sprlook { margin: 10px 0 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 8px; }
+#mundi-root .mu-sprlook h4 { margin: 0; }
+#mundi-root .mu-sprlook textarea { width: 100%; font-family: inherit; font-size: 13px; }
+#mundi-root .mu-sprlook .mu-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#mundi-root .mu-sprlook [aria-disabled="true"] { opacity: .5; }
+#mundi-root .mu-sprgen-state { margin: 0; display: flex; align-items: center; gap: 6px; color: var(--accent); }
+#mundi-root .mu-sprgen-state svg { width: 16px; height: 16px; }
+#mundi-root .mu-sprlabels { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 2px 10px; }
+#mundi-root .mu-sprlooks { display: flex; flex-wrap: wrap; gap: 6px; }
+/* The Library's "No sprites" filter. */
+#mundi-root .mu-lib-nospr { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
+/* The Gallery's sprites: whole figures, not cropped. */
+#mundi-root .mu-gal-sprites .mu-gal-char img { object-fit: contain; background: var(--bg); }
+#mundi-root .mu-photos.is-sprites .mu-photo { aspect-ratio: 2 / 3; background: var(--bg); }
+#mundi-root .mu-photos.is-sprites .mu-photo img, #mundi-root .mu-photos.is-sprites .mu-photo canvas { object-fit: contain; }
+/* Settings › Add-ons › Sprites › Scene looks: one rule per row (on/off, its words, the outfit or condition). */
+#mundi-root .mu-lookrule { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 4px 0; }
+#mundi-root .mu-lookrule .mu-check { flex: 1 1 260px; }
+#mundi-root .mu-lookrule input[type="text"] { flex: 1 1 140px; min-width: 0; }
+#mundi-root .mu-lookrule select { flex: 0 1 140px; }
+/* Settings › Add-ons › LoRAs */
+#mundi-root .mu-loras { display: grid; gap: 6px; margin: 6px 0; }
+#mundi-root .mu-lora { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; }
+#mundi-root .mu-lora.is-off { opacity: .6; }
+#mundi-root .mu-lora > .mu-check:first-child { flex: 1 1 220px; min-width: 0; }
+#mundi-root .mu-lora > .mu-check:first-child span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-lora-num { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+#mundi-root .mu-lora-num input { width: 70px; }
+#mundi-root .mu-lora-for { display: inline-flex; gap: 10px; }
+#mundi-root .mu-lora-add { gap: 6px; }
+#mundi-root .mu-lora-add input { flex: 1; min-width: 0; }
+/* The Stop button while Mundi draws on ComfyUI (outside #mundi-root: it shows in SillyTavern too) */
+#mundi-comfystop { position: fixed; z-index: 100001; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 10px; max-width: min(420px, calc(100vw - 32px)); padding: 8px 8px 8px 14px; border-radius: 999px; background: rgba(24, 26, 34, .94); color: #e8ecf4; border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 6px 24px rgba(0, 0, 0, .45); font: 13px/1.3 system-ui, sans-serif; animation: mu-cs-in .2s ease; }
+#mundi-comfystop .mu-cs-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-comfystop .mu-cs-spin { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .25); border-top-color: #8cc8ff; animation: mu-cs-spin .9s linear infinite; }
+#mundi-comfystop button { flex: none; margin: 0; padding: 6px 14px; border-radius: 999px; border: 0; background: #d9534f; color: #fff; font: 600 13px/1 system-ui, sans-serif; cursor: pointer; }
+#mundi-comfystop button:hover { background: #e2615d; }
+#mundi-comfystop button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@keyframes mu-cs-spin { to { transform: rotate(360deg); } }
+@keyframes mu-cs-in { from { opacity: 0; transform: translateY(6px); } }
+@media (max-width: 760px) { #mundi-comfystop { left: 16px; right: 16px; bottom: 12px; max-width: none; } }
 /* A scenario's floor plan: a blueprint (or the picture of the plan) with the rooms on it */
 #mundi-root .mu-map.is-plan { background: radial-gradient(ellipse at 50% 40%, #13233f 0%, #0a1426 70%); overflow: hidden; }
 #mundi-root .mu-plan-stage { position: absolute; inset: 120px 24px 96px; display: grid; place-items: center; }
@@ -1536,6 +1589,82 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-upd .mu-primary { padding: 7px 16px !important; }
 #mundi-root .mu-upd-link { font-size: 13px; color: inherit; opacity: .8; text-decoration: underline; }
 #mundi-root .mu-upd .mu-ibtn { margin: -4px -2px 0 0; }
+/* World creator, "From lorebooks": the wizard (lorebooks → reading → what to keep) */
+#mundi-root .mu-fromlore .mu-fl-resume { margin-bottom: 14px; }
+#mundi-root .mu-fromlore .mu-fl-buckets { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 16px; margin-bottom: 8px; }
+#mundi-root .mu-fromlore .mu-bar { height: 8px; border-radius: 4px; background: var(--bg2); overflow: hidden; margin: 10px 0; }
+#mundi-root .mu-fromlore .mu-bar > i { display: block; height: 100%; background: var(--accent); transition: width .4s ease; }
+#mundi-root .mu-fromlore .mu-fl-tabs { display: flex; flex-wrap: wrap; gap: 6px; flex-direction: row; margin: 10px 0; }
+#mundi-root .mu-fromlore .mu-fl-list { display: flex; flex-direction: column; gap: 4px; max-height: 55vh; overflow: auto; padding-right: 4px; }
+#mundi-root .mu-fromlore .mu-fl-row { display: grid; grid-template-columns: auto minmax(140px, 260px) 1fr; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); }
+#mundi-root .mu-fromlore .mu-fl-row.is-off { opacity: .45; }
+#mundi-root .mu-fromlore .mu-fl-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 640px) { #mundi-root .mu-fromlore .mu-fl-row { grid-template-columns: auto 1fr; } #mundi-root .mu-fromlore .mu-fl-row small { grid-column: 1 / -1; white-space: normal; } }
+/* World creator tabs: Redo from the lorebooks */
+#mundi-root .mu-fl-redo { align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+#mundi-root .mu-fl-redo small { flex: 1 1 260px; }
+/* Paint with ComfyUI (the world creator's Paint button) */
+#mundi-root .mu-paint { width: min(560px, 100%); }
+#mundi-root .mu-paint-opts { display: grid; gap: 6px; }
+#mundi-root .mu-paint-last { width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+#mundi-root .mu-paint-list { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow: auto; display: grid; gap: 2px; }
+#mundi-root .mu-paint-list li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 8px; border-radius: 6px; font-size: .92em; }
+#mundi-root .mu-paint-list li.is-busy { background: var(--bg2); }
+#mundi-root .mu-paint-list li.is-done { color: var(--good); }
+#mundi-root .mu-paint-list li.is-failed { color: var(--bad); }
+/* Character creation: long trait lists, "write your own", the skill budget and RPG systems. */
+#mundi-root .mu-traits .mu-chips { max-height: 10.5em; overflow-y: auto; padding-right: 2px; }
+#mundi-root .mu-trait-own { gap: 6px; margin-top: 6px; flex-wrap: nowrap; }
+#mundi-root .mu-trait-own input { flex: 1; min-width: 0; }
+#mundi-root .mu-skillchips .mu-chip small { margin-left: 4px; opacity: .6; font-size: .8em; }
+#mundi-root .mu-rpg-free { margin: 10px 0 4px; }
+#mundi-root .mu-sheet-skills .mu-sheet-learn { text-align: left; font: inherit; background: none; border: 1px dashed var(--accent); border-radius: 6px; padding: 1px 6px; color: inherit; cursor: pointer; }
+#mundi-root .mu-sheet-skills .mu-sheet-learn:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+#mundi-root .mu-system-card { position: relative; display: flex; }
+#mundi-root .mu-system-card > .mu-origin { flex: 1; width: 100%; }
+#mundi-root .mu-system-del { position: absolute; top: 6px; right: 6px; opacity: .6; }
+#mundi-root .mu-system-del:hover { opacity: 1; }
+#mundi-root .mu-system-lore { margin-top: 8px; }
+/* Places that open up as the story goes: locked pins, buildings with floors, gates, the floors and add-a-place dialogs */
+#mundi-root .mu-pin.is-locked .dot { width: 18px; height: 18px; display: grid; place-items: center; border-color: #ffb454; color: #ffb454; }
+#mundi-root .mu-pin.is-locked .dot .mu-ic, #mundi-root .mu-me-pin:not(.is-link) .dot .mu-ic { width: 10px; height: 10px; }
+#mundi-root .mu-me-pin:not(.is-link) .dot:has(.mu-ic) { display: grid; place-items: center; color: #ffb454; }
+#mundi-root .mu-pin.is-locked .label { opacity: .8; }
+#mundi-root .mu-pin.is-building .dot { border-radius: 4px; box-shadow: 0 0 0 2px rgba(0, 0, 0, .55), 3px -3px 0 -1px #10162a, 3px -3px 0 1px var(--accent); }
+#mundi-root .mu-pin.is-gate .dot { border-color: #b46cff; background: radial-gradient(circle, #e6ccff 0 20%, #7a3db8 60%, #1a0b2e 100%); animation: mu-gate-pulse 2.4s ease-in-out infinite; }
+@keyframes mu-gate-pulse { 50% { box-shadow: 0 0 0 2px rgba(0, 0, 0, .55), 0 0 14px #b46cff; } }
+#mundi-root .mu-pin .label em { margin-left: 6px; font-style: normal; font-weight: 600; opacity: .75; font-size: .9em; }
+#mundi-root .mu-pop .mu-lock { display: flex; align-items: center; gap: 6px; color: #ffcf9a; }
+#mundi-root .mu-pop .mu-lock .mu-ic { width: 12px; height: 12px; flex: none; }
+#mundi-root .mu-pop-floors { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 2px; }
+#mundi-root .mu-pop-floors li { display: flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 8px; background: rgba(255, 255, 255, .06); font-size: 12px; }
+#mundi-root .mu-pop-floors li.is-you { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+#mundi-root .mu-pop-floors li .mu-ic { width: 11px; height: 11px; color: #ffcf9a; }
+#mundi-root .mu-floors, #mundi-root .mu-addplace-body { overflow: auto; display: grid; align-content: start; gap: 6px; min-height: 0; }
+#mundi-root .mu-floor-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .08); }
+#mundi-root .mu-floor-row.is-you { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+#mundi-root .mu-floor-row.is-locked { opacity: .85; }
+#mundi-root .mu-floor-row > em { font-style: normal; font-weight: 800; font-size: 12px; opacity: .8; }
+#mundi-root .mu-floor-row > span { display: grid; gap: 2px; min-width: 0; }
+#mundi-root .mu-floor-row small { opacity: .75; display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; }
+#mundi-root .mu-floor-row small .mu-ic { width: 11px; height: 11px; flex: none; color: #ffcf9a; }
+#mundi-root .mu-floor-row .faces { display: flex; }
+#mundi-root .mu-floor-row .faces img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); margin-left: -6px; }
+#mundi-root .mu-floor-row .faces i { font-size: 11px; margin-left: 4px; font-style: normal; }
+#mundi-root .mu-addplace-body details summary { cursor: pointer; font-weight: 700; margin: 6px 0; }
+@media (max-width: 560px) { #mundi-root .mu-floor-row { grid-template-columns: 58px minmax(0, 1fr) auto; } #mundi-root .mu-floor-row .faces { display: none; } }
+/* Mundify: the mark on mundified copies (list, grid, card), the "Mundified" filter and the card's Mundify strip. */
+#mundi-root { --mfy: #b48cff; }
+#mundi-root .mu-lib-item .mu-mfymark { display: grid; margin-left: auto; color: var(--mfy); }
+#mundi-root .mu-lib-item .mu-mfymark + .mu-crownmark, #mundi-root .mu-lib-item .mu-mfymark + .mu-fav { margin-left: 4px; }
+#mundi-root .mu-lib-item .mu-mfymark .mu-ic { width: 15px; height: 15px; }
+#mundi-root .mu-lib-list.is-grid .mu-mfymark { position: absolute; top: 12px; left: 12px; margin: 0; padding: 4px; border-radius: 50%; background: var(--panel); }
+#mundi-root .mu-mfybtn.is-on { color: var(--mfy); border-color: var(--mfy); }
+#mundi-root .mu-tag.is-mfy { background: color-mix(in srgb, var(--mfy) 22%, transparent); border-color: color-mix(in srgb, var(--mfy) 60%, transparent); }
+#mundi-root .mu-mfy .mu-row { flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+#mundi-root .mu-mfy small .mu-ic { width: 13px; height: 13px; vertical-align: -2px; color: var(--mfy); }
+#mundi-root .mu-mfy small button { display: inline-flex; padding: 0 6px; min-height: 0; vertical-align: baseline; }
+#mundi-root .mu-lib-list.is-grid .mu-pick ~ .mu-mfymark { top: 44px; }
 /* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
    Colors come from these variables; corners are moderately rounded. */
 #mundi-root {
@@ -1897,6 +2026,16 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mh-invite > img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: top; }
 #mundi-root .mh-invite p { margin: 2px 0 0; font-size: 13px; color: var(--hud-muted); }
 #mundi-root .mh-invite-btns { grid-column: 1 / -1; display: flex; gap: 8px; }
+/* people from the story: the offer card and the list (ui/storypeople.ts) */
+#mundi-root .mu-np-face { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 22px; color: #fff; background: linear-gradient(135deg, #f59e0b, #7c3aed); }
+#mundi-root .mh-invite.is-newcomer small { color: var(--hud-muted); }
+#mundi-root .mu-np-name { width: 100%; margin-top: 8px; }
+#mundi-root .mu-np-list .mu-np-rows { overflow: auto; display: grid; gap: 8px; align-content: start; }
+#mundi-root .mu-np-row { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: start; padding: 10px; border-radius: 14px; background: color-mix(in srgb, var(--text) 5%, transparent); }
+#mundi-root .mu-np-row .mu-np-face { width: 44px; height: 44px; font-size: 16px; }
+#mundi-root .mu-np-row p { margin: 3px 0 0; font-size: 13px; }
+#mundi-root .mu-np-row small { display: block; }
+#mundi-root .mu-np-row.is-never, #mundi-root .mu-np-row.is-added { opacity: .65; }
 #mundi-root .mh-modal-veil { position: absolute; inset: 0; z-index: 35; display: grid; place-items: center; background: rgba(0, 0, 0, .35); }
 #mundi-root .mh-elev { width: 240px; padding: 16px; border-radius: 24px; display: grid; gap: 10px; justify-items: center; text-align: center; }
 #mundi-root .mh-elev header { display: flex; align-items: center; gap: 8px; }
@@ -3928,6 +4067,25 @@ body.mundi-open #completion_prompt_manager_popup {
    can make the click land outside it, like on the gallery's arrows). */
 @keyframes mu-press { 0% { filter: brightness(1); } 35% { filter: brightness(1.32); } 100% { filter: brightness(1); } }
 #mundi-root button:active:not(:disabled):not([aria-disabled="true"]) { animation: mu-press .28s ease-out; }
+/* Death (RPG, death being real): the screen when it is over, and a dead fighter on the fight screen. */
+#mundi-root .mu-death-veil { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 16px; background: radial-gradient(ellipse at center, rgba(40, 6, 10, .88), rgba(0, 0, 0, .96)); animation: mu-fade 1.2s; }
+#mundi-root .mu-death { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; display: grid; gap: 12px; text-align: center; color: #eadfdc; }
+#mundi-root .mu-death h2 { margin: 0; font-size: clamp(34px, 8vw, 56px); letter-spacing: 6px; text-transform: uppercase; color: #c9343d; text-shadow: 0 0 24px rgba(201, 52, 61, .45); }
+#mundi-root .mu-death-when { margin: 0; font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; opacity: .7; }
+#mundi-root .mu-death-text { margin: 4px 0; line-height: 1.55; font-size: 15px; }
+#mundi-root .mu-death-graves { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .05); }
+#mundi-root .mu-death-graves h4 { margin: 0 0 2px; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; opacity: .7; }
+#mundi-root .mu-death-graves small { opacity: .65; }
+#mundi-root .mu-death-btns { display: grid; gap: 8px; margin-top: 6px; }
+#mundi-root .mu-death-btns button { display: grid; gap: 2px; padding: 12px 14px; text-align: left; border-radius: 12px; }
+#mundi-root .mu-death-btns button small { font-weight: 400; opacity: .75; }
+#mundi-root .mu-pkb-sprite.is-dead { filter: grayscale(1) brightness(.45); opacity: .25; transform: rotate(-90deg) translateY(20%); }
+#mundi-root .mu-death-heirs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin: 14px 0; }
+#mundi-root .mu-death-heirs button { display: grid; justify-items: center; gap: 4px; padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05); color: inherit; cursor: pointer; }
+#mundi-root .mu-death-heirs button:hover { border-color: rgba(255, 200, 200, .45); background: rgba(255, 255, 255, .09); }
+#mundi-root .mu-death-heirs img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-death-heirs small { opacity: .7; font-size: 11px; }
+#mundi-root .mu-death-rise { border-color: rgba(170, 190, 255, .55) !important; background: linear-gradient(180deg, rgba(120, 140, 220, .28), rgba(40, 50, 90, .35)) !important; }
 /* The "Advanced" switch at the top of This world / This Home (and Needs): a switch in a pill, easy to see. */
 #mundi-root .mu-switch-row { padding: 6px 8px 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .5); box-shadow: 0 2px 8px rgba(0, 0, 0, .18); transition: background .2s; }
 #mundi-root .mu-switch-row:hover { background: rgba(255, 255, 255, .3); }
