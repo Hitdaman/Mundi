@@ -22,6 +22,7 @@ export interface MapDef {
     mood?: number; tension?: number; prices?: number; crowd?: number; ownWeather?: boolean;
     /** The map's picture for some parts of the day (period id → picture). */
     images?: Record<string, string>;
+    geo?: { lon: number; lat: number; w: number };   // a real place on Earth: its middle and width in degrees (worldgeo.ts)
 }
 export interface Place {
     id: string; name: string; map: string; x: number; y: number;
