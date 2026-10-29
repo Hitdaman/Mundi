@@ -11,7 +11,10 @@
 // nodes titled "… on/off" or "(on, else …)" (each an on/off option here: off takes the switch's first input away).
 // Each picture is its own small job: ComfyUI keeps the body it already drew, so the next expression is only a face
 // pass. An expression the workflow has no node for is drawn through its neutral face pass with that label's tags.
-// Only the nodes a picture needs are sent, so other parts of the workflow (a CG section, a base frame) never run.
+// Only the nodes a picture needs are sent, so other parts of the workflow (a base frame) never run.
+// A CG section ("Position N (…)" nodes as "name: tags", gathered in a list node, and a "Save CG" node) is drawn
+// too, one picture per position, into the person's "cg" subfolder (not an outfit: the scene never wears it). It
+// uses the look's appearance and usual outfit (for the face) and the same seed. Never for a minor or a child's look.
 // A "State" node (its tags joined after the outfit's) draws a condition on an outfit (wet, muddy, hurt…): the scene's
 // looks (sim/looks.ts) ask for a variant folder ("swimsuit+wet") when the story or the weather calls for one. A
 // workflow without it gets the condition's tags added to the outfit's instead.
@@ -19,6 +22,7 @@ import { settings, saveSettings, notify, state, toast, esc, game } from '../core
 import { ctx, charOf, fetchSprites, uploadSprite, fullCharacter, setCharacterImage, quiet, expressionLabels, personas, personaName, outfitOf, wearOutfit } from '../st/bridge.js';
 import { addOutfit, forgetOutfits, savedOutfits, outfitsOf, hasOutfit } from './outfits.js';
 import { lookPrefs, stateTags, stateNames, matchOutfit, RULE_LABELS, STATES, type LookDeps } from '../sim/looks.js';
+import { isMinor } from '../sim/family.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
 
@@ -28,6 +32,8 @@ interface Prefs {
     mode: Mode; workflow: string; url: string; outfits: string[] | null; off: string[]; avatar: boolean; sheets: Record<string, Sheet>;
     /** which expressions: the workflow's own, all of SillyTavern's, or a list of labels */
     labels: 'workflow' | 'all' | string[]; tags: Record<string, string>; expressions?: string[] | null;
+    /** CG pictures: drawn with "Draw all" too, and the positions turned off */
+    cg: boolean; cgOff: string[];
 }
 
 export const sprPrefs = (): Prefs => {
@@ -35,6 +41,7 @@ export const sprPrefs = (): Prefs => {
     const p = (s.sprites ??= {}) as Prefs;
     p.mode ??= 'ask'; p.workflow ??= 'Character.modular.workflow.json'; p.url ??= '';
     p.outfits ??= null; p.off ??= []; p.avatar ??= true; p.sheets ??= {}; p.tags ??= {};
+    p.cg ??= true; p.cgOff ??= [];
     if (p.labels === undefined) { p.labels = Array.isArray(p.expressions) ? p.expressions.map(labelOf) : 'workflow'; delete p.expressions; }
     return p;
 };
@@ -107,7 +114,11 @@ export async function workflowList(): Promise<string[]> {
 
 // What a workflow offers, read from its titles.
 interface Expr { name: string; label: string; node: string; save: string }
-interface Parts { appearance: string[]; outfits: { id: string; name: string; tags: string }[]; list: string | null; seed: string | null; expr: Expr[]; folder: string | null; switches: { id: string; name: string }[]; state: string | null }
+interface Parts {
+    appearance: string[]; outfits: { id: string; name: string; tags: string }[]; list: string | null; seed: string | null; expr: Expr[]; folder: string | null; switches: { id: string; name: string }[]; state: string | null;
+    /** the CG section: its positions, their list node, its Save node and its file prefix node */
+    cg: { positions: { id: string; name: string; tags: string }[]; list: string | null; save: string; prefix: string | null } | null;
+}
 const splitOutfit = (v: string) => { const m = String(v ?? '').match(/^\s*([^:\n]+?)\s*:\s*([\s\S]*)$/); return m ? { name: m[1], tags: m[2].trim() } : { name: '', tags: String(v ?? '').trim() }; };
 const numIn = (s: string) => Number(s.match(/\d+/)?.[0] ?? 0);
 function partsOf(g: Graph): Parts {
@@ -118,6 +129,12 @@ function partsOf(g: Graph): Parts {
         .map((o, k) => ({ ...o, name: o.name || (k ? `outfit${k + 1}` : 'default') }));
     const oset = new Set(outfits.map(o => o.id));
     const list = ids.find(id => Object.values(g[id].inputs ?? {}).some(v => isLink(v) && oset.has(v[0]))) ?? null;
+    const positions = ids.filter(id => /^position\s*\d+/i.test(titleOf(g, id)) && typeof g[id].inputs?.value === 'string')
+        .sort((a, b) => numIn(titleOf(g, a)) - numIn(titleOf(g, b)))
+        .map(id => ({ id, ...splitOutfit(g[id].inputs.value) }))
+        .map((o, k) => ({ ...o, name: (o.name || `position${k + 1}`).replace(/[\\/:*?"<>|]+/g, '') }));
+    const pset = new Set(positions.map(o => o.id));
+    const cgSave = ids.find(id => /^save\s*cg/i.test(titleOf(g, id).trim()));
     const saves = new Map(ids.filter(id => /^save:\s*/i.test(titleOf(g, id))).map(id => [titleOf(g, id).replace(/^save:\s*/i, '').trim().toLowerCase(), id]));
     const expr = ids.filter(id => /^expression\s*\d+\s*:/i.test(titleOf(g, id)) && typeof g[id].inputs?.value === 'string')
         .sort((a, b) => numIn(titleOf(g, a)) - numIn(titleOf(g, b)))
@@ -133,6 +150,11 @@ function partsOf(g: Graph): Parts {
         state: ids.find(id => /^state$/i.test(titleOf(g, id).trim()) && typeof g[id].inputs?.value === 'string') ?? null,
         switches: ids.filter(id => /any switch/i.test(g[id].class_type) && /on\/off|\(on, else/i.test(titleOf(g, id)) && isLink(g[id].inputs?.any_01))
             .map(id => ({ id, name: titleOf(g, id).replace(/\s*\(.*$/, '').replace(/\s*on\/off.*$/i, '').trim() })),
+        cg: positions.length && cgSave ? {
+            positions, save: cgSave,
+            list: ids.find(id => Object.values(g[id].inputs ?? {}).some(v => isLink(v) && pset.has(v[0]))) ?? null,
+            prefix: ids.find(id => /^cg file prefix$/i.test(titleOf(g, id).trim())) ?? null,
+        } : null,
     };
 }
 // The labels to draw: the workflow's own, all of SillyTavern's, or the ones picked.
@@ -177,6 +199,32 @@ function job(base: Graph, p: Parts, sheet: Sheet, outfit: number, label: string,
         e = via;
     }
     return { graph: prune(g, [e.save]), save: e.save };
+}
+
+// One CG picture: one position, with the look's appearance, its usual outfit (the CG face pass uses it) and seed.
+function cgJob(base: Graph, p: Parts, sheet: Sheet, pos: number): { graph: Graph; save: string } {
+    const cg = p.cg!; const g = structuredClone(base);
+    for (const id of p.appearance) g[id].inputs.value = sheet.appearance;
+    if (p.seed) g[p.seed].inputs.seed = sheet.seed;
+    const slot = p.outfits[0], o = sheet.outfits[0];
+    if (slot && o) g[slot.id].inputs.value = `${o.name}: ${o.tags}`;
+    const one = cg.positions[pos];
+    if (cg.list) { const l = g[cg.list]; for (const k of Object.keys(l.inputs)) if (isLink(l.inputs[k])) delete l.inputs[k]; l.inputs.value1 = [one.id, 0]; }
+    if (cg.prefix) { const f = g[cg.prefix].inputs; const key = Object.keys(f).find(k => typeof f[k] === 'string'); if (key) f[key] = `Mundi/${sheet.name.replace(/[^\p{L}\p{N}_-]+/gu, '_')}/cg/`; }
+    for (const s of p.switches) if (sprPrefs().off.includes(s.name)) delete g[s.id].inputs.any_01;
+    return { graph: prune(g, [cg.save]), save: cg.save };
+}
+export const CG_FOLDER = 'cg';
+// Tags that mean a child: no CG for a look that has them.
+const CHILD = /(^|[\s,(])(loli|shota|child|kid|toddler|baby|infant|preteen|underage|minor|aged_down|elementary_school|middle_school|young_(girl|boy)|little_(girl|boy))($|[\s,):])/i;
+// Why there can be no CG of this person ('' when there can): a child of yours not grown up yet, or a look with a
+// child's tags.
+export function cgBlocked(k: string): string {
+    const g = game();
+    if (g && !personaOf(k) && isMinor(g, k)) return `${nameOf(k)} is a minor`;
+    const s = sprPrefs().sheets[k];
+    if (s && CHILD.test(s.appearance.replace(/\s*,\s*/g, ',').replace(/\s+/g, '_'))) return `${nameOf(k)}'s look has a child's tags`;
+    return '';
 }
 
 export async function runJob(graph: Graph, onStep?: () => void): Promise<Record<string, Blob>> {
@@ -255,7 +303,7 @@ Answer with one line of comma-separated tags for the clothes only (garments, col
 /* ---------- the queue ---------- */
 
 // What to draw: some outfits (indexes in the look; all the chosen ones when left out) and labels, or only the missing.
-interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: boolean; lookOnly?: boolean; variant?: Variant }
+interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: boolean; lookOnly?: boolean; variant?: Variant; cg?: 'only' | 'also' }
 // A look the scene asked for: an outfit by name ('' the usual one) with a condition or none, saved in `folder`.
 interface Variant { outfit: string; state: string; folder: string }
 // Session only: who is waiting, being drawn, done or skipped (a failure is not tried again until asked).
@@ -309,7 +357,8 @@ async function pump() {
         const n = await draw(o);
         S.status.set(o.who, (await fetchSprites(o.who, '')).length ? 'has' : 'none');
         if (o.variant) { if (n && o.labels) toast(`${name}: new look drawn (${o.variant.folder.replace(/[_]+/g, ' ')}).`, 'success'); }
-        else if (!o.lookOnly) toast(n ? `${name}: ${n === 1 ? '1 sprite' : `${n} sprites`} drawn.` : `${name} has every sprite already.`, 'success');
+        else if (o.cg === 'only') toast(n ? `${name}: ${n === 1 ? '1 CG picture' : `${n} CG pictures`} drawn.` : `${name} has every CG picture already.`, 'success');
+        else if (!o.lookOnly) toast(n ? `${name}: ${n === 1 ? '1 picture' : `${n} pictures`} drawn.` : `${name} has every sprite already.`, 'success');
     } catch (e: any) {
         // a look that failed leaves their own sprites as they were
         S.status.set(o.who, o.variant && (await fetchSprites(o.who, '').catch(() => [])).length ? 'has' : 'failed');
@@ -336,6 +385,7 @@ async function draw(o: Order): Promise<number> {
     saveSettings();
     if (o.lookOnly) return 0;
     if (o.variant) return drawVariant(o, o.variant, base, p, sheet);
+    if (o.cg === 'only') return drawCg(o, base, p, sheet);
     const labels = o.labels ?? labelsFor(p);
     const outfits = o.outfits ?? sheet.outfits.map((x, i) => i).filter(i => i === 0 || !prefs.outfits || prefs.outfits.includes(sheet.outfits[i].name));
     // the pictures to make, the first outfit's neutral one first so they show up quickly
@@ -360,6 +410,29 @@ async function draw(o: Order): Promise<number> {
         refreshed(o.who);
     }
     sheet.drawn = Date.now(); saveSettings();
+    // "Draw all" (nothing picked) also draws the CG pictures, when the workflow has them and Settings allow it
+    const all = !o.labels && !o.outfits && !o.missing;
+    if ((o.cg === 'also' || (all && prefs.cg)) && p.cg && !cgBlocked(o.who)) done += await drawCg(o, base, p, sheet, done);
+    return done;
+}
+
+// The CG pictures: every position turned on (or only the missing ones), saved in the person's "cg" folder.
+async function drawCg(o: Order, base: Graph, p: Parts, sheet: Sheet, before = 0): Promise<number> {
+    if (!p.cg) throw new Error('the workflow has no CG section ("Position N (…)" nodes and a "Save CG" node).');
+    const why = cgBlocked(o.who); if (why) throw new Error(`no CG pictures: ${why}.`);
+    let todo = p.cg.positions.map((x, i) => i).filter(i => !sprPrefs().cgOff.includes(p.cg!.positions[i].name));
+    if (o.missing) { const have = new Set((await fetchSprites(o.who, CG_FOLDER)).map(s => String(s.label))); todo = todo.filter(i => !have.has(p.cg!.positions[i].name)); }
+    let done = 0;
+    for (const i of todo) {
+        const pos = p.cg.positions[i].name;
+        S.step = `${before + done}/${before + todo.length}`; S.now = `CG · ${pos}`; notify();
+        const { graph, save } = cgJob(base, p, sheet, i);
+        const png = (await runJob(graph))[save];
+        if (!png) throw new Error('ComfyUI gave no picture.');
+        await uploadSprite(o.who, pos, png, pos, CG_FOLDER);
+        done++;
+        refreshed(o.who);
+    }
     return done;
 }
 
@@ -480,8 +553,20 @@ export function spriteLookHtml(k: string, outfit: string): string {
             ${oi >= 0 ? `${b('spr-draw-missing', 'Draw missing', 'mu-primary')}${b('spr-draw-outfit', 'Redraw this outfit')}` : ''}
             ${b('spr-draw-all', 'Redraw everything')}${b('spr-newface', 'New face', 'mu-ghost')}
             <small class="mu-muted">Seed ${s.seed} · the same seed keeps the same face</small></div>
+        ${cgRow(k, busy)}
         ${s.outfits.length > 1 ? `<small class="mu-muted">Outfits in this look: ${s.outfits.map((o, i) => `<span data-notr>${esc(o.name)}</span>${i === 0 ? ' (usual)' : ''}`).join(', ')}. Pick one above to see and edit it.</small>` : ''}
         ${state1}</section>`;
+}
+// The CG pictures of a look: draw them all or the missing ones (when the workflow has a CG section).
+function cgRow(k: string, busy: boolean): string {
+    readWorkflow();
+    const n = WF.parts?.cg?.positions.filter(x => !sprPrefs().cgOff.includes(x.name)).length ?? 0;
+    if (!n) return '';
+    const why = cgBlocked(k);
+    if (why) return `<small class="mu-muted">No CG pictures: ${esc(why)}.</small>`;
+    const b = (act: string, label: string, cls = '') => `<button class="${cls}" data-act="${act}" data-who="${esc(k)}" ${busy ? 'aria-disabled="true"' : ''}>${label}</button>`;
+    return `<div class="mu-row">${b('spr-draw-cg-missing', `Draw missing CG`, 'mu-primary')}${b('spr-draw-cg', `Redraw CG (${n})`)}
+        <small class="mu-muted">CG pictures go in their “${CG_FOLDER}” folder and show in the Gallery${sprPrefs().cg ? ', and “Draw all” draws them too' : ''}.</small></div>`;
 }
 // The button on one expression's tile.
 export function spriteTileButton(k: string, label: string, outfit: string): string {
@@ -497,6 +582,11 @@ export async function spritePhotos(k: string): Promise<{ url: string; caption: s
     const lists = await Promise.all(outs.map(o => fetchSprites(k, o).then(l => l.map(x => ({ url: String(x.path), caption: `${o || 'usual'} · ${x.label}`, label: String(x.label) })))));
     // in each outfit, neutral first
     return lists.flatMap(l => l.sort((a, b) => Number(b.label === 'neutral') - Number(a.label === 'neutral'))).map(({ url, caption }) => ({ url, caption }));
+}
+// The CG pictures of a character or persona, for the Gallery (an album of their own).
+export async function spriteCgPhotos(k: string): Promise<{ url: string; caption: string }[]> {
+    if (!sprPrefs().sheets[k]) return [];
+    return (await fetchSprites(k, CG_FOLDER)).map(x => ({ url: String(x.path), caption: `CG · ${x.label}` }));
 }
 export const lookedKeys = () => Object.keys(sprPrefs().sheets);
 
@@ -530,6 +620,9 @@ export function spritesSettingsHtml(): string {
                 <p class="mu-muted">Drawn through the workflow's neutral face pass with these tags instead. One per line, as “label: tags”.</p>
                 <textarea rows="10" data-input="spr-tags">${esc(others.map(l => `${l}: ${tagsFor(l)}`).join('\n'))}</textarea></details>` : ''}
             ${parts.outfits.length > 1 ? `<div class="mu-field"><span>Outfits (the first is always drawn)</span>${parts.outfits.slice(1).map(o => chk('spr-outfits', o.name, !p.outfits || p.outfits.includes(o.name), o.name)).join('')}</div>` : ''}
+            ${parts.cg ? `<div class="mu-field"><span>CG pictures (the workflow's CG section, one per position; never for a minor or a child's look)</span>
+                ${chk('spr-cg', '', p.cg, '"Draw all" draws them too')}
+                ${parts.cg.positions.map(x => chk('spr-cgpos', x.name, !p.cgOff.includes(x.name), x.name)).join('')}</div>` : ''}
             ${parts.switches.length ? `<div class="mu-field"><span>Workflow options</span>${parts.switches.map(s => chk('spr-switch', s.name, !p.off.includes(s.name), s.name)).join('')}</div>` : ''}`
             : `<p class="mu-muted">${WF.for ? 'Reading the workflow… (if this stays, the file is missing or not in API format)' : ''}</p>`}
         <label class="mu-check"><input type="checkbox" data-input="spr-avatar" ${p.avatar ? 'checked' : ''}><span>Give the world's people a card picture from their sprite<small>Only the people a world made (they start with an initials picture), once.</small></span></label>
@@ -574,6 +667,8 @@ Object.assign(ACT, {
     'spr-draw-outfit': (el) => enqueue(orderOf(el, { outfits: oneOutfit(el) })),
     'spr-draw-one': (el) => enqueue(orderOf(el, { outfits: oneOutfit(el), labels: [el.dataset.l!] })),
     'spr-look': (el) => enqueue(orderOf(el, { lookOnly: true })),
+    'spr-draw-cg': (el) => enqueue(orderOf(el, { cg: 'only' })),
+    'spr-draw-cg-missing': (el) => enqueue(orderOf(el, { cg: 'only', missing: true })),
     'spr-newface': (el) => { const s = sprPrefs().sheets[el.dataset.who!]; if (s) { s.seed = newSeed(); saveSettings(); } enqueue(orderOf(el)); },
     'spr-open': async (el) => { const m = await import('./library.js'); m.openExpressions(el.dataset.who!); },
 });
@@ -625,6 +720,8 @@ Object.assign(INPUT, {
         saveSettings();
     },
     'spr-outfits': (el) => { const all = WF.parts?.outfits.slice(1).map(o => o.name) ?? []; sprPrefs().outfits = toggle(sprPrefs().outfits, all, el.dataset.v!, el.checked); saveSettings(); },
+    'spr-cg': (el) => { sprPrefs().cg = el.checked; saveSettings(); notify(); },
+    'spr-cgpos': (el) => { const p = sprPrefs(); p.cgOff = el.checked ? p.cgOff.filter(x => x !== el.dataset.v) : [...new Set([...p.cgOff, el.dataset.v!])]; saveSettings(); notify(); },
     'spr-switch': (el) => { const p = sprPrefs(); p.off = el.checked ? p.off.filter(x => x !== el.dataset.v) : [...new Set([...p.off, el.dataset.v!])]; saveSettings(); },
     'spr-sheet': (el) => {
         const s = sprPrefs().sheets[el.dataset.who!]; if (!s) return;
