@@ -322,10 +322,10 @@ export const BUILT_IN = ['modern', 'urban', 'medieval', 'house', 'manor'];
 export type GameMode = 'lifesim' | 'rpg' | 'custom';
 // The RPG mode waits for a later update: while this is on, nothing of it can be chosen, made or played. Worlds made
 // for it are shown locked, any other world plays as Life-Sim, and its systems stay off. Turn it off to bring it back.
-export const RPG_LOCKED: boolean = !(globalThis as any).__MUNDI_RPG;   // the tests turn it on (tests/env.mjs)
+export const RPG_LOCKED: boolean = (globalThis as any).__MUNDI_RPG === false;   // unlocked on the unlock-medieval-rpg branch
 export const RPG_NOTE = 'The RPG mode comes in a later update.';
 // The medieval style is locked for this release too: its worlds show "Soon" and it cannot be picked in the creator.
-export const MEDIEVAL_LOCKED: boolean = !(globalThis as any).__MUNDI_MEDIEVAL;   // the tests turn it on (tests/env.mjs)
+export const MEDIEVAL_LOCKED: boolean = (globalThis as any).__MUNDI_MEDIEVAL === false;   // unlocked on the unlock-medieval-rpg branch
 export const GAME_MODES: { id: GameMode; name: string; desc: string; soon?: boolean }[] = [
     { id: 'lifesim', name: 'Life-Sim', desc: 'Daily life: work, home and bills, friends and love. Needs: energy, hunger, thirst, mood and hygiene.' },
     { id: 'rpg', soon: RPG_LOCKED, name: 'RPG', desc: 'Life-Sim plus a character sheet: level, hit points, focus, attributes, a class and subclass, d20 checks, quests, titles, magic and long journeys. Needs the world\'s RPG (RPG tab).' },
