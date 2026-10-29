@@ -49,7 +49,7 @@ function freshHero(w: WorldDef): Hero {
 export function startWizard() {
     resetPick('cast'); resetPick('scen');
     const w = getWorld('modern') ?? worlds()[0];
-    state.wizard = { mode: null as null | 'scenario' | 'world', sq: '', pick: '', step: 'world' as Step, world: w.id, examples: false, cast: [] as string[], q: '', hero: freshHero(w), portraitUrl: '' };
+    state.wizard = { mode: null as null | 'scenario' | 'world', sq: '', pick: '', step: 'world' as Step, world: w.id, examples: false, exDraw: false, cast: [] as string[], q: '', hero: freshHero(w), portraitUrl: '' };
     setWorldDicts(w.id, w.i18n ?? {});
     state.view = 'newgame';
     notify();
@@ -139,6 +139,7 @@ function stepCast() {
         <p class="mu-muted">Pick cards from your SillyTavern to live in this world. Mundi gives each one a home, a routine and a job; the cards themselves are not changed.</p>
         ${presetChipsHtml()}
         ${castMeter()}
+        ${examplesHtml()}
         ${charPicker({ key: 'cast', list: castList(), selected: wz.cast, act: 'ng-cast', multi: true, selectAllAct: 'ng-cast-all', placeholder: 'Search your characters' })}`;
 }
 
@@ -246,6 +247,22 @@ function castMeter() {
     const c = castLevel(n, playMode());
     const cls = c.level === 'too few' ? 'is-too' : `is-${c.level}`;
     return `<div class="mu-castmeter"><b class="${cls}">${n} ${n === 1 ? 'person' : 'people'} · ${esc(c.level)}</b><small class="mu-muted">${esc(c.tip)} Neighbors need ${NEIGHBORS_MIN} people living in your area.</small></div>`;
+}
+
+// The world's own people (written with the world, or read from its lorebooks): Mundi makes their cards when the game
+// starts, and can draw their sprites with ComfyUI (their card picture then comes from their first sprite).
+function examplesHtml() {
+    const wz = state.wizard, w = W(), ex = w.cast.examples;
+    if (!ex.length) return '';
+    const spriteAvatar = (settings() as any).sprites?.avatar !== false;
+    const had = ex.filter(e => characters().some(c => c.data?.extensions?.mundi?.example === exampleTag(w, e))).length;
+    const names = ex.slice(0, 8).map(e => e.name).join(', ') + (ex.length > 8 ? ` and ${ex.length - 8} more` : '');
+    const made = had === ex.length ? 'They all have a card from an earlier game, which is used again.'
+        : `Mundi makes a card for ${had ? `the ${ex.length - had} without one` : 'each of them'} when the game starts${had ? ' (the others have one from an earlier game)' : ''}, with an initials picture.`;
+    return `<div class="mu-ng-examples">
+        <label class="mu-check"><input type="checkbox" data-input="ng-examples" ${wz.examples ? 'checked' : ''}><span>Add this world's own people (${ex.length})<small><span data-notr>${esc(names)}</span>. ${made}</small></span></label>
+        ${wz.examples ? `<label class="mu-check"><input type="checkbox" data-input="ng-ex-draw" ${wz.exDraw ? 'checked' : ''}><span>Draw their pictures and sprites with ComfyUI<small>One at a time in the background once the game starts: everyone's neutral sprite first${spriteAvatar ? ', which also becomes their card picture' : ''}, then their other expressions. Uses the workflow and server set in Settings, Sprites.${spriteAvatar ? '' : ' Their card pictures stay the initials ones: "Give the world\'s people a card picture from their sprite" is off there.'}</small></span></label>` : ''}
+    </div>`;
 }
 
 // Your character: one you already have (a SillyTavern persona) or a new one.
@@ -575,12 +592,18 @@ Object.assign(ACT, {
     },
     'ng-portrait-clear': () => { state.wizard.hero.portrait = null; state.wizard.portraitUrl = ''; notify(); },
     'ng-start': async () => {
-        const wz = state.wizard;
+        const wz = state.wizard, w = W();
         try {
             await startNewGame({ world: W(), cast: wz.cast, examples: wz.examples, hero: { ...wz.hero, name: wz.hero.name.trim() }, persona: wz.heroMode === 'existing' ? wz.persona : undefined, lore: chosenLore(),
                 households: (wz.hh ?? []).filter((h: any) => h.members.length), family: wz.family ?? [], home: wz.home ?? undefined, difficulty: wz.difficulty ?? 'normal',
                 approval: wz.approval ?? undefined, ties: (wz.rels ?? []).filter((t: any) => t.a !== t.b), mode: rpgOf(W()) ? playMode() as any : undefined, rpg: rpgState()?.s, rpgDef: rpgState() ? chosenDef() : undefined, memoriesFrom: wz.memories || undefined, jobs: wz.jobs ?? undefined, rooms: isScenario(W()) ? roomsOf() : undefined, extraRooms: isScenario(W()) ? extraOf() : undefined, roomActs: isScenario(W()) ? wz.roomActs : undefined, start: isScenario(W()) ? { id: startOf().id, text: startOf().text } : undefined });
             state.wizard = null;
+            if (wz.examples && wz.exDraw) {   // the world's people: their sprites, and from them their card pictures
+                const mine = characters().filter(c => w.cast.examples.some(e => exampleTag(w, e) === c.data?.extensions?.mundi?.example)).map(c => c.avatar);
+                const sg = await import('./spritegen.js');
+                const n = sg.drawEveryone(mine);
+                if (n) toast(`Drawing ${n === 1 ? '1 person' : `${n} people`} with ComfyUI in the background.`, 'info');
+            }
         } catch (e: any) {
             console.error('[Mundi] new game', e);
             toast(e?.message ?? 'Could not start the game.', 'error');
@@ -590,6 +613,7 @@ Object.assign(ACT, {
 
 Object.assign(INPUT, {
     'ng-examples': (el) => { state.wizard.examples = el.checked; notify(); },
+    'ng-ex-draw': (el) => { state.wizard.exDraw = el.checked; },
     'ng-rpg-free': (el) => {
         const x = rpgState(); if (!x) return; x.s.free = (el as HTMLInputElement).checked;
         if (!x.s.free) {   // back to the budget: the defaults if what you set no longer fits
