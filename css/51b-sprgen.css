@@ -24,3 +24,8 @@
 #mundi-root .mu-gal-sprites .mu-gal-char img { object-fit: contain; background: var(--bg); }
 #mundi-root .mu-photos.is-sprites .mu-photo { aspect-ratio: 2 / 3; background: var(--bg); }
 #mundi-root .mu-photos.is-sprites .mu-photo img, #mundi-root .mu-photos.is-sprites .mu-photo canvas { object-fit: contain; }
+/* Settings › Add-ons › Sprites › Scene looks: one rule per row (on/off, its words, the outfit or condition). */
+#mundi-root .mu-lookrule { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 4px 0; }
+#mundi-root .mu-lookrule .mu-check { flex: 1 1 260px; }
+#mundi-root .mu-lookrule input[type="text"] { flex: 1 1 140px; min-width: 0; }
+#mundi-root .mu-lookrule select { flex: 0 1 140px; }

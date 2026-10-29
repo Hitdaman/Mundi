@@ -12,9 +12,13 @@
 // Each picture is its own small job: ComfyUI keeps the body it already drew, so the next expression is only a face
 // pass. An expression the workflow has no node for is drawn through its neutral face pass with that label's tags.
 // Only the nodes a picture needs are sent, so other parts of the workflow (a CG section, a base frame) never run.
+// A "State" node (its tags joined after the outfit's) draws a condition on an outfit (wet, muddy, hurt…): the scene's
+// looks (sim/looks.ts) ask for a variant folder ("swimsuit+wet") when the story or the weather calls for one. A
+// workflow without it gets the condition's tags added to the outfit's instead.
 import { settings, saveSettings, notify, state, toast, esc, game } from '../core/store.js';
-import { ctx, charOf, fetchSprites, uploadSprite, fullCharacter, setCharacterImage, quiet, expressionLabels, personas, personaName } from '../st/bridge.js';
-import { addOutfit, forgetOutfits, savedOutfits } from './outfits.js';
+import { ctx, charOf, fetchSprites, uploadSprite, fullCharacter, setCharacterImage, quiet, expressionLabels, personas, personaName, outfitOf, wearOutfit } from '../st/bridge.js';
+import { addOutfit, forgetOutfits, savedOutfits, outfitsOf, hasOutfit } from './outfits.js';
+import { lookPrefs, stateTags, stateNames, matchOutfit, RULE_LABELS, STATES, type LookDeps } from '../sim/looks.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
 
@@ -103,7 +107,7 @@ export async function workflowList(): Promise<string[]> {
 
 // What a workflow offers, read from its titles.
 interface Expr { name: string; label: string; node: string; save: string }
-interface Parts { appearance: string[]; outfits: { id: string; name: string; tags: string }[]; list: string | null; seed: string | null; expr: Expr[]; folder: string | null; switches: { id: string; name: string }[] }
+interface Parts { appearance: string[]; outfits: { id: string; name: string; tags: string }[]; list: string | null; seed: string | null; expr: Expr[]; folder: string | null; switches: { id: string; name: string }[]; state: string | null }
 const splitOutfit = (v: string) => { const m = String(v ?? '').match(/^\s*([^:\n]+?)\s*:\s*([\s\S]*)$/); return m ? { name: m[1], tags: m[2].trim() } : { name: '', tags: String(v ?? '').trim() }; };
 const numIn = (s: string) => Number(s.match(/\d+/)?.[0] ?? 0);
 function partsOf(g: Graph): Parts {
@@ -126,6 +130,7 @@ function partsOf(g: Graph): Parts {
         seed: ids.find(id => /seed/i.test(titleOf(g, id)) && typeof g[id].inputs?.seed === 'number') ?? null,
         expr,
         folder: ids.find(id => /^output folder$/i.test(titleOf(g, id).trim())) ?? null,
+        state: ids.find(id => /^state$/i.test(titleOf(g, id).trim()) && typeof g[id].inputs?.value === 'string') ?? null,
         switches: ids.filter(id => /any switch/i.test(g[id].class_type) && /on\/off|\(on, else/i.test(titleOf(g, id)) && isLink(g[id].inputs?.any_01))
             .map(id => ({ id, name: titleOf(g, id).replace(/\s*\(.*$/, '').replace(/\s*on\/off.*$/i, '').trim() })),
     };
@@ -149,17 +154,19 @@ function prune(g: Graph, keep: string[]): Graph {
     return out;
 }
 
-// One ComfyUI job: one picture (an outfit and a label). Returns the graph and the Save node that gives it.
-function job(base: Graph, p: Parts, sheet: Sheet, outfit: number, label: string): { graph: Graph; save: string } {
+// One ComfyUI job: one picture (an outfit, a condition's tags or none, and a label). Returns the graph and the Save
+// node that gives it.
+function job(base: Graph, p: Parts, sheet: Sheet, outfit: number, label: string, cond = ''): { graph: Graph; save: string } {
     const g = structuredClone(base);
     for (const id of p.appearance) g[id].inputs.value = sheet.appearance;
     if (p.seed) g[p.seed].inputs.seed = sheet.seed;
     const slot = p.outfits[0];
     const o = sheet.outfits[outfit];
     if (slot && o) {
-        g[slot.id].inputs.value = `${o.name}: ${o.tags}`;
+        g[slot.id].inputs.value = `${o.name}: ${o.tags}${cond && !p.state ? `, ${cond}` : ''}`;
         if (p.list) { const l = g[p.list]; for (const k of Object.keys(l.inputs)) if (isLink(l.inputs[k])) delete l.inputs[k]; l.inputs.value1 = [slot.id, 0]; }
     }
+    if (p.state) g[p.state].inputs.value = cond;
     if (p.folder) { const f = g[p.folder].inputs; const key = Object.keys(f).find(k => typeof f[k] === 'string'); if (key) f[key] = `Mundi/${sheet.name.replace(/[^\p{L}\p{N}_-]+/gu, '_')}/`; }
     for (const s of p.switches) if (sprPrefs().off.includes(s.name)) delete g[s.id].inputs.any_01;
     // the workflow's own face pass for this label, else its neutral one with this label's tags
@@ -227,11 +234,30 @@ Comma-separated tags only, no sentences. Take every detail the card gives; inven
     return { name, appearance, outfits: slots.map(o => ({ name: o.name, tags: lines.get(o.name.toLowerCase()) ?? o.tags })), seed: newSeed() };
 }
 const newSeed = () => Math.floor(Math.random() * 2 ** 31);
+// A new outfit for a look (the story put on a kimono, a rule wants a swimsuit): the AI writes only the clothes.
+async function writeOutfit(k: string, sheet: Sheet, outfit: string): Promise<string> {
+    const name = nameOf(k);
+    const card = (await cardText(k)).slice(0, 3000);
+    const raw = await quiet(`Write what ${name} wears for "${outfit.replace(/[_-]+/g, ' ')}" as Danbooru tags for an image model (Illustrious).
+
+<character>
+${card || name}
+</character>
+Their body and face (do not repeat these): ${sheet.appearance}
+Their usual clothes: ${sheet.outfits[0]?.tags ?? ''}
+
+Answer with one line of comma-separated tags for the clothes only (garments, colors, shoes, accessories), in their style, nothing about the body or face, no sentences.`, 200);
+    const line = raw.split('\n').map(l => l.replace(/^\s*[-*]?\s*([^:,\n]{1,30}:)?\s*/, '').trim()).find(l => l.includes(',') || l.length > 3) ?? '';
+    if (!line) throw new Error(`The AI did not describe ${name}'s ${outfit}.`);
+    return line.slice(0, 600);
+}
 
 /* ---------- the queue ---------- */
 
 // What to draw: some outfits (indexes in the look; all the chosen ones when left out) and labels, or only the missing.
-interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: boolean; lookOnly?: boolean }
+interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: boolean; lookOnly?: boolean; variant?: Variant }
+// A look the scene asked for: an outfit by name ('' the usual one) with a condition or none, saved in `folder`.
+interface Variant { outfit: string; state: string; folder: string }
 // Session only: who is waiting, being drawn, done or skipped (a failure is not tried again until asked).
 const S = { queue: [] as Order[], busy: null as Order | null, step: '', now: '', status: new Map<string, 'none' | 'has' | 'queued' | 'busy' | 'failed'>() };
 export const spriteStatus = (k: string) => S.status.get(k);
@@ -282,9 +308,12 @@ async function pump() {
     try {
         const n = await draw(o);
         S.status.set(o.who, (await fetchSprites(o.who, '')).length ? 'has' : 'none');
-        if (!o.lookOnly) toast(n ? `${name}: ${n === 1 ? '1 sprite' : `${n} sprites`} drawn.` : `${name} has every sprite already.`, 'success');
+        if (o.variant) { if (n && o.labels) toast(`${name}: new look drawn (${o.variant.folder.replace(/[_]+/g, ' ')}).`, 'success'); }
+        else if (!o.lookOnly) toast(n ? `${name}: ${n === 1 ? '1 sprite' : `${n} sprites`} drawn.` : `${name} has every sprite already.`, 'success');
     } catch (e: any) {
-        S.status.set(o.who, 'failed');
+        // a look that failed leaves their own sprites as they were
+        S.status.set(o.who, o.variant && (await fetchSprites(o.who, '').catch(() => [])).length ? 'has' : 'failed');
+        if (o.variant) S.queue = S.queue.filter(x => !(x.who === o.who && x.variant?.folder === o.variant!.folder));
         toast(`Could not draw ${name}: ${String(e?.message ?? e)}`, 'error');
     } finally {
         S.busy = null; S.step = ''; S.now = ''; notify();
@@ -306,6 +335,7 @@ async function draw(o: Order): Promise<number> {
     const sheet = prefs.sheets[o.who] ??= await writeSheet(o.who, p);
     saveSettings();
     if (o.lookOnly) return 0;
+    if (o.variant) return drawVariant(o, o.variant, base, p, sheet);
     const labels = o.labels ?? labelsFor(p);
     const outfits = o.outfits ?? sheet.outfits.map((x, i) => i).filter(i => i === 0 || !prefs.outfits || prefs.outfits.includes(sheet.outfits[i].name));
     // the pictures to make, the first outfit's neutral one first so they show up quickly
@@ -332,6 +362,69 @@ async function draw(o: Order): Promise<number> {
     sheet.drawn = Date.now(); saveSettings();
     return done;
 }
+
+// A look the scene asked for: one outfit (written by the AI first when the look has none of that name) with a
+// condition or none, saved as its own folder. Neutral comes first; the scene puts it on as soon as it is in.
+async function drawVariant(o: Order, v: Variant, base: Graph, p: Parts, sheet: Sheet): Promise<number> {
+    let i = 0;
+    if (v.outfit) {
+        // the look's own outfit of that name (or one that means the same: "swim" for a swimsuit), else a new one
+        const same = matchOutfit(v.outfit, sheet.outfits.map(x => x.name));
+        i = same ? sheet.outfits.findIndex(x => x.name === same) : -1;
+        if (i < 0) {
+            sheet.outfits.push({ name: v.outfit, tags: await writeOutfit(o.who, sheet, v.outfit) });
+            i = sheet.outfits.length - 1; saveSettings();
+        }
+    }
+    const tags = v.state ? stateTags(v.state) : '';
+    let todo = o.labels ?? labelsFor(p);
+    todo = [...todo].sort((a, b) => Number(b === 'neutral') - Number(a === 'neutral'));
+    if (o.missing) { const have = new Set((await fetchSprites(o.who, v.folder)).map(s => String(s.label))); todo = todo.filter(l => !have.has(l)); }
+    let done = 0;
+    for (const l of todo) {
+        S.step = `${done}/${todo.length}`; S.now = `${v.folder} · ${l}`; notify();
+        const { graph, save } = job(base, p, sheet, i, l, tags);
+        const png = (await runJob(graph))[save];
+        if (!png) throw new Error('ComfyUI gave no picture.');
+        await uploadSprite(o.who, l, png, l, v.folder);
+        done++;
+        addOutfit(o.who, v.folder);
+        refreshed(o.who);
+        if (done === 1) void import('../sim/game.js').then(m => m.syncScene());   // the first picture is in: wear it
+    }
+    return done;
+}
+
+/* ---------- scene looks: drawing what is missing ---------- */
+
+// Session only: looks already asked for (one try each; a failure is not tried again until Mundi reloads).
+const ASKED = new Set<string>();
+let capWarned = '';
+// Draws a look the scene wants and nobody has drawn yet, if the settings allow it.
+function drawLook(a: string, v: Variant) {
+    const lp = lookPrefs(), sp = sprPrefs();
+    if (!lp.draw || sp.mode === 'off' || a.startsWith('__tut:') || !charOf(a)) return;
+    // someone with sprites of their own (not drawn here) would get a ComfyUI face in the new pictures
+    if (!sp.sheets[a] && !lp.others && S.status.get(a) !== 'none') return;
+    const key = `${a}|${v.folder.toLowerCase()}`;
+    if (ASKED.has(key) || waiting(a)) return;   // one order per person at a time: the next scene sync asks again
+    const today = new Date().toDateString();
+    if (lp.used.day !== today) lp.used = { day: today, n: 0 };
+    if (lp.cap > 0 && lp.used.n >= lp.cap) {
+        if (capWarned !== today) { capWarned = today; toast(`New looks drawn today: ${lp.cap} (the limit in Settings › Add-ons › Sprites). The rest wait until tomorrow.`, 'info'); }
+        return;
+    }
+    ASKED.add(key); lp.used.n++; saveSettings();
+    S.status.set(a, 'queued');
+    S.queue.push({ who: a, variant: v, labels: ['neutral'] }, { who: a, variant: v, missing: true });
+    notify(); void pump();
+}
+/** What the scene's looks need from the sprites: the outfits someone has, wearing one, drawing a missing one. */
+export const lookDeps = (): LookDeps => ({
+    outfits: outfitsOf, has: hasOutfit, current: outfitOf,
+    wear: (a, f) => { wearOutfit(a, f); delete (state.sprites as any)[a]; },
+    draw: drawLook,
+});
 
 // A person the world made (an example of the world, with an initials picture) gets a picture from the sprite.
 async function fixAvatar(avatar: string, sprite: Blob) {
@@ -440,8 +533,32 @@ export function spritesSettingsHtml(): string {
             ${parts.switches.length ? `<div class="mu-field"><span>Workflow options</span>${parts.switches.map(s => chk('spr-switch', s.name, !p.off.includes(s.name), s.name)).join('')}</div>` : ''}`
             : `<p class="mu-muted">${WF.for ? 'Reading the workflow… (if this stays, the file is missing or not in API format)' : ''}</p>`}
         <label class="mu-check"><input type="checkbox" data-input="spr-avatar" ${p.avatar ? 'checked' : ''}><span>Give the world's people a card picture from their sprite<small>Only the people a world made (they start with an initials picture), once.</small></span></label>
+        ${looksSettingsHtml()}
         ${looks.length ? `<h4>Looks written so far</h4><div class="mu-sprlooks">${looks.map(([k, s]) => `<button class="mu-chip" data-act="spr-open" data-who="${esc(k)}" title="Open their Expressions page"><span data-notr>${esc(s.name)}</span>${s.drawn ? '' : ' · not drawn'}</button>`).join('')}</div>` : ''}
     </section>`;
+}
+
+// Scene looks: what people wear and how they look change with the scene and the story (sim/looks.ts).
+function looksSettingsHtml(): string {
+    const lp = lookPrefs();
+    const chk = (act: string, on: boolean, label: string, hint = '') => `<label class="mu-check"><input type="checkbox" data-input="${act}" ${on ? 'checked' : ''}><span>${esc(label)}${hint ? `<small>${esc(hint)}</small>` : ''}</span></label>`;
+    const rule = (r: (typeof lp.rules)[number], i: number) => `<div class="mu-lookrule">
+        <label class="mu-check"><input type="checkbox" data-input="look-rule-on" data-i="${i}" ${r.on ? 'checked' : ''}><span>${esc(RULE_LABELS[r.id] ?? r.id)}</span></label>
+        ${r.places !== undefined ? `<input type="text" data-input="look-rule-places" data-i="${i}" value="${esc(r.places)}" title="Words in the place's name, separated by commas">` : ''}
+        ${r.state !== undefined
+            ? `<span class="mu-muted">→ condition</span><select data-input="look-rule-state" data-i="${i}">${stateNames().map(n => `<option value="${esc(n)}" ${n === r.state ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`
+            : `<span class="mu-muted">→ outfit</span><input type="text" data-input="look-rule-outfit" data-i="${i}" value="${esc(r.outfit ?? '')}" maxlength="30" placeholder="outfit name">`}</div>`;
+    return `<h4>Scene looks</h4>
+        <p class="mu-muted">People change clothes with the scene and the story: a swimsuit at the pool, pajamas at night, soaked after the rain, a kimono when the story puts one on. Mundi wears the outfit folder that fits (synonyms count: a "bikini" folder is a swimsuit), and draws the ones they don't have yet. The AI is told how everyone here looks.</p>
+        ${chk('look-on', lp.on, 'Change how people look with the scene')}
+        ${lp.on ? `${chk('look-story', lp.story, 'Read the story after each reply', 'One short AI call: who changed clothes, got wet, muddy, hurt…')}
+        ${chk('look-draw', lp.draw, 'Draw looks they don\'t have yet on ComfyUI', 'An outfit, or an outfit with a condition (needs the sprite drawing above on). Until it is drawn they keep their sprite.')}
+        ${lp.draw ? `${chk('look-others', lp.others, 'Also for people with sprites of their own', 'Their new pictures get a face drawn by ComfyUI, which may not match their own art.')}
+        <label class="mu-field"><span>New looks drawn per day, at most (0: no limit) · ${lp.used.day === new Date().toDateString() ? lp.used.n : 0} today</span><input type="number" min="0" max="200" value="${lp.cap}" data-input="look-cap"></label>` : ''}
+        <div class="mu-field"><span>Rules (the first that fits gives the outfit; the story wins over them for six hours)</span>${lp.rules.map(rule).join('')}</div>
+        <details class="mu-sprsheet"><summary>Conditions and their tags (${stateNames().length})</summary>
+            <p class="mu-muted">One per line, as “condition: tags”. Drawn with the workflow's "State" node (or added to the outfit's tags when it has none). A new line adds a condition the story can use.</p>
+            <textarea rows="8" data-input="look-states">${esc(stateNames().map(n => `${n}: ${stateTags(n)}`).join('\n'))}</textarea></details>` : ''}`;
 }
 
 const toggle = (list: string[] | null, all: string[], v: string, on: boolean) => {
@@ -468,6 +585,33 @@ export function drawEveryone(keys: string[]) {
     notify(); void pump();
     return list.length;
 }
+// A change to the looks' settings shows in the scene (once typing stops).
+let lookSync: ReturnType<typeof setTimeout> | undefined;
+const lookInput = (fn: (el: HTMLInputElement) => void, redraw = false) => (el: HTMLInputElement) => {
+    fn(el); saveSettings(); if (redraw) notify();
+    clearTimeout(lookSync);
+    lookSync = setTimeout(() => { if (game()) void import('../sim/game.js').then(m => m.syncScene()); }, 600);
+};
+Object.assign(INPUT, {
+    'look-on': lookInput(el => { lookPrefs().on = el.checked; }, true),
+    'look-story': lookInput(el => { lookPrefs().story = el.checked; }),
+    'look-draw': lookInput(el => { lookPrefs().draw = el.checked; }, true),
+    'look-others': lookInput(el => { lookPrefs().others = el.checked; }),
+    'look-cap': lookInput(el => { lookPrefs().cap = Math.max(0, Math.min(200, Math.round(Number(el.value) || 0))); }),
+    'look-rule-on': lookInput(el => { const r = lookPrefs().rules[Number(el.dataset.i)]; if (r) r.on = el.checked; }),
+    'look-rule-places': lookInput(el => { const r = lookPrefs().rules[Number(el.dataset.i)]; if (r) r.places = el.value; }),
+    'look-rule-outfit': lookInput(el => { const r = lookPrefs().rules[Number(el.dataset.i)]; if (r) r.outfit = el.value.trim(); }),
+    'look-rule-state': lookInput(el => { const r = lookPrefs().rules[Number(el.dataset.i)]; if (r) r.state = el.value; }),
+    'look-states': lookInput(el => {
+        const p = lookPrefs(); const next: Record<string, string> = {};
+        for (const line of el.value.split('\n')) {
+            const m = line.match(/^\s*([^:]+?)\s*:\s*(.*)$/); if (!m) continue;
+            const id = m[1].toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu, '_').slice(0, 20); if (!id) continue;
+            if (m[2].trim() !== (STATES[id]?.tags ?? '')) next[id] = m[2].trim();
+        }
+        p.states = next;
+    }),
+});
 Object.assign(INPUT, {
     'spr-mode': (el) => { sprPrefs().mode = el.value as Mode; saveSettings(); notify(); if (game()) void import('../sim/game.js').then(m => m.syncScene()); },
     'spr-wf': (el) => { sprPrefs().workflow = el.value; saveSettings(); notify(); },

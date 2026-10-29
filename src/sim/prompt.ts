@@ -2,6 +2,7 @@
 // with SillyTavern's normal generation (and with any preset). The world's lore lives in its lorebook instead.
 import { homeJobsLine } from './hometime.js';
 import { dressLine } from './dress.js';
+import { lookLine } from './looks.js';
 import { approvalLine, couplesLine, rumorLines, activeWorldLore } from './living.js';
 import './longlife.js';   // people's lives over the weeks (runs by itself, day by day)
 import { feelingLine, physiqueLine, aspirationOf } from './life.js';
@@ -133,6 +134,7 @@ export function sceneBlocks(): Built[] {
             `Place: ${here ? floorName(here) : 'somewhere'}${here?.in && placeOf(g, w, here.in) ? ` (in ${placeOf(g, w, here.in)!.name})` : ''}${here?.desc ? ` — ${here.desc}` : ''}${here && !here.home && systemOn(w, 'living') && !openNow(g, w, here.id) ? ' (closed at this hour: the doors are shut; only staff, if anyone, is around)' : ''}`,
             names.length ? `Here with {{user}}: ${names.join(', ')}. Only they are in this scene; nobody else speaks or appears.` : 'Nobody else is here right now.',
             ...(guestLine(g, present) ? [guestLine(g, present)] : []),
+            lookLine(g, w, present),
             ...(present.some(r => !r.met) ? [`Strangers to {{user}}: ${present.filter(r => !r.met).map(r => r.name).join(', ')}. They and {{user}} have never met: they do not know each other's names until they talk and introduce themselves.`] : []),
         ],
         // only the people in this scene and this place: nobody else's memories, nobody else's whereabouts

@@ -444,8 +444,12 @@ export function syncScene(): Promise<void> {
         if (solo && !here.some(r => r.avatar === solo)) { (g as any).social.solo = ''; solo = ''; }
         const talking = solo ? [solo] : here.map(r => r.avatar);
         if (gid) await setPresent(gid, Object.keys(g.cast), talking);
-        // Home: the room's dress code (the outfits are looked up in the background; the next sync catches up)
-        { const { applyDress, dressAt } = await import('./dress.js'); const { outfitsOf, hasOutfit } = await import('../ui/outfits.js'); const code = dressAt(g, g.player.loc);
+        // what people wear and how they look: the scene's looks (rules, the story, a Home's dress codes; missing
+        // looks are drawn on ComfyUI), or with them off only a Home's dress code. The outfits are looked up in the
+        // background; the next sync catches up.
+        const { looksOn, applyLooks } = await import('./looks.js');
+        if (looksOn()) { const { lookDeps } = await import('../ui/spritegen.js'); applyLooks(g, w, lookDeps()); }
+        else { const { applyDress, dressAt } = await import('./dress.js'); const { outfitsOf, hasOutfit } = await import('../ui/outfits.js'); const code = dressAt(g, g.player.loc);
           applyDress(g, w, a => { const l = outfitsOf(a); if (!code) return l; const h = hasOutfit(a, code); return h === null ? null : h ? [...(l ?? []), code] : (l ?? []); }); }
         followBackground(g, w);
         refreshPrompt();
