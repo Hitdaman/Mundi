@@ -50,7 +50,9 @@ function knownPerson(g: Save, name: string): boolean {
     const k = keyOf(name); if (!k) return true;
     const me = keyOf(personaName());
     if (k === me || (me && k === words(me)[0])) return true;
-    return Object.values(g.cast).some(r => { const rk = keyOf(r.name); return rk === k || words(rk)[0] === k || words(k)[0] === rk; });
+    // the dead too (sim/mortal.ts): someone who died is never offered again as someone new
+    const dead = (((g as any).mortal?.graves ?? []) as { name: string; you?: boolean }[]).filter(x => !x.you).map(x => ({ name: x.name }));
+    return [...Object.values(g.cast), ...dead].some(r => { const rk = keyOf(r.name); return rk === k || words(rk)[0] === k || words(k)[0] === rk; });
 }
 // A note already kept for this name (or one of the other names they went by).
 export function findNewcomer(g: Save, name: string): Newcomer | null {

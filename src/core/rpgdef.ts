@@ -37,7 +37,7 @@ export interface Ability { name: string; kind: 'heal' | 'guard' | 'inspire' | 'h
 export type TalentKind = 'hp' | 'focus' | 'skill' | 'attack' | 'armor' | 'damage' | 'initiative' | 'camp';
 export interface RpgTalent { id: string; name: string; desc?: string; cls?: string; tier: number; requires?: string[]; effect: { kind: TalentKind; skill?: string; amount: number } }
 export type Affliction = 'poison' | 'burn' | 'blind' | 'silence' | 'curse' | 'slow';
-export interface Foe { id: string; name: string; icon?: string; inflict?: { kind: Affliction; chance: number; turns: number }; element?: Element; level: number; hp: number; ac: number; atk: number; dice: number; sides: number; bonus?: number; ranged?: boolean; row?: 'front' | 'back'; tags?: string[]; desc?: string }
+export interface Foe { id: string; name: string; icon?: string; /** when they win: true finishes the fallen off (beasts, monsters), false leaves them (robbers); none: guessed from the tags */ kills?: boolean; inflict?: { kind: Affliction; chance: number; turns: number }; element?: Element; level: number; hp: number; ac: number; atk: number; dice: number; sides: number; bonus?: number; ranged?: boolean; row?: 'front' | 'back'; tags?: string[]; desc?: string }
 export interface RpgSchool { id: string; name: string; desc?: string }
 export type SpellEffect =
     | { kind: 'heal'; amount: number }                       // % of max HP
@@ -47,7 +47,8 @@ export type SpellEffect =
     | { kind: 'rumor' }                                      // you learn a rumor going around
     | { kind: 'scene' }                                      // only told to the AI (light, a show of sparks…)
     | { kind: 'weather'; to: 'rain' | 'clear' }              // calls rain or clears the sky over the region, for the day
-    | { kind: 'cleanse' };                                   // lifts poisons, curses and other afflictions
+    | { kind: 'cleanse' }                                    // lifts poisons, curses and other afflictions
+    | { kind: 'revive' };                                    // brings back someone who died a moment ago (cast for you when it can be)
 export type Element = 'fire' | 'water' | 'lightning' | 'ice' | 'earth' | 'light' | 'dark';
 export interface RpgSpell { id: string; name: string; school: string; level: number; cost: number; desc: string; effect: SpellEffect; element?: Element; /** what it does in a fight (techniques and spells of any school): a blow, or a guard */ combat?: 'damage' | 'shield' }
 export interface RpgTitle { id: string; name: string; desc: string; when: { count?: string; n?: number; level?: number; renown?: number } }
@@ -169,6 +170,7 @@ export const MEDIEVAL_RPG: RpgDef = {
     spells: [
         { id: 'healing_word', name: 'Healing word', school: 'restoration', level: 1, cost: 1, desc: 'A whispered prayer closes small wounds.', effect: { kind: 'heal', amount: 15 } },
         { id: 'cure_wounds', name: 'Cure wounds', school: 'restoration', level: 1, cost: 2, desc: 'A touch that knits flesh.', effect: { kind: 'heal', amount: 35 } },
+        { id: 'revivify', name: 'Revivify', school: 'restoration', level: 3, cost: 4, desc: 'Within a minute of death, a touch calls the soul back into the body.', effect: { kind: 'revive' } },
         { id: 'mass_mend', name: 'Greater restoration', school: 'restoration', level: 3, cost: 4, desc: 'Body and spirit made whole.', effect: { kind: 'heal', amount: 80 } },
         { id: 'guidance', name: 'Guidance', school: 'divination', level: 1, cost: 1, desc: 'A nudge from beyond: +2 to your next check.', effect: { kind: 'bonus', amount: 2 } },
         { id: 'detect_thoughts', name: 'Detect thoughts', school: 'divination', level: 2, cost: 3, desc: 'Surface thoughts, like whispers: read people.', effect: { kind: 'advantage', skills: ['insight', 'deception', 'persuasion'] } },

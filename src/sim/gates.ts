@@ -7,7 +7,7 @@ import type { Save } from '../core/store.js';
 import { systemOn, placeIs, type WorldDef, type Place } from '../core/world.js';
 import { rpgOf, type Foe } from '../core/rpgdef.js';
 import { onDay, afterFight } from './hooks.js';
-import { isRpg, sheetOf, addXp } from './rpg.js';
+import { isRpg, sheetOf, addXp, tooHurt } from './rpg.js';
 import { startCombat, inCombat } from './combat.js';
 import { book } from './ledger.js';
 import { note } from './facts.js';
@@ -104,6 +104,7 @@ export function enterGate(g: Save, w: WorldDef, id: string): string {
     const gt = gatesOf(g).find(x => x.id === id); if (!gt || !gatesOn(w) || !sheetOf(g)) return '';
     if (g.player.loc !== gt.place) return 'The gate is elsewhere.';
     if (inCombat(g)) return 'You are already fighting.';
+    { const hurt = tooHurt(g, w); if (hurt) return hurt; }
     const next = gt.floor + 1;
     const fight = startCombat(g, w, { why: next >= gt.floors ? `The boss of the ${placeOf(g, w, gt.place)?.name}:` : `Floor ${next} of the ${placeOf(g, w, gt.place)?.name}:`, foes: gateFoes(w, gt, next) });
     if (!fight) return 'Nothing stirs.';

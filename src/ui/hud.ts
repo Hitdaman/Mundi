@@ -48,7 +48,8 @@ import { openNow } from '../sim/daynight.js';
 import { questsHere, doStep } from '../sim/quests.js';
 import { weatherHere, crowdLevel, crowdWord, regionState, regionOf, moodWord, tensionWord } from '../sim/worldstate.js';
 import { chanceOf } from '../sim/dice.js';
-import { isRpg, sheetOf, focusMax, hpMax } from '../sim/rpg.js';
+import { isRpg, sheetOf, focusMax, hpMax, mortalOn } from '../sim/rpg.js';
+import { bandOf, BAND_WORD } from '../sim/wounds.js';
 import { lifeActs, festivalChip, schoolActs } from './lifeplus.js';
 import { factionActs } from './factionsui.js';
 import { holdingsActs } from './holdingsui.js';
@@ -80,7 +81,7 @@ function personaCard(g: Save, w: WorldDef) {
         <button class="mh-face" data-act="pa-open" title="Play as…">${img ? `<img src="${esc(img)}" alt="">` : icon('user')}<i class="mh-face-swap">${icon('users')}</i></button>
         <div class="mh-needs">
             <div class="mh-who"><b>${esc(personaName())}</b>${levelChip()}${isScenario(w) ? '' : `<span class="mu-cash">${esc(money(w, g.player.money))}</span>`}</div>
-            ${shown.filter(isBar).map(s => `<div class="mh-bar ${v(s) <= 20 ? 'is-low' : ''}" data-stat="${esc(s.id)}" data-word="${esc(sh && (s.id === 'life' || s.id === 'health') ? `${sh.hp}/${hpMax(w, sh)} HP` : needWord(s, v(s)))}" style="--c:${esc(s.color)};--v:${v(s)}">
+            ${shown.filter(isBar).map(s => `<div class="mh-bar ${v(s) <= 20 ? 'is-low' : ''}" data-stat="${esc(s.id)}" data-word="${esc(sh && (s.id === 'life' || s.id === 'health') ? `${sh.hp}/${hpMax(w, sh)} HP${mortalOn(g, w) && bandOf(sh.hp, hpMax(w, sh)) !== 'fine' ? ` · ${BAND_WORD[bandOf(sh.hp, hpMax(w, sh))]}` : ''}` : needWord(s, v(s)))}" style="--c:${esc(s.color)};--v:${v(s)}">
                 <span class="mh-bar-ic">${needIcon(s)}</span><span class="mh-bar-name">${esc(s.name)}</span><span class="mh-bar-track"><i></i></span></div>`).join('')}${focusBar}
             <div class="mh-rings">${shown.filter(s => !isBar(s)).map(s => `<div class="mh-ring ${v(s) <= 20 ? 'is-low' : ''}" data-stat="${esc(s.id)}" data-word="${esc(`${s.name}: ${needWord(s, v(s))}`)}" aria-label="${esc(s.name)}" style="--c:${esc(s.color)};--v:${v(s)}">
                 <span class="mh-ring-ic">${needIcon(s)}</span><small>${esc(s.name)}</small></div>`).join('')}</div>

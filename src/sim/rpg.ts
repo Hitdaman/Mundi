@@ -6,7 +6,8 @@ import { nowAbs, type Save } from '../core/store.js';
 import { gameMode, type WorldDef } from '../core/world.js';
 import { rpgOf, setRpgGame, type RpgDef, type RpgClass, type RpgSpell, type TalentKind, type Weapon } from '../core/rpgdef.js';
 import { note } from './facts.js';
-import { checkMods, onRoll } from './hooks.js';
+import { checkMods, onRoll, onHurt } from './hooks.js';
+import { bandOf, BAND_WORD } from './wounds.js';
 export { checkMods };
 import { SAVE, game } from '../core/store.js';
 setRpgGame(() => game() as any);
@@ -28,11 +29,22 @@ export interface Sheet {
     weapon?: string;
     /** skills you can still learn (one at levels 3, 5, 7…) */
     skillPicks?: number;
+    /** the part of a hit point gained or lost that has not added up to a whole one yet */
+    carry?: number;
     /** a boost for the next check (a spell): roll twice, or add */
     next?: { advantage?: string[]; bonus?: { amount: number; skills?: string[] } };
 }
 
 export const isRpg = (w: WorldDef | null | undefined) => !!w && gameMode(w) === 'rpg' && !!rpgOf(w);
+// Death is real (the RPG): at 0 hit points you are dead unless something brings you back; a night heals only some
+// (sim/mortal.ts). On for every RPG save unless the save turns it off (cfg.mortal = false).
+export const mortalOn = (g: Save | null | undefined, w: WorldDef | null | undefined) => !!g && isRpg(w) && !!sheetOf(g) && (g as any).cfg?.mortal !== false;
+/** Barely standing (under 30% of your hit points, death being real): no work, no training, no picking a fight. '' when you can. */
+export function tooHurt(g: Save, w: WorldDef): string {
+    const s = sheetOf(g); if (!s || !mortalOn(g, w)) return '';
+    const b = bandOf(s.hp, hpMax(w, s));
+    return b === 'critical' || b === 'out' ? `You are barely standing (${s.hp}/${hpMax(w, s)} HP). Rest, eat, or get yourself treated first.` : '';
+}
 export const sheetOf = (g: Save | null | undefined): Sheet | null => ((g as any)?.rpg ?? null);
 export const classOf = (w: WorldDef, s: Sheet): RpgClass | null => rpgOf(w)?.classes.find(c => c.id === s.cls) ?? null;
 
@@ -215,8 +227,14 @@ export function learnSpell(g: Save, w: WorldDef, id: string): boolean {
 // Hit points move the "life" need too (as a share of the maximum), and the other way round.
 export function changeHp(g: Save, w: WorldDef, delta: number) {
     const s = sheetOf(g); if (!s) return;
-    s.hp = Math.max(0, Math.min(hpMax(w, s), Math.round(s.hp + delta)));
+    const before = s.hp;
+    // a slow drain (starving: a fraction of a hit point an hour) adds up instead of rounding away
+    const raw = s.hp + delta + (s.carry ?? 0);
+    s.hp = Math.max(0, Math.min(hpMax(w, s), Math.round(raw)));
+    if (Math.abs(raw - s.hp) < 1) s.carry = raw - s.hp; else delete s.carry;
+    if (!s.carry) delete s.carry;
     syncLife(g, w);
+    if (s.hp < before) for (const f of onHurt) f(g, w);
 }
 export function syncLife(g: Save, w: WorldDef) {
     const s = sheetOf(g); if (!s) return;
@@ -224,9 +242,13 @@ export function syncLife(g: Save, w: WorldDef) {
     if (life) g.player.stats[life.id] = Math.round((s.hp / hpMax(w, s)) * life.max);
 }
 // A long rest (a night's sleep, at home or at camp): hit points and focus back, spells can be prepared again.
+// When death is real, wounds heal slowly: a fifth of your hit points a night (half that at camp), and nothing
+// while you are starving or parched.
 export function longRest(g: Save, w: WorldDef, share = 1) {
     const s = sheetOf(g); if (!s) return;
-    s.hp = Math.min(hpMax(w, s), s.hp + Math.ceil(hpMax(w, s) * share)); s.focus = Math.min(focusMax(w, s), s.focus + Math.ceil(focusMax(w, s) * share)); s.prepOpen = true;
+    const starving = ['hunger', 'thirst'].some(id => w.statuses.some(x => x.id === id) && (g.player.stats[id] ?? 1) <= 0);
+    const hpShare = mortalOn(g, w) ? (starving ? 0 : share < 1 ? 0.1 : 0.2) : share;
+    s.hp = Math.min(hpMax(w, s), s.hp + Math.ceil(hpMax(w, s) * hpShare)); s.focus = Math.min(focusMax(w, s), s.focus + Math.ceil(focusMax(w, s) * share)); s.prepOpen = true;
     syncLife(g, w);
 }
 
@@ -289,7 +311,7 @@ export function sheetLine(g: Save, w: WorldDef): string {
     const t = titleNames(w, s);
     const renown = s.renown >= 60 ? 'famous across the land' : s.renown >= 25 ? 'known in these parts' : s.renown >= 8 ? 'getting a name' : '';
     const sys = rpgOf(w)?.name;
-    return `${sys ? `RPG system: ${sys}. ` : ''}{{user}} is a level ${s.level} ${sub ? `${sub.name} ` : ''}${c?.name.toLowerCase() ?? 'adventurer'}${t.length ? `, known as ${t.join(', ')}` : ''}${renown ? `; ${renown}` : ''}. Hit points ${s.hp}/${hpMax(w, s)}${s.hp <= hpMax(w, s) / 4 ? ' (badly hurt)' : ''}.`;
+    return `${sys ? `RPG system: ${sys}. ` : ''}{{user}} is a level ${s.level} ${sub ? `${sub.name} ` : ''}${c?.name.toLowerCase() ?? 'adventurer'}${t.length ? `, known as ${t.join(', ')}` : ''}${renown ? `; ${renown}` : ''}. Hit points ${s.hp}/${hpMax(w, s)}${mortalOn(g, w) ? (bandOf(s.hp, hpMax(w, s)) === 'fine' ? '' : ` (${BAND_WORD[bandOf(s.hp, hpMax(w, s))]})`) : s.hp <= hpMax(w, s) / 4 ? ' (badly hurt)' : ''}.`;
 }
 void nowAbs;
 // a save of a world played as RPG that has no sheet yet gets one (with the first class), the first time it opens

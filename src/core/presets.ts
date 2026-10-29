@@ -37,6 +37,7 @@ export const PRESETS: Record<string, Preset> = {
             { id: 'scrap', name: 'Scrap metal', icon: '⚙️', price: 6, kind: 'ore', cheap: ['industrial'], dear: ['finance'] },
             { id: 'supplies', name: 'Medical supplies', icon: '🧴', price: 10, kind: 'goods', cheap: ['hospital'], dear: ['industrial'] },
             { id: 'medkit', name: 'First aid kit', icon: '🩹', price: 30, kind: 'potion', cures: true },
+            { id: 'aed', name: 'Defibrillator (AED)', icon: '⚡', price: 400, kind: 'gear', revive: 'helper', dear: ['industrial'] },
             { id: 'scope', name: 'Red-dot sight', icon: '🎯', price: 90, kind: 'arms', socket: { slot: 'weapon', kind: 'attack', amount: 1 } },
             { id: 'weights', name: 'Weighted gloves', icon: '🥊', price: 70, kind: 'arms', socket: { slot: 'weapon', kind: 'damage', amount: 1 } },
             { id: 'kevlar', name: 'Kevlar plate', icon: '🦺', price: 120, kind: 'arms', socket: { slot: 'armor', kind: 'armor', amount: 1 } },
@@ -152,6 +153,7 @@ export const PRESETS: Record<string, Preset> = {
             { id: 'mead', name: 'Mead', icon: '🍯', price: 9, kind: 'drink', cheap: ['hrafnborg'], dear: ['solmira'] },
             { id: 'wine', name: 'Wine', icon: '🍷', price: 12, kind: 'drink', cheap: ['solmira'], dear: ['eskarn'] },
             { id: 'potion', name: 'Healing potion', icon: '🧪', price: 20, kind: 'potion', cheap: ['lumeria'], dear: ['vigilia', 'eskarn'] },
+            { id: 'phoenix', name: 'Phoenix feather', icon: '🪶', price: 500, kind: 'rare', revive: 'self', dear: ['vigilia', 'eskarn'] },
             { id: 'herbs', name: 'Herbs', icon: '🌿', price: 5, kind: 'herb', cheap: ['trigal'], dear: ['lumeria'] },
             { id: 'mandrake', name: 'Mandrake root', icon: '🥕', price: 25, kind: 'herb', dear: ['lumeria'] },
             { id: 'moonleaf', name: 'Moonleaf', icon: '🍃', price: 40, kind: 'contraband', cheap: ['areia'], dear: ['kingdom', 'eskarn'], illegal: true },
@@ -340,6 +342,12 @@ export function upgradeWorld(w: WorldDef): WorldDef {
         if (w.goods) for (const x of p.goods ?? []) if ((x.socket || x.cures || x.kind === 'potion' || x.kind === 'sentient' || (p.recipes ?? []).some(r => r.makes === x.id || x.id in r.needs)) && !w.goods.some(y => y.id === x.id)) w.goods.push(structuredClone(x));
         if (w.pets) for (const x of p.pets ?? []) if (x.mount && !w.pets.some(y => y.id === x.id)) w.pets.push(structuredClone(x));
         (w as any).presetAdventure = true;
+    }
+    // death is real in the RPG: what can bring someone back (a phoenix feather, a defibrillator, Revivify), once
+    if (!(w as any).presetRevive) {
+        if (w.goods) for (const x of p.goods ?? []) if (x.revive && !w.goods.some(y => y.id === x.id)) w.goods.push(structuredClone(x));
+        if (w.rpg && p.rpg && (w.rpg.schools ?? []).some(sc => sc.id === 'restoration')) for (const x of p.rpg.spells ?? []) if (x.effect.kind === 'revive' && !w.rpg.spells.some(y => y.id === x.id)) w.rpg.spells.push(structuredClone(x));
+        (w as any).presetRevive = true;
     }
     // crises at zero (an older world gets them once; one removed in the creator stays removed)
     if (!(w as any).presetCrises) {

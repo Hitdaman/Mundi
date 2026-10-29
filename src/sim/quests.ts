@@ -8,7 +8,7 @@ import { note } from './facts.js';
 import { bump } from './social.js';
 import { breakOf } from './daylife.js';
 import { regionState, regionOf } from './worldstate.js';
-import { isRpg, sheetOf, rollCheck, checkWon, addXp, addRenown, count, gradeWord, type Check } from './rpg.js';
+import { isRpg, sheetOf, rollCheck, checkWon, addXp, addRenown, count, gradeWord, tooHurt, type Check } from './rpg.js';
 import { book } from './ledger.js';
 import { addRep } from './standing.js';
 import { pleaseBlade } from './artifacts.js';
@@ -133,6 +133,7 @@ export function doStep(g: Save, w: WorldDef, id: string): StepResult | null {
     let check: Check | undefined;
     if (st.fight && !(q as any).won) {
         if (inCombat(g)) return { text: 'You are already fighting.', msgs };
+        { const hurt = tooHurt(g, w); if (hurt) return { text: hurt, msgs }; }
         if (q.tried === g.day) return { text: 'Not today: catch your breath and come back tomorrow.', msgs };
         const c = startCombat(g, w, { why: 'The bandits come at you:', tags: st.fight, quest: q.id });
         return { text: c ? 'To arms!' : 'There is no one to fight here.', fight: !!c, msgs };

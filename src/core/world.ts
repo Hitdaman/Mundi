@@ -373,7 +373,9 @@ export interface PlanRoom { id: string; floor: string; x: number; y: number; w: 
 export interface HousePlan { on?: boolean; floors: PlanFloor[]; rooms: PlanRoom[]; /** the color a room lights up with under the mouse */ glow?: string; /** false: names only under the mouse */ labels?: boolean }
 export interface HobbyDef { id: string; name: string; icon?: string; desc?: string; actions: string[]; /** extra pay per level, in % (default 12) */ pay?: number }
 export interface FestivalDef { id: string; name: string; season: string; day: number; days?: number; place?: string; prices?: number; mood?: number; desc?: string }
-export interface GoodDef { id: string; name: string; icon: string; price: number; kind?: string; cheap?: string[]; dear?: string[]; illegal?: boolean; socket?: { slot: 'weapon' | 'armor'; kind: 'attack' | 'damage' | 'armor'; amount: number }; cures?: boolean }
+export interface GoodDef { id: string; name: string; icon: string; price: number; kind?: string; cheap?: string[]; dear?: string[]; illegal?: boolean; socket?: { slot: 'weapon' | 'armor'; kind: 'attack' | 'damage' | 'armor'; amount: number }; cures?: boolean;
+    /** brings someone back from death (RPG): 'self' works on its own when you die (a phoenix feather); 'helper' needs someone at your side to use it (a defibrillator) */
+    revive?: 'self' | 'helper' }
 export interface RecipeDef { id: string; name: string; needs: Record<string, number>; makes: string; count?: number; skill?: string; dc?: number; at?: string[]; risky?: boolean; legendary?: boolean }
 /** Gates: what they are called in this world ("Gate", "Rift", "Dungeon") and how often a new one opens (days). */
 export interface GatesDef { name?: string; every?: number }
