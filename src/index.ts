@@ -28,7 +28,8 @@ async function storyPlaces() {
         const { state, notify } = await import('./core/store.js'); if (state.open) notify();
     } catch { /* the judge is offline: the places stay as they are */ }
 }
-// After a reply: did anyone in the scene change clothes, or get wet, muddy, hurt…? (sim/looks.ts)
+// After a reply: did anyone in the scene change clothes, or get wet, muddy, hurt…? (sim/looks.ts) And did the story
+// bring in someone new, or a moment with someone it brought in before? (sim/newcomers.ts) One AI call for both.
 async function storyLooks() {
     const { game, saveGame, state, notify } = await import('./core/store.js');
     const { getWorld } = await import('./core/world.js');
@@ -36,9 +37,11 @@ async function storyLooks() {
     if (!g || !w) return;
     try {
         const { outfitsOf } = await import('./ui/outfits.js');
-        if (!await (await import('./sim/looks.js')).storyLooks(g, w, a => outfitsOf(a) ?? []) || game() !== g) return;
+        const r = await (await import('./sim/newcomers.js')).storyAfterReply(g, w, a => outfitsOf(a) ?? []);
+        if ((!r.looks && !r.people.length) || game() !== g) return;
         saveGame();
-        await (await import('./sim/game.js')).syncScene();   // the new look goes on (or is drawn)
+        if (r.looks) await (await import('./sim/game.js')).syncScene();   // the new look goes on (or is drawn)
+        if (r.people.length) await (await import('./ui/storypeople.js')).autoAdd(g, w);   // or the card offers them
         if (state.open) notify();
     } catch { /* the AI is offline: the looks stay as they are */ }
 }

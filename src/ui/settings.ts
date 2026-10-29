@@ -13,6 +13,7 @@ import { feedPrefs } from '../sim/feed.js';
 import { setSkin } from './skins.js';
 import { addonsTab } from './addons.js';
 import { spritesSettingsHtml } from './spritegen.js';
+import { peopleSettingsHtml } from './storypeople.js';
 import { lookPanelHtml, lookConfirmHtml } from './chatlook.js';
 import { DATE_FORMATS, fmtDate, fmtDateTime, fmtClock } from '../core/fmt.js';
 import { aiTestHtml } from './aitest.js';
@@ -71,6 +72,7 @@ function tabGame() {
     return `<section><h3>General</h3>
             <label class="mu-check"><input type="checkbox" data-input="set-openstart" ${settings().openOnStart ? 'checked' : ''}><span>Open Mundi when SillyTavern starts</span></label></section>
         <section><h3>AI calls</h3><p class="mu-muted">What makes Mundi call the AI (the diary, Chirp, characters' texts, narrating what you do) is now in the game: ☰ → This world → AI context.</p></section>
+        ${peopleSettingsHtml()}
         <section><h3>Background</h3>
             <label class="mu-field"><span>When you move between places</span><select data-input="set-bgfollow">${([['mundi', 'Only Mundi\'s scene changes picture'], ['chat', 'SillyTavern\'s chat background follows the place too']] as const).map(([v, l]) => `<option value="${v}" ${((settings() as any).bgFollow ?? 'mundi') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></section>
         ${g ? `<section><h3>This save</h3>
