@@ -209,13 +209,16 @@ export function applyLooks(g: Save, w: WorldDef, d: LookDeps): boolean {
 }
 
 /** For the AI: how the people here look now (only those not in their usual clothes, or with a condition). */
+// What someone always wears whatever the outfit (a hijab, glasses…), from their drawn look, in plain words.
+export const keepsOf = (avatar: string): string => String((settings() as any).sprites?.sheets?.[avatar]?.keeps ?? '').replace(/_/g, ' ').replace(/\s*,\s*/g, ', ').trim();
 export function lookLine(g: Save, w: WorldDef, present: Resident[]): string {
     if (!looksOn()) return '';
     const parts = present.map(r => {
         const l = wantedLook(g, w, r);
         if (isUsual(l.outfit) && !l.states.length) return '';
         const clothes = isUsual(l.outfit) ? 'usual clothes' : l.outfit.replace(/[_-]+/g, ' ');
-        return `${r.name}: ${clothes}${l.states.length ? `, ${l.states.map(stateSay).join(', ')}` : ''}`;
+        const keeps = keepsOf(r.avatar);
+        return `${r.name}: ${clothes}${keeps ? `, still wearing ${keeps}` : ''}${l.states.length ? `, ${l.states.map(stateSay).join(', ')}` : ''}`;
     }).filter(Boolean);
     return parts.length ? `How they look right now (keep to it until the story changes it): ${parts.join('; ')}.` : '';
 }
