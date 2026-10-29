@@ -14,6 +14,20 @@ import { applyGameLore } from './sim/lore.js';
 // A reply that came back empty (the prompt did not fit the model's context, or the reply ran out of tokens while the
 // model was still thinking) is removed, so it does not pile up in the story, and Mundi says why.
 let emptyWarned = 0;
+// After a reply: a hidden or restricted place named in the story — did {{user}} just find it, or get let in?
+async function storyPlaces() {
+    const { game, saveGame, toast } = await import('./core/store.js');
+    const { getWorld } = await import('./core/world.js');
+    const g = game(); const w = g && getWorld(g.world);
+    if (!g || !w) return;
+    try {
+        const found = await (await import('./sim/discovery.js')).storyCheck(g, w);
+        if (!found.length || game() !== g) return;
+        found.forEach(m => toast(m, 'success'));
+        saveGame(); (await import('./sim/prompt.js')).refreshPrompt();
+        const { state, notify } = await import('./core/store.js'); if (state.open) notify();
+    } catch { /* the judge is offline: the places stay as they are */ }
+}
 function emptyReply() {
     if (!state.open) return;
     const list = chat(); const m = list.at(-1);
@@ -91,7 +105,7 @@ function follow() {
         }
         redraw();
     };
-    on('GENERATION_ENDED', () => { emptyReply(); done(); void import('./ui/relui.js').then(m => m.checkAsk()); void import('./ui/events.js').then(m => m.checkEventEnd()); });
+    on('GENERATION_ENDED', () => { emptyReply(); done(); void import('./ui/relui.js').then(m => m.checkAsk()); void import('./ui/events.js').then(m => m.checkEventEnd()); void storyPlaces(); });
     on('GENERATION_STOPPED', done);
     on('GROUP_WRAPPER_FINISHED', done);
     on('STREAM_TOKEN_RECEIVED', () => { if (state.open && state.view === 'scene') patchLastLine(); });

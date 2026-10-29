@@ -53,6 +53,7 @@ import { lifeActs, festivalChip, schoolActs } from './lifeplus.js';
 import { factionActs } from './factionsui.js';
 import { holdingsActs } from './holdingsui.js';
 import { adventureActs } from './adventureui.js';
+import { discoveryActs } from './discoveryui.js';
 import { rpgOf } from '../core/rpgdef.js';
 
 /* ---------- you ---------- */
@@ -194,6 +195,7 @@ function actsColumn(g: Save, w: WorldDef) {
         factionActs(g, w),
         holdingsActs(g, w),
         adventureActs(g, w),
+        discoveryActs(g, w),
         ...questsHere(g).map(q => `<button class="mh-act is-quest mh-glass" data-act="quest-step" data-id="${esc(q.id)}"><i>📜</i><b>${esc(q.steps[q.step].what)}</b><small>${esc(q.title)}</small></button>`),
         ...(job ? [`<button class="mh-act is-work mh-glass ${offScreenWork(w) ? 'is-outing' : ''}" data-act="work" ${isOpen(g, job) ? '' : 'aria-disabled="true"'}><i>${icon('briefcase')}</i><b>${offScreenWork(w) ? 'Go to work' : 'Work a shift'} · ${job.shift} h</b><small>${isOpen(g, job) ? `${money(w, payOf(g, job.ranks[g.player.job!.rank].pay * job.shift))}` : `Open ${String(job.hours?.[0] ?? 0).padStart(2, '0')}:00–${String(job.hours?.[1] ?? 24).padStart(2, '0')}:00`}</small></button>`] : []),
         ...jobs.map(o => `<button class="mh-act mh-glass" data-act="apply" data-id="${esc(o.id)}" ${missingCourses(g, w, o).length || triedToday(g, o.id) ? 'aria-disabled="true"' : ''}><i>${icon('briefcase')}</i><b>Apply: ${esc(o.name)}</b><small>${missingCourses(g, w, o).length ? `${lex(w, 'needsCourse')}: ${esc(missingCourses(g, w, o).join(', '))}` : `${money(w, payOf(g, o.ranks[0].pay))}/h · interview 🎲 ${interviewChance(g, o, traitsOf(g))}%`}</small></button>`),
