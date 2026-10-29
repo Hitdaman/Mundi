@@ -9,6 +9,9 @@
 //     with a defibrillator or Revivify, or CPR (a modern world) from someone at your side or a passer-by.
 //   - Lose a fight to beasts or monsters and they finish you; robbers take your coins and leave you to bleed.
 //   - Companions and sellswords live by the same rules. One who dies is gone from the world (a grave in the journal).
+//   - Where the world has magic or the dead walk, the dead sometimes do not rest: a ghost, or undead (killed by the
+//     undead, or in a crypt). It is not a choice: the death screen offers it only when it happens. The risen do not
+//     eat or drink, healers will not take them, and nothing brings them back a second time.
 // When you die, the save is kept as it was a moment before (Settings → Game → This save), and the game shows how it
 // ended. The world stands still for the dead.
 import { nowAbs, type Save } from '../core/store.js';
@@ -27,17 +30,20 @@ import { book } from './ledger.js';
 import { faithOf, patronOf } from './realm.js';
 import { bagOf, addGood, goodDef } from './economy.js';
 import { priceOf } from './bills.js';
-import { partyOf, friends, memberKey, memberName, dismissMerc, leave, type Member } from './party.js';
+import { partyOf, friends, memberKey, memberName, dismissMerc, leave, inParty, type Member } from './party.js';
 import { normalizeHomes } from './homes.js';
 import type { Combat, Fighter } from './combat.js';
 
 export interface Grave { avatar?: string; name: string; day: number; minutes: number; where: string; cause: string; you?: boolean }
-export interface Death { day: number; minutes: number; where: string; cause: string; text: string }
+export type Form = 'ghost' | 'undead';
+export interface Death { day: number; minutes: number; where: string; cause: string; text: string; /** the dead do not rest: they can rise as this */ rise?: Form }
 export interface Told { at: number; title: string; text: string }
-interface Mortal { graves: Grave[]; dead?: Death; told?: Told[]; revived?: Record<string, number> }
+interface Mortal { graves: Grave[]; dead?: Death; told?: Told[]; revived?: Record<string, number>; /** risen after death */ form?: Form; /** fights ended (the story's harm skips the reply that tells a fight) */ fights?: number }
 export const mortalOf = (g: Save): Mortal => ((g as any).mortal ??= { graves: [] });
 export const deathOf = (g: Save | null | undefined): Death | null => ((g as any)?.mortal?.dead ?? null);
 export const gravesOf = (g: Save) => mortalOf(g).graves;
+export const formOf = (g: Save | null | undefined): Form | null => ((g as any)?.mortal?.form ?? null);
+export const FORM_WORD: Record<Form, string> = { ghost: 'a ghost', undead: 'undead' };
 /** What happened to you while you were out (shown once, then cleared). */
 export const toldOf = (g: Save): Told | null => mortalOf(g).told?.[0] ?? null;
 export function dismissTold(g: Save) { const m = mortalOf(g); m.told = (m.told ?? []).slice(1); if (!m.told.length) delete m.told; }
@@ -125,7 +131,9 @@ const someone = (p: Patient) => (p.you ? 'you' : p.name);
 function getThrough(g: Save, w: WorldDef, p: Patient, sc: Scene): Outcome {
     const lines: string[] = [];
     const limit = minutesLeft(p.hp, p.max, sc.cause);
-    const heal = healers(g, w)[0];
+    const risen = p.you && !!formOf(g);   // healers will not take the risen, and strangers run
+    const heal = risen ? undefined : healers(g, w)[0];
+    if (risen) sc = { ...sc, strangers: false };
     let t = 0; let stable = false;
     // the people with you
     const hs = sc.helpers.filter(h => h.key !== p.key);
@@ -180,6 +188,7 @@ interface Revival { ok: boolean; lines: string[]; hp: number }
 // Revivify in someone's hands, CPR (a modern world). `slain`: finished off on purpose (no CPR helps then).
 function revive(g: Save, w: WorldDef, p: Patient, sc: Scene, slain: boolean): Revival {
     const s = sheetOf(g)!; const m = mortalOf(g); const hs = sc.helpers.filter(h => h.key !== p.key);
+    if (p.you && formOf(g)) return { ok: false, lines: [], hp: 0 };   // the risen have no second time
     if (p.you && faithOf(g).ward) {
         faithOf(g).ward = false;
         const god = patronOf(g, w)?.name ?? 'Your god';
@@ -214,16 +223,51 @@ function revive(g: Save, w: WorldDef, p: Patient, sc: Scene, slain: boolean): Re
 /* ---------- the end ---------- */
 
 const CAUSE: Record<string, string> = { wounds: 'bled to death', hunger: 'starved to death', thirst: 'died of thirst' };
-function youDie(g: Save, w: WorldDef, pre: Save | null, cause: string, where: string, lines: string[]): string[] {
+// A world where the dead might not rest: magic, or the walking dead, or a world that says so.
+export function supernatural(w: WorldDef): boolean {
+    const r = rpgOf(w); const tags = ((w as any).tags ?? []) as string[];
+    if ((r?.bestiary ?? []).some(b => (b.tags ?? []).includes('undead'))) return true;
+    if (tags.includes('realistic')) return false;   // (a modern world's "spells" are skills and gadgets)
+    if ((r?.spells?.length ?? 0) > 0) return true;
+    return /magic|fantasy|supernatural|horror|myth|occult|ghost|undead|cultivat|xianxia|wuxia/i.test(`${w.style ?? ''} ${w.kind ?? ''} ${((w as any).tags ?? []).join(' ')}`);
+}
+const CRYPT = /crypt|tomb|grave|cemeter|barrow|catacomb|haunt|necro|ossuar|mausole/i;
+/** Whether the dead rise, and as what: rare, likelier when the undead killed you or you died among the dead. */
+export function riseOf(g: Save, w: WorldDef, where: string, byUndead: boolean): Form | null {
+    if (formOf(g) || !supernatural(w)) return null;
+    const place = placeOf(g, w, where)?.name ?? '';
+    const s = sheetOf(g);
+    const undying = ((s as any)?.talents as string[] | undefined ?? []).some(id => /undying|deathless|revenant|lich|undead/i.test(`${id} ${rpgOf(w)?.talents?.find(t => t.id === id)?.name ?? ''}`));
+    let chance = 0.08 + (byUndead ? 0.3 : 0) + (CRYPT.test(place) ? 0.2 : 0);
+    if (undying) chance = 1;
+    if (rnd() >= chance) return null;
+    return byUndead || CRYPT.test(place) ? 'undead' : 'ghost';
+}
+function youDie(g: Save, w: WorldDef, pre: Save | null, cause: string, where: string, lines: string[], byUndead = false): string[] {
     const s = sheetOf(g)!; const m = mortalOf(g);
     if (pre) { try { backup(pre, 'right before you died'); } catch { /* no chat to keep it in (tests) */ } }
     s.hp = 0; syncLife(g, w);
     const place = placeOf(g, w, where)?.name ?? 'somewhere';
+    const was = formOf(g);
+    const rise = riseOf(g, w, where, byUndead);   // (never for the risen)
+    if (was) { cause = was === 'ghost' ? 'faded away for good' : 'were destroyed for good'; delete m.form; }
     const text = [...lines, `You ${cause} at ${place}.`].join(' ');
     m.dead = { day: g.day, minutes: g.minutes, where, cause, text };
-    m.graves.push({ name: 'You', day: g.day, minutes: g.minutes, where, cause, you: true });
+    if (rise) m.dead.rise = rise;
+    if (!was) m.graves.push({ name: 'You', day: g.day, minutes: g.minutes, where, cause, you: true });
     note(g, '{u} {0} at {1}.', [cause, place], [], where, 'event');
     return [`☠️ You ${cause}.`];
+}
+/** Rise from death as what the death screen offers (a ghost, or undead): half your hit points, and no second time. */
+export function rise(g: Save, w: WorldDef): string {
+    const m = mortalOf(g); const d = m.dead; const s = sheetOf(g);
+    if (!d?.rise || !s) return '';
+    const form = d.rise;
+    m.form = form; delete m.dead;
+    s.hp = Math.ceil(hpMax(w, s) * 0.5); delete s.carry; syncLife(g, w);
+    for (const id of ['hunger', 'thirst']) { const st = w.statuses.find(x => x.id === id); if (st) g.player.stats[id] = st.max; }
+    note(g, '{u} rose again as {0}.', [FORM_WORD[form]], [], d.where, 'event');
+    return form === 'ghost' ? 'You open eyes you no longer have. You are still here, a ghost.' : 'Your heart does not beat, but you get up. You are undead.';
 }
 /** A companion or sellsword dies: gone from the party and from the world, remembered in the journal. */
 export function companionDies(g: Save, w: WorldDef, key: string, cause: string, where = g.player.loc): string {
@@ -233,13 +277,57 @@ export function companionDies(g: Save, w: WorldDef, key: string, cause: string, 
     if (m.merc) { dismissMerc(g, key); note(g, '{0} {1} at {u}\'s side, at {2}.', [m.merc.name, cause, place], [], where, 'event'); return `💀 ${m.merc.name} ${cause}.`; }
     const a = m.avatar!;
     leave(g, a);
-    const soc: any = (g as any).social;
-    if (soc) { for (const x of soc.appts ?? []) if (x.avatar === a && (x.state === 'set' || x.state === 'met')) x.state = 'cancelled'; if (soc.solo === a) soc.solo = ''; soc.partner = (soc.partner ?? []).filter((x: string) => x !== a); }
-    for (const x of Object.values(g.cast)) if ((x as any).homeWith === a) delete (x as any).homeWith;
     note(g, '{0} {1} at {2}.', [name, cause, place], [a], where, 'event');
+    forget(g, a);
+    return `💀 ${name} ${cause}.`;
+}
+/** Someone of the world dies (in the story): a companion as above; anyone else gets a grave and is gone too. */
+export function residentDies(g: Save, w: WorldDef, avatar: string, cause: string, where = g.player.loc): string {
+    if (inParty(g, avatar)) return companionDies(g, w, avatar, cause, where);
+    const r = g.cast[avatar]; if (!r) return '';
+    const place = placeOf(g, w, where)?.name ?? 'somewhere';
+    mortalOf(g).graves.push({ avatar, name: r.name, day: g.day, minutes: g.minutes, where, cause });
+    note(g, '{0} {1} at {2}.', [r.name, cause, place], [avatar], where, 'event');
+    forget(g, avatar);
+    return `💀 ${r.name} ${cause}.`;
+}
+// Gone from the world: plans with them called off, nobody lives with them, their card out of the cast.
+export function forget(g: Save, a: string) {
+    const soc: any = (g as any).social;
+    if (soc) {
+        for (const x of soc.appts ?? []) if (x.avatar === a && (x.state === 'set' || x.state === 'met')) x.state = 'cancelled';
+        if (soc.solo === a) soc.solo = '';
+        soc.partner = (soc.partner ?? []).filter((x: string) => x !== a);
+        soc.with = (soc.with ?? []).filter((x: any) => x.avatar !== a);
+    }
+    for (const x of Object.values(g.cast)) if ((x as any).homeWith === a) delete (x as any).homeWith;
     delete g.cast[a];
     normalizeHomes(g);
-    return `💀 ${name} ${cause}.`;
+}
+
+/* ---------- a companion hurt outside a fight (in the story) ---------- */
+
+/** Down under a tenth of their hit points, dead at 0, unless you or the others get them through. */
+export function memberHurt(g: Save, w: WorldDef, key: string, dmg: number, max: number): string[] {
+    const m = partyOf(g).members.find(x => memberKey(x) === key); if (!m) return [];
+    const hp = Math.max(0, Math.min(max, (m.hp ?? max) - dmg));
+    if (!isDown(hp, max)) { m.hp = hp; m.max = max; if (hp >= max) { delete m.hp; delete m.max; } return []; }
+    const s = sheetOf(g)!; const name = memberName(g, m); const lines: string[] = [];
+    const youUp = !isDown(s.hp, hpMax(w, s));
+    const sc: Scene = { cause: 'wounds', where: g.player.loc, remote: false, helpers: helpersOf(g, w, new Set([key]), youUp), strangers: true };
+    const p: Patient = { key, name, hp, max, you: false };
+    if (hp <= 0) {
+        const r = revive(g, w, p, sc, false); lines.push(...r.lines);
+        if (!r.ok) { lines.push(companionDies(g, w, key, dmg >= max ? 'was killed' : 'died of their wounds')); return lines; }
+        p.hp = r.hp;
+    }
+    if (isDown(p.hp, max)) {
+        const o = getThrough(g, w, p, sc); lines.push(...o.lines);
+        if (!o.saved) { lines.push(companionDies(g, w, key, 'died of their wounds')); return lines; }
+        p.hp = Math.max(p.hp, o.treated ? Math.ceil(max * 0.4) : awakeHp(max));
+    }
+    m.hp = p.hp; m.max = max;
+    return lines;
 }
 
 /* ---------- falling outside a fight (starving, poison, a blast in the face…) ---------- */
@@ -311,6 +399,7 @@ export function afterBattle(g: Save, w: WorldDef, c: Combat, pre: Save | null): 
     try { return aftermath(g, w, c, pre); } finally { busy = false; }
 }
 function aftermath(g: Save, w: WorldDef, c: Combat, pre: Save | null): Aftermath {
+    const mo = mortalOf(g); mo.fights = (mo.fights ?? 0) + 1;
     const s = sheetOf(g)!; const me = c.list.find(f => f.id === 'you')!;
     const lines: string[] = []; const story: string[] = [];
     const killers = c.over === 'lost' && merciless(w, c);
@@ -350,7 +439,8 @@ function aftermath(g: Save, w: WorldDef, c: Combat, pre: Save | null): Aftermath
         if (killers) story.push(`The ${[...new Set(c.list.filter(f => f.side === 'them' && !f.down).map(f => f.name.replace(/ \d+$/, '')))].join(' and ').toLowerCase() || 'foes'} finish what they started.`);
         if (me.hp <= 0 || killers) {
             const r = revive(g, w, p, sc, killers); story.push(...r.lines);
-            if (!r.ok) { lines.push(...youDie(g, w, pre, killers ? 'were killed' : 'died of your wounds', c.where, story)); youDied = true; }
+            const byUndead = c.list.some(f => f.side === 'them' && (f.tags ?? []).includes('undead'));
+            if (!r.ok) { lines.push(...youDie(g, w, pre, killers ? 'were killed' : 'died of your wounds', c.where, story, byUndead)); youDied = true; }
             else p.hp = r.hp;
         }
         if (!youDied) {
@@ -386,12 +476,15 @@ export function mortalLine(g: Save, w: WorldDef): string {
     const d = deathOf(g);
     if (d) return `{{user}} is DEAD: ${d.text} The story of {{user}} is over. Write only what follows their death (who finds them, who mourns), never {{user}} acting or speaking again.`;
     const out: string[] = [];
+    const form = formOf(g);
+    if (form === 'ghost') out.push('{{user}} died and came back as a ghost: no body, unseen by most people; the few who see them are frightened. A ghost cannot eat, drink, or hold anything for long, and cannot be healed by any healer. If a ghost is destroyed, it is gone forever.');
+    if (form === 'undead') out.push('{{user}} died and came back as undead: a walking corpse with no heartbeat, no hunger and no thirst. The living fear or attack the undead; healers and temples turn them away; holy places and sunlight are hostile to them. If destroyed, they are gone forever.');
     const b = bandNow(g, w);
     if (b && b !== 'fine') out.push(`{{user}} is ${BAND_WORD[b]}${b === 'critical' ? ': every move hurts, they can barely fight or work' : b === 'wounded' ? ', and it shows in everything they do' : ''}.`);
     const hurt = friends(g).filter(m => m.hp !== undefined && (m as any).max).map(m => `${memberName(g, m)} is ${BAND_WORD[bandOf(m.hp!, (m as any).max)]}`);
     if (hurt.length) out.push(`${hurt.join('; ')}.`);
     const recent = gravesOf(g).filter(x => !x.you && g.day - x.day <= 7);
     if (recent.length) out.push(`Dead and gone (they never appear again): ${recent.map(x => `${x.name} (${x.cause}, day ${x.day})`).join(', ')}.`);
-    out.push('In this world death is real: at 0 hit points a person is dead for good.');
+    out.push('In this world death is real: at 0 hit points a person is dead for good. Harm in the story costs real hit points: describe injuries honestly when they happen, and never undo or ignore them.');
     return out.join(' ');
 }

@@ -106,6 +106,8 @@ function memberFighter(g: Save, w: WorldDef, m: Member, lvl: number): Fighter {
     const c = rpgOf(w)?.classes.find(x => x.id === m.cls) ?? null;
     return npcFighter(w, c, m.merc ? m.merc.level : lvl + (m.avatar && graduated(g, m.avatar) ? 1 : 0), { id: memberKey(m), name: memberName(g, m), who: m.merc ? 'merc' : 'friend', ref: memberKey(m), row: m.row }, m.hp);
 }
+/** A companion's hit points at full, as they would fight now. */
+export const memberMaxHp = (g: Save, w: WorldDef, m: Member) => memberFighter(g, w, m, sheetOf(g)?.level ?? 1).max;
 function foeFighter(f: Foe, n: number): Fighter {
     return {
         id: `${f.id}#${n}`, name: n > 1 ? `${f.name} ${n}` : f.name, side: 'them', who: 'foe', ref: f.id, row: f.row ?? (f.ranged ? 'back' : 'front'),
