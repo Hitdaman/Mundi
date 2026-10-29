@@ -139,13 +139,9 @@ async function readParts(which: number[]) {
     FL.busy = true; FL.stop = false; FL.step = 'reading'; notify();
     for (const i of which) {
         if (FL.stop) break;
-        const prompt = sketchPrompt(FL.chunks[i].text, r.sketch, styleName(r.style));
         try {
-            let raw = await quiet(prompt, 3000);
-            let data: any;
-            try { data = parseJson(raw); }
-            catch (e: any) { raw = await quiet(`${prompt}\n\nYour last answer could not be read (${String(e?.message ?? e)}). Reply with the JSON object only.`, 3000); data = parseJson(raw); }
-            mergeSketch(r.sketch, data);
+            const data = await readPart(FL.chunks[i].text);
+            for (const d of data) mergeSketch(r.sketch, d);
             r.failed = r.failed.filter(x => x !== i);
         } catch (e) {
             console.warn('[Mundi] from lorebooks, part', i, e);
@@ -157,6 +153,32 @@ async function readParts(which: number[]) {
     FL.busy = false;
     if (!FL.stop) FL.step = 'review';
     notify();
+}
+// One part: asked twice; if both answers cannot be read, or the answer was cut off (a part full of people can run out
+// of room), its two halves are asked one at a time.
+async function readPart(text: string, halves = true): Promise<any[]> {
+    const ask = (t: string, extra = '') => quiet(`${sketchPrompt(t, R().sketch, styleName(R().style))}${extra}`, 3000).then(parseJson);
+    const inHalves = async (first: any[], why: unknown) => {
+        const cut = halfAt(text);
+        if (!halves || !cut) { if (first.length) return first; throw why; }
+        console.warn('[Mundi] from lorebooks: reading a part in two halves', why);
+        const out = [...first];
+        for (const t of cut) { try { out.push(...await readPart(t, false)); } catch (e3) { console.warn('[Mundi] from lorebooks, half a part', e3); } }
+        if (!out.length) throw why;
+        return out;
+    };
+    try { const d = await ask(text); return d.cutOff ? inHalves([d], 'the answer was cut off') : [d]; }
+    catch (e: any) {
+        try { return [await ask(text, `\n\nYour last answer could not be read (${String(e?.message ?? e)}). Reply with the JSON object only, and keep each line short.`)]; }
+        catch (e2) { return inHalves([], e2); }
+    }
+}
+// Splits a part at the entry heading nearest its middle (none: no split).
+function halfAt(text: string): [string, string] | null {
+    const heads = [...text.matchAll(/\n\n### /g)].map(m => m.index!);
+    if (!heads.length) return null;
+    const mid = heads.reduce((a, b) => (Math.abs(b - text.length / 2) < Math.abs(a - text.length / 2) ? b : a));
+    return [text.slice(0, mid), text.slice(mid + 2)];
 }
 const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a) }, (_, k) => a + k);
 
