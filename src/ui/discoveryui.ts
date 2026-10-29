@@ -1,7 +1,7 @@
 // Places that open up as the story goes, on screen: a building's floors (one pin on the map; its floors stacked,
 // the top one first, like the buttons of a lift), "Add a place we just found", and the HUD buttons of gates.
 import { esc, game, notify, saveGame, toast, state } from '../core/store.js';
-import { getWorld, type WorldDef, type Place } from '../core/world.js';
+import { getWorld, builtInIds, type WorldDef, type Place } from '../core/world.js';
 import type { Save } from '../core/store.js';
 import { ACT, INPUT } from './reg.js';
 import { icon } from './icons.js';
@@ -10,9 +10,11 @@ import { refreshPrompt } from '../sim/prompt.js';
 import { presentAt } from '../sim/people.js';
 import { placeOf, floorsOf, buildingOf, floorName, lockedNow, hiddenNow, travelMinutes } from '../sim/places.js';
 import { addFound, describeFound, unlock, waiting, rulesText } from '../sim/discovery.js';
+import { paintFound, paintFoundOn } from './worldpaint.js';
 import { gatesOn, gateAt, looseAt, enterGate, leaveGate, fightLoose, RANKS } from '../sim/gates.js';
 import { sheetOf } from '../sim/rpg.js';
 
+const mine = (w: WorldDef) => !builtInIds().includes(w.id);
 const S = () => { const g = game(); const w = g && getWorld(g.world); return g && w ? { g, w } : null; };
 export const BLD = { id: '' };
 const ADD = { open: false, name: '', floor: '', inside: false, spoil: false };
@@ -54,6 +56,7 @@ function addHtml(g: Save, w: WorldDef): string {
             <label class="mu-field"><span>Name</span><input data-input="dv-name" value="${esc(ADD.name)}" placeholder="Cha Hae-In's apartment" maxlength="60"></label>
             ${b ? `<label class="mu-check"><input type="checkbox" data-input="dv-inside" ${ADD.inside ? 'checked' : ''}><span>It is a floor of ${esc(b.name)}<small>One pin on the map; its floors open from it.</small></span></label>
                 ${ADD.inside ? `<label class="mu-field"><span>Which floor</span><input data-input="dv-floor" value="${esc(ADD.floor)}" placeholder="Floor ${floorsOf(g, w, b.id).length + 2}" maxlength="30"></label>` : ''}` : ''}
+            <label class="mu-check"><input type="checkbox" data-input="dv-paint" ${paintFoundOn() ? 'checked' : ''}><span>Paint it with my ComfyUI<small>${mine(w) ? 'Its background, and drawn into the map as a building (the map of your world: other games see the building, not its name).' : 'Its background. The map of a world that comes with Mundi stays as it is.'}</small></span></label>
             ${left.length ? `<details ${ADD.spoil ? 'open' : ''}><summary data-act="dv-spoil">Or is it one the world keeps hidden? (spoilers)</summary>
                 ${left.map(p => `<div class="mu-lp-row"><b data-notr>${esc(floorName(p))}</b><small>${hiddenNow(g, w, p) ? 'not on your map' : ''}${hiddenNow(g, w, p) && lockedNow(g, w, p) ? ' · ' : ''}${lockedNow(g, w, p) ? esc(lockedNow(g, w, p)) : ''}</small>
                     ${hiddenNow(g, w, p) ? `<button class="mu-ghost" data-act="dv-find" data-id="${esc(p.id)}">Found it</button>` : ''}${lockedNow(g, w, p) ? `<button class="mu-ghost" data-act="dv-open" data-id="${esc(p.id)}">Let me in</button>` : ''}</div>`).join('')}</details>` : ''}
@@ -81,6 +84,17 @@ export function discoveryActs(g: Save, w: WorldDef): string {
     return out.join('');
 }
 
+// Painting takes a while: the game goes on, and the place gets its pictures when they are ready.
+async function paintNew(g: Save, w: WorldDef, p: Place) {
+    toast(`Painting ${p.name} with ComfyUI…`, 'info');
+    try {
+        const r = await paintFound(w, p, mine(w));
+        if (r.bg) p.bg = r.bg;
+        if (game() === g) saveGame();
+        toast(`${p.name} is painted${r.drawn ? ' and drawn into the map' : ''}.`, 'success');
+    } catch (e: any) { toast(`Could not paint ${p.name}: ${String(e?.message ?? e)}`, 'warn'); }
+    notify();
+}
 const done = (m: string, kind: 'info' | 'success' | 'warn' = 'success') => { if (m) toast(m, kind); saveGame(); refreshPrompt(); notify(); };
 Object.assign(ACT, {
     'dv-bld': (el) => openBuilding(el.dataset.id ?? ''),
@@ -104,6 +118,7 @@ Object.assign(ACT, {
         if (!p) { done('That place could not be added.', 'warn'); return; }
         if (state.view === 'scene') setPrompt('mundi_roll', `[{{user}} now knows the way to ${floorName(p)}.]`, 0);
         done(`New place on your map: ${floorName(p)}.`);
+        if (paintFoundOn()) void paintNew(c.g, c.w, p);
     },
     'dv-gate': (el) => { const c = S(); if (c) done(enterGate(c.g, c.w, el.dataset.id!), 'info'); },
     'dv-gate-leave': (el) => { const c = S(); if (c) { leaveGate(c.g, el.dataset.id!); done('You step back out of the gate.', 'info'); } },
@@ -113,4 +128,5 @@ Object.assign(INPUT, {
     'dv-name': (el) => { const had = !!ADD.name.trim(); ADD.name = el.value; if (had !== !!ADD.name.trim()) notify(); },
     'dv-floor': (el) => { ADD.floor = el.value; },
     'dv-inside': (el) => { ADD.inside = el.checked; notify(); },
+    'dv-paint': (el) => { paintFoundOn(el.checked); },
 });
