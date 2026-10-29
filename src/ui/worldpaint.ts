@@ -19,13 +19,15 @@ import { ACT, INPUT } from './reg.js';
 type Graph = Record<string, { class_type: string; inputs: Record<string, any>; _meta?: { title?: string } }>;
 type Kind = 'map' | 'bg' | 'cover';
 interface Item { kind: Kind; id: string; name: string; state: 'wait' | 'busy' | 'done' | 'failed'; why?: string }
-interface Prefs { workflow: string; strength: number; loras: boolean; maps: boolean; bgs: boolean; cover: boolean; redo: boolean }
+interface Prefs { v?: number; workflow: string; strength: number; loras: boolean; maps: boolean; bgs: boolean; cover: boolean; redo: boolean }
 
 export const WP = { open: false, busy: false, stop: false, items: [] as Item[], flows: [] as string[], last: '' };
 const prefs = (): Prefs => {
     const p = ((settings() as any).worldPaint ??= {}) as Prefs;
     p.workflow ??= meg().currentWorkflowName || 'Default_Comfy_Workflow.json';
-    p.strength ??= 0.6; p.loras ??= false; p.maps ??= true; p.bgs ??= true; p.cover ??= true; p.redo ??= false;
+    // v2: the plan is a soft guide now, so ComfyUI gets more room by default (0.6 copied the plan back)
+    if (p.v !== 2) { p.strength = 0.8; p.v = 2; }
+    p.loras ??= false; p.maps ??= true; p.bgs ??= true; p.cover ??= true; p.redo ??= false;
     return p;
 };
 // Megumin Suite's image settings (its default profile), else nothing: the workflow's own values stay.
@@ -44,11 +46,19 @@ function todo(w: WorldDef, p: Prefs): Item[] {
 
 /* ---------- the plan drawn under a map ---------- */
 
+// The plan is a soft guide, not a drawing: broad colour areas (districts, woods, fields, water), winding roads and
+// a darker patch where each place stands, then blurred and grained. ComfyUI keeps where things are and invents
+// every building, tree and street itself; a sharp plan would be copied back as it is.
 const W_PX = 1344, H_PX = 832;
 const WATER = /\b(sea|ocean|coast|coastal|beach|harbou?r|port|bay|river|lake|canal|docks?|pier|shore|island)\b/i;
 const RURAL = /\b(kingdom|realm|region|province|country|lands?|wilds?|valley|island|continent|empire)\b/i;
 const GREEN = /\b(park|garden|forest|woods?|field|farm|meadow|grove|cemetery|camp)\b/i;
+const HILLS = /\b(mountains?|hills?|peaks?|cliffs?|highlands?|ridge)\b/i;
 const indoor = (m: MapDef) => (m.trip ?? 99) <= 5;
+const isCountry = (w: WorldDef, m: MapDef) => {
+    const pins = w.places.filter(p => p.map === m.id);
+    return !m.parent && (RURAL.test(`${m.name} ${m.area ?? ''}`) || (!pins.some(p => !p.link) && pins.filter(p => p.link).length > 1 && w.style === 'medieval'));
+};
 function rng(seed: string) { let h = 2166136261; for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; }
 
 export async function drawPlan(w: WorldDef, m: MapDef): Promise<Blob> {
@@ -56,97 +66,135 @@ export async function drawPlan(w: WorldDef, m: MapDef): Promise<Blob> {
     const g = c.getContext('2d')!;
     const r = rng(m.id);
     const pins = w.places.filter(p => p.map === m.id);
-    const px = (p: Place) => [(p.x / 100) * W_PX, (p.y / 100) * H_PX] as const;
+    const pts = pins.map(p => [(p.x / 100) * W_PX, (p.y / 100) * H_PX] as const);
+    // an organic patch: a few overlapping ellipses round a point
+    const patch = (x: number, y: number, size: number, col: string, n = 5) => {
+        g.fillStyle = col;
+        for (let k = 0; k < n; k++) { g.beginPath(); g.ellipse(x + (r() - 0.5) * size, y + (r() - 0.5) * size * 0.7, size * (0.35 + r() * 0.4), size * (0.25 + r() * 0.3), r() * Math.PI, 0, Math.PI * 2); g.fill(); }
+    };
+    const scatter = (n: number, size: number, cols: string[], ok: (x: number, y: number) => boolean = () => true) => {
+        for (let k = 0; k < n; k++) { const x = r() * W_PX, y = r() * H_PX; if (ok(x, y)) patch(x, y, size * (0.6 + r() * 0.8), cols[k % cols.length]); }
+    };
     if (indoor(m)) {
-        // a floor plan: a floor, walls round a room at each pin, corridors between them
-        g.fillStyle = '#d9cbb2'; g.fillRect(0, 0, W_PX, H_PX);
-        g.fillStyle = '#bfae90'; g.fillRect(40, 40, W_PX - 80, H_PX - 80);
-        g.strokeStyle = '#efe6d4'; g.lineWidth = 46; g.lineCap = 'round';
-        road(g, pins.map(px));
-        for (const p of pins) { const [x, y] = px(p); const ww = 170 + r() * 60, hh = 120 + r() * 50; g.fillStyle = '#e8dcc4'; g.fillRect(x - ww / 2, y - hh / 2, ww, hh); g.strokeStyle = '#5a4a36'; g.lineWidth = 8; g.strokeRect(x - ww / 2, y - hh / 2, ww, hh); }
-        return blob(c);
+        // inside a building: dark walls, a warm floor, a room of its own colour at each place, a corridor joining them
+        g.fillStyle = '#5b4a3a'; g.fillRect(0, 0, W_PX, H_PX);
+        g.fillStyle = '#b89c78'; g.fillRect(50, 50, W_PX - 100, H_PX - 100);
+        // the rest of the floor split into plain rooms, so the building is full rather than one big hall
+        for (let y = 50; y < H_PX - 50; y += 150 + r() * 60) for (let x = 50; x < W_PX - 50; x += 180 + r() * 80) {
+            g.strokeStyle = '#5b4a3a'; g.lineWidth = 10; g.strokeRect(x, y, 180 + r() * 80, 150 + r() * 60);
+            if (r() < 0.6) { g.fillStyle = r() < 0.5 ? '#7a5e45' : '#9a8266'; g.fillRect(x + 20 + r() * 100, y + 20 + r() * 80, 30 + r() * 30, 20 + r() * 25); }
+        }
+        g.strokeStyle = '#d8c3a0'; g.lineCap = 'round'; g.lineWidth = 60; road(g, pts, r);
+        const floors = ['#c9a77e', '#a9b3a2', '#c2967a', '#d2bf96', '#9fa7b5'];
+        pts.forEach(([x, y], i) => {
+            const ww = 200 + r() * 90, hh = 150 + r() * 70;
+            g.fillStyle = '#4e3f31'; g.fillRect(x - ww / 2 - 10, y - hh / 2 - 10, ww + 20, hh + 20);
+            g.fillStyle = floors[i % floors.length]; g.fillRect(x - ww / 2, y - hh / 2, ww, hh);
+            for (let k = 0; k < 5; k++) { g.fillStyle = r() < 0.5 ? '#6d4f36' : '#8a7058'; g.fillRect(x - ww / 2 + 15 + r() * (ww - 60), y - hh / 2 + 15 + r() * (hh - 50), 25 + r() * 25, 18 + r() * 20); }
+        });
+        return blob(soften(c, r));
     }
-    const lots = pins.filter(p => !p.link), links = pins.filter(p => p.link);
-    const country = !m.parent && (RURAL.test(`${m.name} ${m.area ?? ''}`) || (!lots.length && links.length > 1 && w.style === 'medieval'));
-    g.fillStyle = country ? '#b3c08f' : '#cbc4b4'; g.fillRect(0, 0, W_PX, H_PX);
-    // water: a coast along one edge, or a river across
+    const country = isCountry(w, m);
     const text = `${m.name} ${m.area ?? ''} ${pins.map(p => `${p.name} ${p.desc ?? ''}`).join(' ')} ${m.parent ? '' : w.setting}`;
-    let water: ((x: number, y: number) => boolean) = () => false;
+    // water: a river winding across, or a coast along the bottom
+    let water: Path2D | null = null, river = false;
     if (WATER.test(text)) {
-        g.fillStyle = '#6f9fbf'; g.strokeStyle = '#6f9fbf';
+        water = new Path2D();
         if (/\b(river|canal)\b/i.test(text)) {
-            const y0 = H_PX * (0.3 + r() * 0.4), y1 = H_PX * (0.3 + r() * 0.4);
-            g.lineWidth = 70; g.beginPath(); g.moveTo(0, y0); g.bezierCurveTo(W_PX * 0.35, H_PX * r(), W_PX * 0.65, H_PX * r(), W_PX, y1); g.stroke();
-            water = (x, y) => g.getImageData(x, y, 1, 1).data[2] > 180;
+            river = true;
+            water.moveTo(0, H_PX * (0.3 + r() * 0.4)); water.bezierCurveTo(W_PX * 0.35, H_PX * r(), W_PX * 0.65, H_PX * r(), W_PX, H_PX * (0.3 + r() * 0.4));
         } else {
-            g.beginPath(); g.moveTo(0, H_PX); for (let x = 0; x <= W_PX; x += 64) g.lineTo(x, H_PX * 0.88 - Math.sin(x / 140) * 26); g.lineTo(W_PX, H_PX); g.fill();
-            water = (_x, y) => y > H_PX * 0.84;
+            water.moveTo(0, H_PX); for (let x = 0; x <= W_PX; x += 48) water.lineTo(x, H_PX * 0.84 - Math.sin(x / 160 + r()) * 30 - r() * 14); water.lineTo(W_PX, H_PX); water.closePath();
         }
     }
-    const near = (x: number, y: number, d: number) => pins.some(p => { const [a, b] = px(p); return Math.hypot(a - x, b - y) < d; });
+    g.lineWidth = 80;
+    const wet = (x: number, y: number) => !!water && (river ? g.isPointInStroke(water, x, y) : g.isPointInPath(water, x, y));
+    const dry = (x: number, y: number) => !wet(x, y);
     if (country) {
-        // countryside: fields and woods, a cluster of roofs for each town
-        for (let k = 0; k < 40; k++) { const x = r() * W_PX, y = r() * H_PX; if (water(x, y) || near(x, y, 90)) continue; g.fillStyle = r() < 0.5 ? '#5f8a4a' : '#c9c27d'; g.beginPath(); g.ellipse(x, y, 30 + r() * 70, 20 + r() * 40, r() * 3, 0, Math.PI * 2); g.fill(); }
+        // countryside: meadow, woods, fields, hills at the top if the world has any
+        g.fillStyle = '#8fac64'; g.fillRect(0, 0, W_PX, H_PX);
+        scatter(26, 120, ['#a3b86c', '#7f9e58']);
+        if (HILLS.test(text)) for (let x = -40; x < W_PX; x += 110) patch(x + r() * 60, r() * 70, 170, ['#8b8473', '#9a9283', '#6f6a5c'][Math.floor(r() * 3)], 3);
+        scatter(18, 110, ['#c9b866', '#b7ad5e', '#d2c27a'], dry);
+        scatter(34, 130, ['#4c7238', '#56803f', '#3f6331'], dry);
     } else {
-        // a town: a street grid filled with blocks of houses, a few parks; each district its own roof colour
-        const step = 64, hue = (x: number, y: number) => { let best = 0, d = 1e9; links.forEach((p, i) => { const [a, b] = px(p); const e = Math.hypot(a - x, b - y); if (e < d) { d = e; best = i + 1; } }); return best; };
-        const roofs = ['#9a6b55', '#7d7268', '#62758a', '#8f7f62', '#7a5d6e', '#6e7f5c'];
-        for (let y = 8; y < H_PX; y += step) for (let x = 8; x < W_PX; x += step) {
-            if (water(x + 24, y + 24)) continue;
-            if (r() < 0.07) { g.fillStyle = '#7fa262'; g.fillRect(x, y, step - 12, step - 12); continue; }
-            g.fillStyle = '#a49c90'; g.fillRect(x, y, step - 12, step - 12);
-            g.fillStyle = roofs[hue(x, y) % roofs.length];
-            for (let k = 0; k < 4; k++) g.fillRect(x + 3 + (k % 2) * 26, y + 3 + Math.floor(k / 2) * 26, 20 + r() * 4, 18 + r() * 5);
-        }
+        // a town: districts of their own tone round each district pin (or a few spread out), parks, rooftops for grain
+        g.fillStyle = '#a19c92'; g.fillRect(0, 0, W_PX, H_PX);
+        const hubs = pts.filter((_, i) => pins[i].link);
+        const centres = hubs.length >= 2 ? hubs : [0, 1, 2, 3].map(() => [r() * W_PX, r() * H_PX] as const);
+        const tones = ['#ad8f7c', '#8e959e', '#a3a58e', '#b4a68e', '#8a8794', '#9c8574'];
+        centres.forEach(([x, y], i) => patch(x, y, 380, tones[i % tones.length], 9));
+        for (let k = 0; k < 2600; k++) { const x = r() * W_PX, y = r() * H_PX; g.fillStyle = ['#7d6e64', '#8f8f8f', '#b5aa98', '#6b7280', '#c4bcae'][k % 5]; g.fillRect(x, y, 8 + r() * 12, 6 + r() * 10); }
+        scatter(6, 80, ['#7a9a62', '#6c8c58'], dry);
     }
-    // main roads between the places, then a landmark at each place (a square and a big building, or a park)
-    g.lineCap = 'round';
-    g.strokeStyle = '#7d7a74'; g.lineWidth = country ? 16 : 30; road(g, pins.map(px));
-    g.strokeStyle = country ? '#d8c79a' : '#ebe7de'; g.lineWidth = country ? 9 : 20; road(g, pins.map(px));
-    for (const p of pins) {
-        const [x, y] = px(p);
-        if (p.link) { if (country) for (let k = 0; k < 14; k++) { g.fillStyle = ['#9a5b45', '#7d7268', '#8a7a62'][k % 3]; g.fillRect(x - 60 + r() * 120, y - 40 + r() * 80, 16 + r() * 12, 14 + r() * 10); } continue; }
-        if (GREEN.test(`${p.id} ${p.name}`)) { g.fillStyle = '#5f8f48'; g.beginPath(); g.ellipse(x, y, 80, 60, 0, 0, Math.PI * 2); g.fill(); continue; }
-        g.fillStyle = '#e4dccb'; g.fillRect(x - 70, y - 55, 140, 110);
-        g.fillStyle = ['#a0523c', '#5c6f84', '#7a6a5a', '#6d5a7d'][Math.floor(r() * 4)]; g.fillRect(x - 46, y - 36, 92, 64);
-        g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(x - 46, y + 28, 92, 8);
+    if (water) {
+        g.fillStyle = '#5f8fb0'; g.strokeStyle = '#5f8fb0';
+        if (river) { g.lineWidth = 70; g.stroke(water); } else { g.fill(water); g.fillStyle = '#d9cfa8'; g.lineWidth = 18; g.strokeStyle = '#d9cfa8'; g.stroke(water); }
+        g.lineWidth = 80;
     }
-    return blob(c);
+    // roads between the places, then a patch at each place: a town, a park, or a big building
+    g.lineCap = 'round'; g.strokeStyle = country ? '#cdb98c' : '#d9d4ca'; g.lineWidth = country ? 16 : 26; road(g, pts, r);
+    pins.forEach((p, i) => {
+        const [x, y] = pts[i];
+        if (GREEN.test(`${p.id} ${p.name}`)) patch(x, y, 110, '#6a9152', 4);
+        else if (p.link) patch(x, y, country ? 130 : 160, country ? '#8d5f48' : '#7a6f68', 6);
+        else patch(x, y, 80, country ? '#946650' : '#6a5f59', 3);
+    });
+    return blob(soften(c, r));
 }
-// Roads: every place joined to its nearest neighbours (a spanning tree), so the plan reads as one street net.
-function road(g: CanvasRenderingContext2D, pts: readonly (readonly [number, number])[]) {
+// Roads: every place joined to its nearest neighbours (a spanning tree), each road bending a little.
+function road(g: CanvasRenderingContext2D, pts: readonly (readonly [number, number])[], r: () => number) {
     if (pts.length < 2) return;
     const inTree = [0], d = (a: number, b: number) => Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]);
     while (inTree.length < pts.length) {
         let best: [number, number] | null = null;
         for (const a of inTree) for (let b = 0; b < pts.length; b++) if (!inTree.includes(b) && (!best || d(a, b) < d(best[0], best[1]))) best = [a, b];
         const [a, b] = best!; inTree.push(b);
-        g.beginPath(); g.moveTo(pts[a][0], pts[a][1]); g.lineTo(pts[a][0], pts[b][1]); g.lineTo(pts[b][0], pts[b][1]); g.stroke();
+        const [x0, y0] = pts[a], [x1, y1] = pts[b], bend = (r() - 0.5) * 0.5;
+        g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo((x0 + x1) / 2 - (y1 - y0) * bend, (y0 + y1) / 2 + (x1 - x0) * bend, x1, y1); g.stroke();
     }
+}
+// Blur (shrunk and grown back, so it works in every browser) and grain, so nothing in the plan is sharp enough to copy.
+function soften(c: HTMLCanvasElement, r: () => number): HTMLCanvasElement {
+    const out = document.createElement('canvas'); out.width = c.width; out.height = c.height;
+    const o = out.getContext('2d')!;
+    o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
+    const small = document.createElement('canvas'); small.width = Math.round(c.width / 20); small.height = Math.round(c.height / 20);
+    const s = small.getContext('2d')!; s.imageSmoothingEnabled = true; s.imageSmoothingQuality = 'high';
+    s.drawImage(c, 0, 0, small.width, small.height);
+    o.drawImage(small, 0, 0, out.width, out.height);
+    const img = o.getImageData(0, 0, out.width, out.height), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { const n = (r() - 0.5) * 34; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+    o.putImageData(img, 0, 0);
+    return out;
 }
 const blob = (c: HTMLCanvasElement) => new Promise<Blob>((ok, bad) => c.toBlob(b => (b ? ok(b) : bad(new Error('Could not draw the plan.'))), 'image/png'));
 
 /* ---------- ComfyUI ---------- */
 
 // The workflow's placeholders, filled the way Megumin Suite and Image Generation fill them.
-function fill(g: Graph, v: { prompt: string; width: number; height: number }): Graph {
+function fill(g: Graph, v: { prompt: string; width: number; height: number; negative?: string }): Graph {
     const s = meg(), p = prefs();
     const loras = (n: number) => (p.loras ? s[`selectedLora${n === 1 ? '' : n}`] : '') || 'None';
     const triggers = p.loras ? [1, 2, 3, 4].filter(n => loras(n) !== 'None').map(n => s[`loraTrigger${n}`]).filter(Boolean) : [];
     const vals: Record<string, any> = {
-        '%prompt%': [...triggers, s.promptPrefix, v.prompt].map(x => String(x).trim().replace(/,$/, '')).filter(Boolean).join(', '), '%negative_prompt%': [s.customNegative, 'text, letters, watermark, signature, people, person'].filter(Boolean).join(', '),
+        '%prompt%': [...triggers, s.promptPrefix, v.prompt].map(x => String(x).trim().replace(/,$/, '')).filter(Boolean).join(', '), '%negative_prompt%': [s.customNegative, 'text, letters, watermark, signature, people, person', v.negative].filter(Boolean).join(', '),
         '%seed%': Math.floor(Math.random() * 1e9), '%sampler%': s.selectedSampler || 'euler', '%model%': s.selectedModel || undefined, '%steps%': Number(s.steps) || 25,
-        '%scale%': Number(s.cfg) || 6, '%denoise%': 1, '%clip_skip%': -Math.abs(Number(s.clipSkip) || 2), '%width%': v.width, '%height%': v.height,
+        '%scale%': Number(s.cfg) || 6, '%scheduler%': s.scheduler || s.selectedScheduler || 'normal', '%denoise%': 1, '%clip_skip%': -Math.abs(Number(s.clipSkip) || 2), '%width%': v.width, '%height%': v.height,
         '%lora1%': loras(1), '%lora2%': loras(2), '%lora3%': loras(3), '%lora4%': loras(4),
         '%lorawt1%': p.loras ? Number(s.selectedLoraWt) || 1 : 0, '%lorawt2%': p.loras ? Number(s.selectedLoraWt2) || 1 : 0, '%lorawt3%': p.loras ? Number(s.selectedLoraWt3) || 1 : 0, '%lorawt4%': p.loras ? Number(s.selectedLoraWt4) || 1 : 0,
     };
-    for (const n of Object.values(g)) for (const [k, x] of Object.entries(n.inputs ?? {})) if (typeof x === 'string' && vals[x] !== undefined) n.inputs[k] = vals[x];
+    for (const n of Object.values(g)) for (const [k, x] of Object.entries(n.inputs ?? {})) {
+        if (typeof x !== 'string' || !/^%\w+%$/.test(x)) continue;
+        if (vals[x] !== undefined) n.inputs[k] = vals[x];
+        else if (/prompt|text|tags|style/i.test(x)) n.inputs[k] = ''; // an extra text slot (a style or character prompt) stays empty
+    }
     const left = Object.values(g).flatMap(n => Object.values(n.inputs ?? {})).find(x => typeof x === 'string' && /^%\w+%$/.test(x));
     if (left) throw new Error(`The workflow needs ${left}, which Megumin Suite does not set (choose a model there, or another workflow).`);
     return g;
 }
 // txt2img → img2img: the empty latent becomes the uploaded picture, encoded with the workflow's own VAE, and the
-// sampler starts part of the way in (strength 0.6: the last 60% of the steps).
+// sampler starts part of the way in (strength 0.8: the last 80% of the steps).
 function toImg2Img(g: Graph, image: string, strength: number): Graph {
     const lat = Object.keys(g).find(id => /^Empty.*LatentImage$/.test(g[id].class_type));
     const dec = Object.values(g).find(n => n.class_type === 'VAEDecode');
@@ -169,7 +217,7 @@ async function upload(b: Blob, name: string): Promise<string> {
     return d.subfolder ? `${d.subfolder}/${d.name}` : d.name;
 }
 async function paint(prompt: string, width: number, height: number, plan?: Blob): Promise<Blob> {
-    let g = fill(structuredClone(await loadWorkflow(prefs().workflow)) as Graph, { prompt, width, height });
+    let g = fill(structuredClone(await loadWorkflow(prefs().workflow)) as Graph, { prompt, width, height, negative: plan ? MAP_NEG : '' });
     if (plan) g = toImg2Img(g, await upload(plan, `mundi-plan-${Date.now().toString(36)}.png`), prefs().strength);
     const out = await runJob(g as any);
     const saved = Object.keys(out).find(id => g[id]?.class_type === 'SaveImage') ?? Object.keys(out)[0];
@@ -179,8 +227,13 @@ async function paint(prompt: string, width: number, height: number, plan?: Blob)
 
 /* ---------- prompts (the AI turns the world into tags once) ---------- */
 
-const MAP_TAGS = 'masterpiece, best quality, no humans, scenery, map, from above, aerial view, top-down, detailed illustration, painted map, roads, rooftops, trees, no text';
-const PLAN_TAGS = 'masterpiece, best quality, no humans, indoors, floor plan, from above, top-down, rooms, corridors, furniture, detailed illustration, no text';
+// The look of Mundi's own maps: a detailed isometric game illustration seen from high above.
+const MAP_BASE = 'masterpiece, best quality, highly detailed, no humans, scenery, isometric, from above, high angle view, aerial view, game map, detailed illustration, sharp focus';
+const MAP_TOWN = `${MAP_BASE}, cityscape, town, many buildings, rooftops, streets, cars, trees, plaza`;
+const MAP_COUNTRY = `${MAP_BASE}, landscape, countryside, forest, fields, winding road, village, hills, river`;
+const MAP_INDOOR = 'masterpiece, best quality, highly detailed, no humans, scenery, indoors, isometric, cutaway, from above, rooms, walls, furniture, floor, detailed illustration';
+const MAP_NEG = 'grid, blueprint, diagram, chart, flat colors, simple background, blurry, lowres, abstract, pixelated, frame, border';
+const mapTags = (w: WorldDef, m: MapDef) => (indoor(m) ? MAP_INDOOR : isCountry(w, m) ? MAP_COUNTRY : MAP_TOWN);
 async function tagsFor(w: WorldDef, places: Place[]): Promise<Map<string, string>> {
     const out = new Map<string, string>();
     for (let i = 0; i < Math.max(places.length, 1); i += 30) {
@@ -214,7 +267,7 @@ async function run() {
             let pic: Blob;
             if (it.kind === 'map') {
                 const m = w.maps.find(x => x.id === it.id)!;
-                pic = await paint(`${indoor(m) ? PLAN_TAGS : MAP_TAGS}, ${look}`, W_PX, H_PX, await drawPlan(w, m));
+                pic = await paint(`${mapTags(w, m)}, ${look}`, W_PX, H_PX, await drawPlan(w, m));
                 m.image = await uploadWorldPicture(w, pic, `map-${m.id}`); m.ratio = +(W_PX / H_PX).toFixed(4); delete m.images;
                 if (!isPainted(w.cover) && !WP.items.some(i => i.kind === 'cover' && i.state !== 'failed')) w.cover = m.image;
             } else if (it.kind === 'bg') {
@@ -255,7 +308,7 @@ export function paintHtml(): string {
             <label class="mu-check"><input type="checkbox" data-act="wp-opt" data-k="redo" ${p.redo ? 'checked' : ''}><span>Paint again what already has a picture</span></label>
             <label class="mu-check"><input type="checkbox" data-act="wp-opt" data-k="loras" ${p.loras ? 'checked' : ''}><span>Use my Megumin Suite LoRAs<small>Off: character LoRAs would bleed into scenery.</small></span></label>
             <label class="mu-field"><span>Workflow</span><select data-input="wp-flow">${flows.map(f => `<option ${f === p.workflow ? 'selected' : ''} data-notr>${esc(f)}</option>`).join('')}</select></label>
-            <label class="mu-field"><span>How much ComfyUI may change the plan: ${Math.round(p.strength * 100)}%</span><input type="range" min="0.3" max="0.9" step="0.05" value="${p.strength}" data-input="wp-strength"></label></div>`}
+            <label class="mu-field"><span>How much ComfyUI may change the plan: ${Math.round(p.strength * 100)}%</span><input type="range" min="0.4" max="0.95" step="0.05" value="${p.strength}" data-input="wp-strength"></label></div>`}
         ${WP.last ? `<img class="mu-paint-last" src="${esc(WP.last)}" alt="">` : ''}
         <ul class="mu-paint-list">${list.map(i => `<li class="is-${i.state}" title="${esc(i.why ?? '')}"><span data-notr>${esc(i.name)}</span><i>${mark(i)}</i></li>`).join('') || '<li class="mu-muted">Nothing to paint: everything has a picture.</li>'}</ul>
         <div class="mu-row mu-dlg-btns">${WP.busy ? `<button data-act="wp-stop">${icon('x')}<span>Stop after this one</span></button>`
@@ -276,5 +329,5 @@ Object.assign(ACT, {
 });
 Object.assign(INPUT, {
     'wp-flow': (el) => { prefs().workflow = el.value; saveSettings(); },
-    'wp-strength': (el) => { prefs().strength = Number(el.value) || 0.6; saveSettings(); notify(); },
+    'wp-strength': (el) => { prefs().strength = Number(el.value) || 0.8; saveSettings(); notify(); },
 });
