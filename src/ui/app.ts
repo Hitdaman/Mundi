@@ -31,6 +31,7 @@ import { combatHtml } from './combatui.js';
 import { audienceHtml } from './factionsui.js';
 import { diceHtml } from './dice.js';
 import { arrestHtml } from './adventureui.js';
+import { discoveryHtml } from './discoveryui.js';
 import { sceneHtml, afterScene, chatHtml } from './scene.js';
 import { worldCfgHtml } from './worldcfg.js';
 import { styleOf } from '../core/world.js';
@@ -125,7 +126,7 @@ export function render() {
     main.querySelectorAll<HTMLElement>('[data-keep]').forEach(el => { keep[el.dataset.keep!] = { top: el.scrollTop, h: el.scrollHeight, atEnd: el.scrollHeight - el.scrollTop - el.clientHeight < 40 }; });
 
     // only what changed is redrawn (morph), so nothing else on screen "resets"
-    morph(main, `${body()}${inGame() ? hudHtml() + phoneHtml() + helpHtml() + coursesHtml() + journeyHtml() + rpgOverlays() + combatHtml() + audienceHtml() + arrestHtml() + diceHtml() : ''}${updateHtml()}${whatsNewHtml()}${tutorialHtml()}${state.busy ? `<div class="mu-busy"><i></i><span>${state.busy}…</span></div>` : ''}`);
+    morph(main, `${body()}${inGame() ? hudHtml() + phoneHtml() + helpHtml() + coursesHtml() + journeyHtml() + discoveryHtml() + rpgOverlays() + combatHtml() + audienceHtml() + arrestHtml() + diceHtml() : ''}${updateHtml()}${whatsNewHtml()}${tutorialHtml()}${state.busy ? `<div class="mu-busy"><i></i><span>${state.busy}…</span></div>` : ''}`);
     { const g = game(); rainAmbience(!!g && inGame() && (state.view === 'map' || state.view === 'scene') && weatherHere(g, getWorld(g.world)).rain); }   // rain you can hear
     r.dataset.view = state.view;
     // the style of the world on screen (the medieval look, the modern one…)
