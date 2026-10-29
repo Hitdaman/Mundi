@@ -561,6 +561,7 @@ export interface CardPatch {
     name?: string; description?: string; personality?: string; scenario?: string; first_mes?: string; mes_example?: string;
     creator_notes?: string; system_prompt?: string; post_history_instructions?: string; talkativeness?: number;
     depth_prompt?: { prompt: string; depth: number; role: string }; tags?: string[]; alternate_greetings?: string[];
+    extensions?: Record<string, any>;   // other card extensions, merged in (world: the card's lorebook, mundified: Mundi's mark)
 }
 // Saves card fields with SillyTavern's own merge endpoint (the card file keeps its name and image).
 export async function saveCharacter(avatar: string, p: CardPatch) {
@@ -572,6 +573,7 @@ export async function saveCharacter(avatar: string, p: CardPatch) {
     if (p.post_history_instructions !== undefined) data.post_history_instructions = p.post_history_instructions;
     if (p.talkativeness !== undefined) { top.talkativeness = p.talkativeness; ext.talkativeness = p.talkativeness; }
     if (p.depth_prompt !== undefined) ext.depth_prompt = p.depth_prompt;
+    if (p.extensions) Object.assign(ext, p.extensions);
     if (Object.keys(ext).length) data.extensions = ext;
     const res = await fetch('/api/characters/merge-attributes', { method: 'POST', headers: headers(), body: JSON.stringify({ avatar, ...top, data }) });
     if (!res.ok) throw new Error('Could not save the character.');

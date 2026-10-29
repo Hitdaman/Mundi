@@ -15,6 +15,7 @@ import {
     refreshList, folderColor, setFolderColor, deleteFolder, personaLore, setPersonaLore, exportCharacter, cardFile, fileNameOf, baseSpriteFolder, loreCount, charTags, tagColor, tagCharacter, untagCharacter, allTags, cardTokens, cachedTokens, folderMade, renameFolder, characterChats, useGreeting, openCharacter,
 } from '../st/bridge.js';
 import { currentEntry, heroDescription, initialsAvatar } from '../sim/game.js';
+import { mundify, mundifiedOf, madeForMundi, mundiCopies } from '../sim/mundify.js';
 import { sceneText } from '../sim/prompt.js';
 import { ACT, INPUT } from './reg.js';
 import { leaveHtml } from './creator.js';
@@ -90,17 +91,16 @@ const FAV = {
 
 /* ---------- the items of each list ---------- */
 
-interface Item { id: string; name: string; img: string; fav: boolean; crown?: boolean }
+interface Item { id: string; name: string; img: string; fav: boolean; crown?: boolean; mfy?: boolean }
 const match = (name: string) => !L.q || name.toLowerCase().includes(L.q.toLowerCase());
-const isMundiCard = (c: any) => !!c.data?.extensions?.mundi || c.creator === 'Mundi' || c.data?.creator === 'Mundi';
 
 function items(tab: ListTab): Item[] {
     let list: Item[];
-    if (tab === 'characters') list = characters().map(c => ({ id: c.avatar, name: String(c.name ?? ''), img: thumb(c.avatar), fav: isFav(c) }));
+    if (tab === 'characters') list = characters().map(c => ({ id: c.avatar, name: String(c.name ?? ''), img: thumb(c.avatar), fav: isFav(c), mfy: !!mundifiedOf(c) }));
     else if (tab === 'personas') { const d = defaultPersona(); list = personas().map(p => ({ id: p.file, name: p.name, img: personaThumb(p.file), fav: FAV.is(tab, p.file), crown: p.file === d })); }
     else if (tab === 'backgrounds') { if (!B()) { loadBgs(); return []; } list = B()!.images.map(f => ({ id: f, name: f.replace(/\.[^.]+$/, ''), img: bgThumb(f), fav: false })); }
     else list = lorebooks().map(n => ({ id: n, name: n, img: '', fav: FAV.is(tab, n) }));
-    list = list.filter(i => match(i.name) && (!L.favOnly || i.fav));
+    list = list.filter(i => match(i.name) && (!L.favOnly || i.fav) && (!MF.on || tab !== 'characters' || i.mfy));
     if (NS.on && (tab === 'characters' || tab === 'personas')) {
         const key = (i: Item) => (tab === 'personas' ? personaKey(i.id) : i.id);
         checkSprites(list.map(key));
@@ -110,6 +110,8 @@ function items(tab: ListTab): Item[] {
 }
 // The "No sprites" filter: only the characters (or personas) whose Expressions folder is empty.
 const NS = { on: false };
+// The "Mundified" filter: only the mundified copies (characters).
+const MF = { on: false };
 const sprKey = (tab: ListTab, id: string) => (tab === 'personas' ? personaKey(id) : id);
 
 /* ---------- sorting the list (favorites stay on top) ---------- */
@@ -206,10 +208,10 @@ function charDetail(avatar: string) {
     const c = charOf(avatar);
     if (!c) return '<p class="mu-muted mu-pad">This character no longer exists.</p>';
     const d = c.data ?? {}; const ext = d.extensions ?? {}; const dp = ext.depth_prompt ?? {};
-    const head = headHtml('characters', avatar, c.name, thumb(avatar), avatar, isMundiCard(c) ? '<span class="mu-tag">Mundi</span>' : '');
+    const head = headHtml('characters', avatar, c.name, thumb(avatar), avatar, madeForMundi(c) ? '<span class="mu-tag">Mundi</span>' : mundifiedOf(c) ? '<span class="mu-tag is-mfy">Mundified</span>' : '');
     const bar = actionBar({ dup: 'lib-dup', expr: true, del: 'lib-del-one' });
     if (c.shallow) return `${head}<p class="mu-muted">Loading the card…</p>`;
-    if (!L.edit) return `${head}${charToolsHtml(avatar)}${read('Description', c.description)}${read('Personality', c.personality)}${read('Scenario', c.scenario)}${greetingsHtml(c, avatar)}${charTagsHtml(avatar)}${charLoreHtml(avatar)}${bar}`;
+    if (!L.edit) return `${head}${charToolsHtml(avatar)}${mfyHtml(c, avatar)}${read('Description', c.description)}${read('Personality', c.personality)}${read('Scenario', c.scenario)}${greetingsHtml(c, avatar)}${charTagsHtml(avatar)}${charLoreHtml(avatar)}${bar}`;
     return `${head}<div class="mu-lib-form">${charTagsHtml(avatar)}${charLoreHtml(avatar)}
         ${field('Name', 'name', c.name)}
         ${field('Description', 'description', c.description, 'area', { rows: 9 })}
@@ -230,6 +232,26 @@ function charDetail(avatar: string) {
 }
 
 const EXP = { open: false };   // the export menu by the favorite star
+// Mundify: on a mundified copy, where it came from; on any other card (not made by Mundi), what a copy would lose and
+// the button to make one, with the copies already made.
+const STRIPPED: [string, (c: any) => any][] = [
+    ['scenario', c => c.scenario], ['greetings', c => c.first_mes || c.data?.alternate_greetings?.length], ['example dialogue', c => c.mes_example],
+    ['main prompt override', c => c.data?.system_prompt], ['post-history instructions', c => c.data?.post_history_instructions],
+    ["Character's note", c => c.data?.extensions?.depth_prompt?.prompt], ['linked lorebook', c => c.data?.extensions?.world],
+];
+function mfyHtml(c: any, avatar: string) {
+    const m = mundifiedOf(c);
+    if (m) {
+        const orig = charOf(m.from);
+        return `<section class="mu-lib-read mu-mfy"><small class="mu-muted">${icon('sparkles')} Mundified copy of ${orig ? btn('lib-mfy-go', 'user', esc(orig.name), 'mu-ghost', `data-id="${esc(m.from)}"`) : `<b data-notr>${esc(m.name)}</b> (the original was deleted)`}, ${m.ai ? 'cleaned up by the AI' : 'stripped without the AI'} on ${new Date(m.at).toLocaleDateString()}. It keeps only who they are; the world sets the scene and the first meeting.</small></section>`;
+    }
+    if (madeForMundi(c)) return '';
+    const copies = mundiCopies(avatar);
+    const extra = STRIPPED.filter(([, f]) => String(f(c) || '').trim()).map(([k]) => k);
+    return `<section class="mu-lib-read mu-mfy"><div class="mu-row">${btn('lib-mfy', 'sparkles', copies.length ? 'Mundify again' : 'Mundify', copies.length ? '' : 'mu-primary')}
+            ${copies.map(x => btn('lib-mfy-go', 'sparkles', `Open the copy${copies.length > 1 ? ` (${new Date(mundifiedOf(x)!.at).toLocaleDateString()})` : ''}`, 'mu-ghost', `data-id="${esc(x.avatar)}"`)).join('')}</div>
+        <small class="mu-muted">${extra.length ? `This card has its own <span data-notr>${extra.join(', ')}</span>, which fight the world in Mundi. ` : ''}Mundify makes a copy for Mundi with only their appearance, backstory, personality and details. This card stays as it is.</small></section>`;
+}
 // Export, tokens, chats and the Mundi saves the character is in (30, 31, 33).
 const STATS: Record<string, { chats: number; msgs: number } | 'loading'> = {};
 function charToolsHtml(avatar: string) {
@@ -540,7 +562,7 @@ function pickFiles(accept: string): Promise<File[]> {
 interface Row extends Item { folder?: boolean; count?: number }
 function rows(tab: ListTab): Row[] {
     const list = items(tab);
-    if (L.q || L.favOnly || NS.on) return list;   // searching (and the filters) show everything, without folders
+    if (L.q || L.favOnly || NS.on || MF.on) return list;   // searching (and the filters) show everything, without folders
     if (L.folder) return list.filter(i => F.of(tab, i.id).includes(L.folder!));
     const fs = F.list(tab); const ids = new Set(fs.map(f => f.id));
     const out: Row[] = sortFolders(tab, fs.map(f => ({ id: f.id, name: f.name, img: '', fav: false, folder: true, count: list.filter(i => F.of(tab, i.id).includes(f.id)).length })));
@@ -572,7 +594,7 @@ function rowHtml(r: Row) {
     const picked = L.picked.includes(r.id);
     const box = L.picking || L.picked.length ? `<em class="mu-pick">${picked ? icon('check') : ''}</em>` : '';
     const pic = r.img ? `<img src="${esc(r.img)}" alt="" loading="lazy" draggable="false">` : `<i class="mu-lib-thumb">${icon('book')}</i>`;
-    const badges = `${r.crown ? `<b class="mu-crownmark" title="Default persona">${icon('crownFill')}</b>` : ''}${r.fav ? `<b class="mu-fav">${icon('starFill')}</b>` : ''}`;
+    const badges = `${r.mfy ? `<b class="mu-mfymark" title="Mundified copy">${icon('sparkles')}</b>` : ''}${r.crown ? `<b class="mu-crownmark" title="Default persona">${icon('crownFill')}</b>` : ''}${r.fav ? `<b class="mu-fav">${icon('starFill')}</b>` : ''}`;
     const n = L.tab === 'lorebooks' && !grid() ? loreCount(r.id, notify) : undefined;
     const count = L.tab === 'lorebooks' && !grid() ? `<small class="mu-lib-count" title="Entries">${n ?? '…'}</small>` : '';
     return `<button class="mu-lib-item ${L.sel === r.id && !L.picked.length ? 'is-on' : ''} ${picked ? 'is-picked' : ''}" data-act="lib-sel" data-id="${esc(r.id)}" draggable="true" title="${esc(r.name)}">${box}${pic}<span data-notr>${esc(r.name)}</span>${badges}${count}</button>`;
@@ -587,6 +609,7 @@ function bulkBar(tab: ListTab) {
         <div class="mu-lib-bulkbtns">
             ${tab === 'backgrounds' ? '' : btn('lib-bulk-fav', allFav ? 'star' : 'starFill', allFav ? 'Unfavorite' : 'Favorite', '', dis)}
             ${btn('lib-bulk-folder', 'move', 'Move', '', dis)}
+            ${tab === 'characters' ? btn('lib-bulk-mfy', 'sparkles', 'Mundify', '', dis) : ''}
             ${tab === 'characters' || tab === 'lorebooks' ? btn('lib-bulk-zip', 'download', 'Zip', '', dis) : ''}
             ${btn('lib-bulk-del', 'trash', 'Delete', 'mu-danger', dis)}
             ${ibtn('lib-pick-clear', 'x', 'Cancel selection')}</div></div>`;
@@ -595,7 +618,7 @@ function bulkBar(tab: ListTab) {
 const CREATE: Record<ListTab, string> = { characters: 'New character', personas: 'New persona', lorebooks: 'New lorebook', backgrounds: 'Upload pictures' };
 function listPane(tab: ListTab) {
     const list = rows(tab);
-    const folder = L.folder && !L.q && !L.favOnly && !NS.on ? F.list(tab).find(f => f.id === L.folder) : null;
+    const folder = L.folder && !L.q && !L.favOnly && !NS.on && !MF.on ? F.list(tab).find(f => f.id === L.folder) : null;
     return `<aside class="mu-lib-list mu-panel ${grid() ? 'is-grid' : ''} ${tab === 'backgrounds' ? 'is-bgs' : ''}">
         <div class="mu-lib-filter">
             <div class="mu-lib-tools">
@@ -605,6 +628,7 @@ function listPane(tab: ListTab) {
                 ${ibtn('lib-picking', 'select', 'Select several (or Ctrl+click, Shift+click)', L.picking ? 'is-on' : '')}
                 ${ibtn('lib-search', 'search', 'Search', L.searching || L.q ? 'is-on' : '')}
                 ${tab === 'backgrounds' ? '' : ibtn('lib-favonly', L.favOnly ? 'starFill' : 'star', 'Only favorites', `mu-favbtn ${L.favOnly ? 'is-on' : ''}`)}
+                ${tab === 'characters' ? ibtn('lib-mfyonly', 'sparkles', 'Only mundified copies', `mu-mfybtn ${MF.on ? 'is-on' : ''}`) : ''}
                 ${tab === 'characters' || tab === 'personas' ? ibtn('lib-nospr', 'image', 'Only those with no sprites', NS.on ? 'is-on' : '') : ''}
                 ${sortBtn(tab)}${tab === 'backgrounds' ? '' : ibtn('lib-view', grid() ? 'list' : 'grid', grid() ? 'Show as a list' : 'Show as a grid')}
             </div>
@@ -678,6 +702,14 @@ function dialogHtml() {
             <div class="mu-lib-searchrow"><input type="text" placeholder="New folder name" value="${esc(m.name ?? '')}" data-input="lib-dlg-name" data-focus="lib-dlg-name">${btn('lib-folder-new', 'folderPlus', 'Create')}</div>
             ${tab === 'characters' ? '<p class="mu-muted">Folders are SillyTavern\'s folder tags, so they also show in its character list.</p>' : ''}
             <div class="mu-row mu-dlg-btns"><button class="mu-primary" data-act="lib-dlg-close">Done</button></div>`;
+    } else if (m.type === 'lib-dlg-mfy') {
+        const ids: string[] = m.ids;
+        body = `<h3>${ids.length === 1 ? `Mundify “${esc(nameOfId('characters', ids[0]))}”?` : `Mundify ${ids.length} characters?`}</h3>
+            ${ids.length > 1 ? `<p class="mu-muted mu-dlg-names" data-notr>${esc(ids.map(i => nameOfId('characters', i)).join(', '))}</p>` : ''}
+            <p>Mundi makes a copy of ${ids.length === 1 ? 'the card' : 'each card'} for its worlds. The original is not changed.</p>
+            <p class="mu-muted"><b>Kept:</b> appearance, backstory, personality and other details about the character.<br><b>Removed:</b> scenario, greetings, example dialogue, main prompt override, post-history instructions, Character's note and the linked lorebook. The world handles all of these.</p>
+            <label class="mu-check"><input type="checkbox" data-input="lib-mfy-ai" ${m.ai ? 'checked' : ''}><span>Clean up with the AI<small>The AI sorts the card into appearance, backstory, personality and details, and saves facts about the character hidden in the scenario, greetings or notes. Without it, the description and personality are copied word for word.</small></span></label>
+            <div class="mu-row mu-dlg-btns"><button data-act="lib-dlg-close">Cancel</button>${btn('lib-mfy-yes', 'sparkles', 'Mundify', 'mu-primary')}</div>`;
     } else if (m.type === 'lib-dlg-newfolder') {
         body = `<h3>New folder</h3><input type="text" placeholder="New folder name" value="${esc(m.name ?? '')}" data-input="lib-dlg-name" data-focus="lib-dlg-name">
             ${L.picked.length ? `<p class="mu-muted">${L.picked.length} selected items go into it.</p>` : ''}
@@ -866,6 +898,22 @@ async function renameBg(file: string) {
     L.sel = next;
 }
 
+// Mundifies the cards of the dialog one by one; a card that fails is said and the others go on.
+async function doMundify() {
+    const m = state.modal; if (m?.type !== 'lib-dlg-mfy') return;
+    const ids: string[] = m.ids; const ai = !!m.ai;
+    state.modal = null;
+    const made: string[] = [], failed: string[] = [];
+    for (const [k, id] of ids.entries()) {
+        const name = nameOfId('characters', id);
+        try { made.push(await busy(ids.length > 1 ? `Mundifying ${name} (${k + 1} of ${ids.length})` : `Mundifying ${name}`, () => mundify(id, ai))); }
+        catch (e: any) { failed.push(`${name}: ${String(e?.message ?? e)}`); }
+    }
+    if (failed.length) toast(failed.join('\n'), 'error');
+    if (made.length) toast(made.length === 1 ? 'Mundified copy made. The original is unchanged.' : `${made.length} mundified copies made. The originals are unchanged.`, 'success');
+    if (made.length) { clearPicks(); await select(made[0]); } else notify();
+}
+
 async function doDuplicate() {
     const tab = listTab(); const id = L.sel;
     if (!tab || !id || !guard()) return;
@@ -979,6 +1027,15 @@ Object.assign(ACT, {
     // expressions
     'lib-expr': () => { if (!guard() || !L.sel || !listTab()) return; L.expr = sprKey(listTab()!, L.sel); L.sprites = null; notify(); },
     'lib-nospr': () => { NS.on = !NS.on; notify(); },
+    'lib-mfyonly': () => { MF.on = !MF.on; notify(); },
+    'lib-mfy': () => { if (L.sel && guard()) { state.modal = { type: 'lib-dlg-mfy', ids: [L.sel], ai: true }; notify(); } },
+    'lib-bulk-mfy': () => {
+        const ids = L.picked.filter(a => { const c = charOf(a); return c && !madeForMundi(c) && !mundifiedOf(c); });
+        if (!ids.length) { toast('These are made for Mundi already.', 'info'); return; }
+        state.modal = { type: 'lib-dlg-mfy', ids, ai: true }; notify();
+    },
+    'lib-mfy-go': (el) => { if (guard()) void select(el.dataset.id!); },
+    'lib-mfy-yes': () => void doMundify(),
     'lib-nospr-draw': () => {
         const tab = listTab(); if (!tab) return;
         const n = drawEveryone(items(tab).map(i => sprKey(tab, i.id)));
@@ -1080,6 +1137,7 @@ Object.assign(INPUT, {
     'lib-dlg-name': (el) => { if (state.modal) state.modal.name = el.value; },
     'lib-outfit-name': (el) => { EO.name = el.value; },
     'lib-tag-text': (el) => { TG.text = el.value; },
+    'lib-mfy-ai': (el) => { if (state.modal?.type === 'lib-dlg-mfy') state.modal.ai = (el as HTMLInputElement).checked; },
     'lib-dlg-desc': (el) => { if (state.modal) state.modal.desc = el.value; },
     'lib-alt': (el) => {
         const c = L.sel ? charOf(L.sel) : null; if (!c) return;
