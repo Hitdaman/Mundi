@@ -155,7 +155,8 @@ function tabNeeds(w: WorldDef) {
             <h4>Drops over time</h4>${chk('It drops by itself', `${p}.decay`)}
             ${s.decay ? `<div class="mu-row2">${num('By', `${p}.decay.amount`, 0, 0.5)}${num('Every … game minutes', `${p}.decay.everyMinutes`, 1)}</div>${chk('Only while awake', `${p}.decay.awakeOnly`)}` : ''}
             ${num('Sleeping restores', `sleep.restore.${s.id}`)}
-            <h4>At zero</h4>${chk('Something happens at zero', `${p}.zero`)}
+            <h4>At zero</h4>${/^(life|health)$/.test(s.id) && (s.rpg || gameMode(w) === 'rpg') ? `<p class="mu-muted">Death is real in the RPG: at 0 hit points a person is dead. Under a tenth they are unconscious and bleed out unless someone gets them treated in time (first aid, a passer-by, an ambulance or a healer). Nobody wakes up at the hospital by default.</p>
+            ${s.zero ? num('A stay at the hospital or healer costs', `${p}.zero.cost`) : ''}` : `${chk('Something happens at zero', `${p}.zero`)}
             ${s.zero ? `${area('Message', `${p}.zero.text`, 2, 'You pass out… The bill is {cost}.')}
                 <div class="mu-row2">${sel('You wake up at', `${p}.zero.place`, [['', '(stay where you are)'], ['home', 'Your home'], ...placeOpts(w)])}${num('It costs', `${p}.zero.cost`)}</div>
                 <div class="mu-row2">${num('Comes back to', `${p}.zero.restore`)}${sel('While at zero, it drains', `${p}.zero.drain.status`, [['', '(nothing)'], ...statusOpts(w)])}</div>
@@ -165,7 +166,7 @@ function tabNeeds(w: WorldDef) {
                     ${area('What happens (message)', `${p}.zero.crisis.text`, 2, 'You feel faint and nearly collapse…')}
                     <div class="mu-row2">${num('It costs', `${p}.zero.crisis.cost`)}${num('Comes back to', `${p}.zero.crisis.restore`)}</div>
                     <div class="mu-row2">${num('Your mood changes by', `${p}.zero.crisis.mood`, -100)}${num('People who saw it think less of you by', `${p}.zero.crisis.shame`)}</div>
-                    ${txt('What the people who saw it remember ({u} = you, {0} = the place)', `${p}.zero.crisis.seen`, '{u} nearly fainted at {0}.')}` : ''}` : ''}`;
+                    ${txt('What the people who saw it remember ({u} = you, {0} = the place)', `${p}.zero.crisis.seen`, '{u} nearly fainted at {0}.')}` : ''}` : ''}`}`;
     }, 'need');
 }
 
