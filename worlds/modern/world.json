@@ -2739,6 +2739,73 @@
        ]
       }
      ]
+    },
+    {
+     "at": 7,
+     "options": [
+      {
+       "id": "ana_fund",
+       "name": "Fund management",
+       "desc": "Run the money yourself.",
+       "likes": [
+        "Ambitious",
+        "Good with numbers"
+       ],
+       "ranks": [
+        {
+         "name": "Fund manager",
+         "pay": 140
+        },
+        {
+         "name": "Head of investments",
+         "pay": 162
+        },
+        {
+         "name": "Chief investment officer",
+         "pay": 188
+        }
+       ],
+       "promote": [
+        14,
+        14,
+        18
+       ],
+       "after": [
+        "ana_inv"
+       ]
+      },
+      {
+       "id": "ana_board",
+       "name": "The board",
+       "desc": "Steer the whole firm from the top.",
+       "likes": [
+        "Serious",
+        "Calm"
+       ],
+       "ranks": [
+        {
+         "name": "Finance director",
+         "pay": 135
+        },
+        {
+         "name": "Board member",
+         "pay": 156
+        },
+        {
+         "name": "Chief executive officer",
+         "pay": 185
+        }
+       ],
+       "promote": [
+        14,
+        14,
+        18
+       ],
+       "after": [
+        "ana_risk"
+       ]
+      }
+     ]
     }
    ]
   },
@@ -2847,6 +2914,88 @@
         12,
         12,
         12
+       ]
+      }
+     ]
+    },
+    {
+     "at": 6,
+     "options": [
+      {
+       "id": "eng_proj",
+       "name": "Major projects",
+       "desc": "Bridges, towers and tunnels the city will keep for a century.",
+       "likes": [
+        "Serious",
+        "Handy"
+       ],
+       "ranks": [
+        {
+         "name": "Project director",
+         "pay": 124
+        },
+        {
+         "name": "Director of works",
+         "pay": 144
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "eng_civ"
+       ]
+      },
+      {
+       "id": "eng_lab",
+       "name": "The lab",
+       "desc": "Inventions with your name on the patent.",
+       "likes": [
+        "Curious",
+        "Smart"
+       ],
+       "ranks": [
+        {
+         "name": "Lead inventor",
+         "pay": 120
+        },
+        {
+         "name": "Director of innovation",
+         "pay": 140
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "eng_rd"
+       ]
+      }
+     ]
+    },
+    {
+     "at": 8,
+     "options": [
+      {
+       "id": "eng_cto",
+       "name": "Chief technology officer",
+       "desc": "The top of the engineering side.",
+       "likes": [],
+       "ranks": [
+        {
+         "name": "Chief technology officer",
+         "pay": 175
+        },
+        {
+         "name": "Founder of your own firm",
+         "pay": 205
+        }
+       ],
+       "promote": [
+        18,
+        18
        ]
       }
      ]
@@ -3105,6 +3254,88 @@
         12,
         12,
         12
+       ]
+      }
+     ]
+    },
+    {
+     "at": 6,
+     "options": [
+      {
+       "id": "nur_trauma",
+       "name": "Trauma care",
+       "desc": "Run the trauma center on the worst nights.",
+       "likes": [
+        "Calm",
+        "Strong"
+       ],
+       "ranks": [
+        {
+         "name": "Trauma coordinator",
+         "pay": 88
+        },
+        {
+         "name": "Director of trauma care",
+         "pay": 102
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "nur_er"
+       ]
+      },
+      {
+       "id": "nur_np",
+       "name": "Nurse practitioner",
+       "desc": "See your own patients, write your own prescriptions.",
+       "likes": [
+        "Kind",
+        "Smart"
+       ],
+       "ranks": [
+        {
+         "name": "Nurse practitioner",
+         "pay": 86
+        },
+        {
+         "name": "Senior nurse practitioner",
+         "pay": 99
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "nur_ped"
+       ]
+      }
+     ]
+    },
+    {
+     "at": 8,
+     "options": [
+      {
+       "id": "nur_chief",
+       "name": "Chief nursing officer",
+       "desc": "Every nurse in the hospital answers to you.",
+       "likes": [],
+       "ranks": [
+        {
+         "name": "Director of nursing",
+         "pay": 118
+        },
+        {
+         "name": "Chief nursing officer",
+         "pay": 136
+        }
+       ],
+       "promote": [
+        18,
+        18
        ]
       }
      ]
@@ -4210,6 +4441,88 @@
         12,
         12,
         12
+       ]
+      }
+     ]
+    },
+    {
+     "at": 6,
+     "options": [
+      {
+       "id": "tea_board",
+       "name": "Education board",
+       "desc": "Set the rules for every school in the city.",
+       "likes": [
+        "Ambitious",
+        "Serious"
+       ],
+       "ranks": [
+        {
+         "name": "Board director",
+         "pay": 84
+        },
+        {
+         "name": "Deputy commissioner",
+         "pay": 97
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "tea_head"
+       ]
+      },
+      {
+       "id": "tea_train",
+       "name": "Teacher training",
+       "desc": "Teach the teachers.",
+       "likes": [
+        "Kind",
+        "Smart"
+       ],
+       "ranks": [
+        {
+         "name": "Teacher trainer",
+         "pay": 78
+        },
+        {
+         "name": "Dean of education",
+         "pay": 92
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "tea_coach"
+       ]
+      }
+     ]
+    },
+    {
+     "at": 8,
+     "options": [
+      {
+       "id": "tea_comm",
+       "name": "Education commissioner",
+       "desc": "The schools of Porto Alto are yours to shape.",
+       "likes": [],
+       "ranks": [
+        {
+         "name": "Education commissioner",
+         "pay": 110
+        },
+        {
+         "name": "Minister of education",
+         "pay": 128
+        }
+       ],
+       "promote": [
+        18,
+        18
        ]
       }
      ]
@@ -5441,6 +5754,88 @@
        ]
       }
      ]
+    },
+    {
+     "at": 6,
+     "options": [
+      {
+       "id": "pol_major",
+       "name": "Major crimes",
+       "desc": "The cases that make the news.",
+       "likes": [
+        "Smart",
+        "Curious"
+       ],
+       "ranks": [
+        {
+         "name": "Head of major crimes",
+         "pay": 86
+        },
+        {
+         "name": "Deputy commissioner",
+         "pay": 100
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "pol_det"
+       ]
+      },
+      {
+       "id": "pol_dist",
+       "name": "District command",
+       "desc": "A whole district of the city is yours to keep safe.",
+       "likes": [
+        "Ambitious",
+        "Serious"
+       ],
+       "ranks": [
+        {
+         "name": "District commander",
+         "pay": 84
+        },
+        {
+         "name": "Assistant commissioner",
+         "pay": 98
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "pol_cmd"
+       ]
+      }
+     ]
+    },
+    {
+     "at": 8,
+     "options": [
+      {
+       "id": "pol_comm",
+       "name": "Police commissioner",
+       "desc": "The whole force answers to you.",
+       "likes": [],
+       "ranks": [
+        {
+         "name": "Police commissioner",
+         "pay": 115
+        },
+        {
+         "name": "Head of national police",
+         "pay": 134
+        }
+       ],
+       "promote": [
+        18,
+        18
+       ]
+      }
+     ]
     }
    ]
   },
@@ -5588,6 +5983,88 @@
         12,
         12,
         12
+       ]
+      }
+     ]
+    },
+    {
+     "at": 6,
+     "options": [
+      {
+       "id": "rep_world",
+       "name": "Foreign desk",
+       "desc": "Report from wherever the world is on fire.",
+       "likes": [
+        "Curious",
+        "Serious"
+       ],
+       "ranks": [
+        {
+         "name": "Foreign correspondent",
+         "pay": 84
+        },
+        {
+         "name": "Head of the foreign desk",
+         "pay": 97
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "rep_inv"
+       ]
+      },
+      {
+       "id": "rep_show",
+       "name": "Your own show",
+       "desc": "A show with your name in the title.",
+       "likes": [
+        "Charming",
+        "Outgoing"
+       ],
+       "ranks": [
+        {
+         "name": "Talk show host",
+         "pay": 88
+        },
+        {
+         "name": "Network star",
+         "pay": 104
+        }
+       ],
+       "promote": [
+        14,
+        14
+       ],
+       "after": [
+        "rep_tv"
+       ]
+      }
+     ]
+    },
+    {
+     "at": 8,
+     "options": [
+      {
+       "id": "rep_chief",
+       "name": "Head of news",
+       "desc": "You decide what the city hears about.",
+       "likes": [],
+       "ranks": [
+        {
+         "name": "Director of news",
+         "pay": 118
+        },
+        {
+         "name": "Media mogul",
+         "pay": 140
+        }
+       ],
+       "promote": [
+        18,
+        18
        ]
       }
      ]
