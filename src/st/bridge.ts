@@ -406,14 +406,25 @@ export async function narratorLine(text: string) {
 // a small length left nothing for the answer ("No message generated"). So the length asked is never small, the
 // answer is cut by Mundi afterwards, and an empty answer is tried once more with room to spare.
 export async function quiet(prompt: string, responseLength = 300, systemPrompt = ''): Promise<string> {
+    const saved = QUIET_TAP.replay?.(prompt);
+    if (saved !== undefined) { QUIET_TAP.seen?.(prompt, saved, 0); return saved; }
+    const t0 = Date.now();
     const ask = async (len: number) => String(await ctx().generateRaw({ prompt, systemPrompt, responseLength: len }) ?? '')
         .replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
-    try {
-        const out = await ask(Math.max(responseLength, 1000));
-        if (out) return out;
-    } catch (e: any) { if (!/no message generated|empty/i.test(String(e?.message ?? e))) throw e; }
-    return ask(Math.min(Math.max(responseLength * 2, 3000), 4000));   // one more try, with more room (models that think first)
+    const once = async () => {
+        try {
+            const out = await ask(Math.max(responseLength, 1000));
+            if (out) return out;
+        } catch (e: any) { if (!/no message generated|empty/i.test(String(e?.message ?? e))) throw e; }
+        return ask(Math.min(Math.max(responseLength * 2, 3000), 4000));   // one more try, with more room (models that think first)
+    };
+    if (!QUIET_TAP.seen) return once();
+    try { const out = await once(); QUIET_TAP.seen(prompt, out, Date.now() - t0); return out; }
+    catch (e: any) { QUIET_TAP.seen(prompt, '', Date.now() - t0, String(e?.message ?? e)); throw e; }
 }
+/** The real-AI tests (ui/aitest.ts): `seen` sees every call above and its answer; `replay` answers a call from a
+ *  saved run instead of the AI (undefined: ask the AI). Both unset outside a test. */
+export const QUIET_TAP: { seen?: (prompt: string, answer: string, ms: number, error?: string) => void; replay?: (prompt: string) => string | undefined } = {};
 
 // Hides lines from the AI's prompt (SillyTavern's /hide: the messages stay in the chat).
 export async function hideMessages(start: number, end: number) {
