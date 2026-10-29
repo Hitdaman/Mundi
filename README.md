@@ -1,5 +1,28 @@
 # Mundi
 
+> ## About this fork
+>
+> This is **Seb's fork** of [tjalis/Mundi](https://github.com/tjalis/Mundi). It is Mundi 0.2.1 plus a set of new features, offered back to the author as pull requests (one per feature). Everything below this box is the original README.
+>
+> **To play it:** install `https://github.com/Hitdaman/Mundi` with the branch **`all-features`** (in SillyTavern, Extensions → Install extension, then fill in the branch). That branch also unlocks the medieval style and the RPG mode, which 0.2.1 keeps locked for a later release. Apart from this box, the `main` branch here is the same as the original.
+>
+> ### What's different
+>
+> - **Play in any chat:** attach a Mundi world to an existing one-on-one or group chat, and detach it again.
+> - **Worlds from lorebooks:** the AI reads your lorebooks and builds the world (maps, places, people, jobs, factions). It then fills every World creator tab, adds everyday places the lorebooks didn't mention, and has hidden or restricted places, buildings with floors, and gates that open up as the story goes.
+> - **Mundify:** make a Mundi copy of a character card, a lorebook or a persona. **Fill from my persona** sets up a new game from a persona, its lorebook and a chat. **Meters** (Warmth, Weariness…) show as HUD bars that the AI reads and updates. Your home can be a room inside a building.
+> - **ComfyUI sprites:** draw Expressions sprites for anyone who has none, from the scene or the Library (all 28 expressions, outfits, new faces). CG pictures get their own page. **Scene looks** keep outfits and conditions (wet, hurt…) in step with the story, and each character has a list of things they always wear.
+> - **Paint a world with ComfyUI:** maps, backgrounds and the cover, laid out from the pins, and painted at the right scale (a globe, a country, an island, a city). Earth uses NASA's Blue Marble. **Draw into the map** adds a new place to a map picture.
+> - **ComfyUI tools:** a Stop button for everything Mundi draws, and a LoRA picker for sprites, CG and maps.
+> - **Character creation:** open traits with "write your own", Flaws, and RPG systems to pick from (Classic fantasy, Martial arts, Superpowers, Nen hunter, Solo dungeon, Space saga, Cultivation), or a system the AI writes from lorebooks. Skills come from a budget, and you choose your weapon.
+> - **RPG death is real:** HP bands with penalties, death at 0 HP unless someone treats you in time, harm in the story costs HP, the dead sometimes rise, and you can carry on as someone else.
+> - **Quests you find:** on boards, by asking around, from lorebooks and from the story. There are also new things to do: wound care, locked doors, searching for places, inns, waiting.
+> - **People from the story:** people the AI introduces can be added as real characters, with a card, home, job and sprites.
+> - **New jobs** in Porto Alto and Nova Vega, with ten-rank career paths.
+> - **AI tests:** check your model against Mundi's lorebook steps.
+>
+> Everything is built and tested on 0.2.1, and all of the original tests pass.
+
 **Open worlds inside SillyTavern.** Mundi turns a SillyTavern group chat into a life you live: a city with a map and a clock, needs to look after, a job, bills, people with their own days, and the story the AI writes around what you do.
 
 <p align="center"><img src="docs/map.jpg" alt="Midtown, the map of Porto Alto"></p>
