@@ -31,6 +31,8 @@ interface Sheet {
     name: string; appearance: string; outfits: { name: string; tags: string }[]; seed: number; drawn?: number; avatarSet?: boolean;
     /** what they always wear, whatever the outfit (a hijab, glasses, a necklace…): tags, '' for nothing; unset: not asked yet */
     keeps?: string;
+    /** their personal style in a few words (streetwear, dark colors): every outfit written for them follows it */
+    style?: string;
 }
 // An outfit's tags with what they always wear (the ones it does not have already).
 export function withKeeps(tags: string, keeps = ''): string {
@@ -285,15 +287,16 @@ ${card || name}
 Answer with exactly these lines and nothing else:
 appearance: <the subject count tag first (1girl, 1boy…), then age, body, skin, face, eyes, hair: only what does not change with clothes>
 ${slots.map(o => `${o.name}: <what ${name} wears for "${o.name}"${o.tags ? `, in the spirit of: ${o.tags.split(',').slice(0, 8).join(',')}` : ''}>`).join('\n')}
+style: <${name}'s personal style in a few plain words (streetwear, dark colors; preppy; practical workwear…), from the card or chosen to fit them>
 always: <what ${name} wears whatever the outfit, if the card says so: a hijab or other religious headwear, glasses, a necklace or keepsake they never take off, a prosthetic… or none>
 
-Comma-separated tags only, no sentences. Take every detail the card gives; invent the rest so it fits the character. What is in "always" is part of every outfit too.`;
+Comma-separated tags only, no sentences (the style line: a few plain words). Every outfit fits the style. Take every detail the card gives; invent the rest so it fits the character. What is in "always" is part of every outfit too.`;
     const raw = await quiet(prompt, 600);
     const lines = new Map(raw.split('\n').map(l => l.match(/^\s*[-*]?\s*([^:\n]+?)\s*:\s*(.+)$/)).filter(Boolean).map(m => [m![1].toLowerCase(), m![2].trim()]));
     const appearance = lines.get('appearance') ?? '';
     if (!appearance) throw new Error(`The AI did not describe ${name}.`);
-    const always = lines.get('always') ?? '';
-    return { name, appearance, outfits: slots.map(o => ({ name: o.name, tags: lines.get(o.name.toLowerCase()) ?? o.tags })), seed: newSeed(), keeps: !lines.has('always') ? undefined : noneish(always) ? '' : always.slice(0, 300) };
+    const always = lines.get('always') ?? '', style = lines.get('style') ?? '';
+    return { name, appearance, style: noneish(style) ? '' : style.slice(0, 120), outfits: slots.map(o => ({ name: o.name, tags: lines.get(o.name.toLowerCase()) ?? o.tags })), seed: newSeed(), keeps: !lines.has('always') ? undefined : noneish(always) ? '' : always.slice(0, 300) };
 }
 // A look written before "always wears" existed: asked once, from the card and the usual clothes.
 async function writeKeeps(k: string, sheet: Sheet): Promise<void> {
@@ -314,7 +317,8 @@ Answer with one line of comma-separated Danbooru tags, or: none`, 120);
 }
 const newSeed = () => Math.floor(Math.random() * 2 ** 31);
 // A new outfit for a look (the story put on a kimono, a rule wants a swimsuit): the AI writes only the clothes.
-async function writeOutfit(k: string, sheet: Sheet, outfit: string): Promise<string> {
+// `fresh`: rewritten for a new style, so their current clothes are not shown as the example.
+async function writeOutfit(k: string, sheet: Sheet, outfit: string, fresh = false): Promise<string> {
     const name = nameOf(k);
     const card = (await cardText(k)).slice(0, 3000);
     const raw = await quiet(`Write what ${name} wears for "${outfit.replace(/[_-]+/g, ' ')}" as Danbooru tags for an image model (Illustrious).
@@ -323,9 +327,7 @@ async function writeOutfit(k: string, sheet: Sheet, outfit: string): Promise<str
 ${card || name}
 </character>
 Their body and face (do not repeat these): ${sheet.appearance}
-Their usual clothes: ${sheet.outfits[0]?.tags ?? ''}${sheet.keeps ? `
-They always wear, whatever the outfit: ${sheet.keeps}. Keep these in it, and make the outfit go with them (modest swimwear with a hijab, say).` : ''}
-
+${fresh ? '' : `Their usual clothes: ${sheet.outfits[0]?.tags ?? ''}\n`}${sheet.style ? `Their style: ${sheet.style}. The outfit fits it.\n` : ''}${sheet.keeps ? `They always wear, whatever the outfit: ${sheet.keeps}. Keep these in it, and make the outfit go with them (modest swimwear with a hijab, say).\n` : ''}
 Answer with one line of comma-separated tags for the clothes only (garments, colors, shoes, accessories), in their style, nothing about the body or face, no sentences.`, 200);
     const line = raw.split('\n').map(l => l.replace(/^\s*[-*]?\s*([^:,\n]{1,30}:)?\s*/, '').trim()).find(l => l.includes(',') || l.length > 3) ?? '';
     if (!line) throw new Error(`The AI did not describe ${name}'s ${outfit}.`);
@@ -335,7 +337,7 @@ Answer with one line of comma-separated tags for the clothes only (garments, col
 /* ---------- the queue ---------- */
 
 // What to draw: some outfits (indexes in the look; all the chosen ones when left out) and labels, or only the missing.
-interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: boolean; lookOnly?: boolean; variant?: Variant; cg?: 'only' | 'also' }
+interface Order { who: string; outfits?: number[]; labels?: string[]; missing?: boolean; lookOnly?: boolean; variant?: Variant; cg?: 'only' | 'also'; restyle?: boolean }
 // A look the scene asked for: an outfit by name ('' the usual one) with a condition or none, saved in `folder`.
 interface Variant { outfit: string; state: string; folder: string }
 // Session only: who is waiting, being drawn, done or skipped (a failure is not tried again until asked).
@@ -416,6 +418,10 @@ async function draw(o: Order): Promise<number> {
     const sheet = prefs.sheets[o.who] ??= await writeSheet(o.who, p);
     saveSettings();
     await writeKeeps(o.who, sheet).catch(() => {});   // asked once; drawing goes on without it
+    if (o.restyle) {   // a new style: every outfit written again in it, then drawn
+        for (const x of sheet.outfits) { S.now = `writing the ${x.name} outfit in their style`; notify(); x.tags = await writeOutfit(o.who, sheet, x.name, true); }
+        saveSettings();
+    }
     if (o.lookOnly) return 0;
     if (o.variant) return drawVariant(o, o.variant, base, p, sheet);
     if (o.cg === 'only') return drawCg(o, base, p, sheet);
@@ -580,6 +586,8 @@ export function spriteLookHtml(k: string, outfit: string): string {
         <div class="mu-row">${b('spr-draw-all', 'Draw all', 'mu-primary')}${b('spr-look', 'Only write the look', 'mu-ghost')}</div>${state1}</section>`;
     return `<section class="mu-sprlook"><h4>Draw with ComfyUI</h4>
         <label class="mu-field"><span>Appearance</span><textarea rows="3" data-input="spr-sheet" data-who="${esc(k)}" data-k="appearance">${esc(s.appearance)}</textarea></label>
+        <label class="mu-field"><span>Style (every outfit written for them follows it)</span><input type="text" data-input="spr-sheet" data-who="${esc(k)}" data-k="style" value="${esc(s.style ?? '')}" placeholder="streetwear, dark colors · preppy · practical workwear…"></label>
+        ${s.style ? `<div class="mu-row">${b('spr-restyle', 'Rewrite outfits in this style and redraw', 'mu-ghost')}<small class="mu-muted">New outfits follow the style by themselves; this redoes the ones they have.</small></div>` : ''}
         <label class="mu-field"><span>Always wears, whatever the outfit (a hijab, glasses, a necklace…)</span><input type="text" data-input="spr-sheet" data-who="${esc(k)}" data-k="keeps" value="${esc(s.keeps ?? '')}" placeholder="${s.keeps === undefined ? 'Asked from the card the next time they are drawn' : 'Nothing'}"></label>
         ${oi >= 0 && s.outfits[oi] ? `<label class="mu-field"><span>Outfit: <span data-notr>${esc(s.outfits[oi].name)}</span></span><textarea rows="2" data-input="spr-sheet" data-who="${esc(k)}" data-k="${oi}">${esc(s.outfits[oi].tags)}</textarea></label>`
             : `<p class="mu-muted">The look has no outfit called “${esc(outfit)}”: these pictures can be uploaded, not drawn.</p>`}
@@ -701,6 +709,7 @@ Object.assign(ACT, {
     'spr-draw-outfit': (el) => enqueue(orderOf(el, { outfits: oneOutfit(el) })),
     'spr-draw-one': (el) => enqueue(orderOf(el, { outfits: oneOutfit(el), labels: [el.dataset.l!] })),
     'spr-look': (el) => enqueue(orderOf(el, { lookOnly: true })),
+    'spr-restyle': (el) => enqueue(orderOf(el, { restyle: true })),
     'spr-draw-cg': (el) => enqueue(orderOf(el, { cg: 'only' })),
     'spr-draw-cg-missing': (el) => enqueue(orderOf(el, { cg: 'only', missing: true })),
     'spr-newface': (el) => { const s = sprPrefs().sheets[el.dataset.who!]; if (s) { s.seed = newSeed(); saveSettings(); } enqueue(orderOf(el)); },
@@ -760,7 +769,7 @@ Object.assign(INPUT, {
     'spr-sheet': (el) => {
         const s = sprPrefs().sheets[el.dataset.who!]; if (!s) return;
         const k = el.dataset.k!;
-        if (k === 'appearance') s.appearance = el.value.trim(); else if (k === 'keeps') s.keeps = el.value.trim(); else if (s.outfits[Number(k)]) s.outfits[Number(k)].tags = el.value.trim();
+        if (k === 'appearance') s.appearance = el.value.trim(); else if (k === 'keeps') s.keeps = el.value.trim(); else if (k === 'style') { const had = !!s.style; s.style = el.value.trim(); if (had !== !!s.style) notify(); } else if (s.outfits[Number(k)]) s.outfits[Number(k)].tags = el.value.trim();
         saveSettings();
     },
 });

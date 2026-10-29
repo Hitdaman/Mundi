@@ -14,6 +14,7 @@ import { note } from './facts.js';
 import { inCombat } from './combat.js';
 import { isRpg } from './rpg.js';
 import { join } from './party.js';
+import { STYLE_HEAD } from './mundify.js';
 import { resident, addResident, exampleCards, initialsAvatar } from './game.js';
 import { takenHomes, normalizeHomes } from './homes.js';
 
@@ -247,17 +248,18 @@ The story where they appear:
 ${storyLinesOf(n).join('\n') || '(no lines)'}
 
 Answer with these sections, each starting with its tag on its own line:
-[APPEARANCE] What ${name} looks like: body, face, hair, eyes, clothes they usually wear, voice.
+[APPEARANCE] What ${name} looks like: body, face, hair, eyes, voice (not their clothes).
+[CLOTHING] Their personal style in a few words, the clothes they usually wear (garments, colors, shoes), and anything they always wear whatever the outfit (a hijab, glasses, a necklace…).
 [BACKSTORY] Who ${name} is: job, past, life, and how they met {{user}} (from the story).
 [PERSONALITY] Traits, habits, how they speak and behave.
 [GREETING] One short line ${name} would say when meeting {{user}} again, with an action in *asterisks*.
 [JOB] ${jobs.length ? `The one of these that fits them best, or "none": ${jobs.join(', ')}` : 'none'}
 Rules: keep every fact the story gives; where it says nothing, fill in briefly so it fits the role and the world. Third person, plain prose, short. Write ${name}, never {{char}}.`;
 }
-export interface CardParts { appearance: string; backstory: string; personality: string; greeting: string; job: string }
+export interface CardParts { appearance: string; clothing: string; backstory: string; personality: string; greeting: string; job: string }
 export function parseCard(out: string): CardParts | null {
-    const p: CardParts = { appearance: '', backstory: '', personality: '', greeting: '', job: '' };
-    const hits = [...out.matchAll(/\[(APPEARANCE|BACKSTORY|PERSONALITY|GREETING|JOB)\]\s*:?/gi)];
+    const p: CardParts = { appearance: '', clothing: '', backstory: '', personality: '', greeting: '', job: '' };
+    const hits = [...out.matchAll(/\[(APPEARANCE|CLOTHING|BACKSTORY|PERSONALITY|GREETING|JOB)\]\s*:?/gi)];
     if (hits.length < 2) return null;
     hits.forEach((m, k) => {
         const end = k + 1 < hits.length ? hits[k + 1].index! : out.length;
@@ -293,7 +295,7 @@ export async function addNewcomer(g: Save, w: WorldDef, n: Newcomer, as = ''): P
     if (!avatar) {
         const p = parseCard(await quiet(cardPrompt(w, n, name), 1500));
         const description = p
-            ? [['Appearance', p.appearance], ['Backstory', p.backstory]].filter(([, v]) => v).map(([k, v]) => `${k}:\n${v}`).join('\n\n')
+            ? [['Appearance', p.appearance], [STYLE_HEAD, p.clothing], ['Backstory', p.backstory]].filter(([, v]) => v).map(([k, v]) => `${k}:\n${v}`).join('\n\n')
             : [`${name}${n.role ? `, ${n.role}` : ''}.`, n.looks, ...n.notes].filter(Boolean).join(' ');
         job = p?.job ?? '';
         avatar = await createCharacter({

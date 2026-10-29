@@ -15,7 +15,7 @@ import {
     refreshList, folderColor, setFolderColor, deleteFolder, personaLore, setPersonaLore, exportCharacter, cardFile, fileNameOf, baseSpriteFolder, loreCount, charTags, tagColor, tagCharacter, untagCharacter, allTags, cardTokens, cachedTokens, folderMade, renameFolder, characterChats, useGreeting, openCharacter,
 } from '../st/bridge.js';
 import { currentEntry, heroDescription, initialsAvatar } from '../sim/game.js';
-import { mundify, mundifiedOf, madeForMundi, mundiCopies } from '../sim/mundify.js';
+import { mundify, mundifiedOf, madeForMundi, mundiCopies, hasStyle, addStyle } from '../sim/mundify.js';
 import { mundifyLore, loreMundifiedOf, loreCopies } from '../sim/mundifylore.js';
 import { sceneText } from '../sim/prompt.js';
 import { ACT, INPUT } from './reg.js';
@@ -240,18 +240,21 @@ const STRIPPED: [string, (c: any) => any][] = [
     ['main prompt override', c => c.data?.system_prompt], ['post-history instructions', c => c.data?.post_history_instructions],
     ["Character's note", c => c.data?.extensions?.depth_prompt?.prompt],
 ];
+// A mundified copy (or a card Mundi wrote) made before cards had their own clothing and style: the button to add it.
+const styleBtn = (c: any) => hasStyle(c) ? '' : `<div class="mu-row">${btn('lib-style', 'sparkles', 'Add clothing and style')}</div>
+        <small class="mu-muted">This card has no clothing and style section yet. The AI writes one from the card (choosing what fits where the card says little), so their sprites and the story know how they dress.</small>`;
 function mfyHtml(c: any, avatar: string) {
     const m = mundifiedOf(c);
     if (m) {
         const orig = charOf(m.from);
-        return `<section class="mu-lib-read mu-mfy"><small class="mu-muted">${icon('sparkles')} Mundified copy of ${orig ? btn('lib-mfy-go', 'user', esc(orig.name), 'mu-ghost', `data-id="${esc(m.from)}"`) : `<b data-notr>${esc(m.name)}</b> (the original was deleted)`}, ${m.ai ? 'cleaned up by the AI' : 'stripped without the AI'} on ${new Date(m.at).toLocaleDateString()}. It keeps only who they are; the world sets the scene and the first meeting.</small></section>`;
+        return `<section class="mu-lib-read mu-mfy">${styleBtn(c)}<small class="mu-muted">${icon('sparkles')} Mundified copy of ${orig ? btn('lib-mfy-go', 'user', esc(orig.name), 'mu-ghost', `data-id="${esc(m.from)}"`) : `<b data-notr>${esc(m.name)}</b> (the original was deleted)`}, ${m.ai ? 'cleaned up by the AI' : 'stripped without the AI'} on ${new Date(m.at).toLocaleDateString()}. It keeps only who they are; the world sets the scene and the first meeting.</small></section>`;
     }
-    if (madeForMundi(c)) return '';
+    if (madeForMundi(c)) return hasStyle(c) ? '' : `<section class="mu-lib-read mu-mfy">${styleBtn(c)}</section>`;
     const copies = mundiCopies(avatar);
     const extra = STRIPPED.filter(([, f]) => String(f(c) || '').trim()).map(([k]) => k);
     return `<section class="mu-lib-read mu-mfy"><div class="mu-row">${btn('lib-mfy', 'sparkles', copies.length ? 'Mundify again' : 'Mundify', copies.length ? '' : 'mu-primary')}
             ${copies.map(x => btn('lib-mfy-go', 'sparkles', `Open the copy${copies.length > 1 ? ` (${new Date(mundifiedOf(x)!.at).toLocaleDateString()})` : ''}`, 'mu-ghost', `data-id="${esc(x.avatar)}"`)).join('')}</div>
-        <small class="mu-muted">${extra.length ? `This card has its own <span data-notr>${extra.join(', ')}</span>, which fight the world in Mundi. ` : ''}Mundify makes a copy for Mundi with only their appearance, backstory, personality and details. This card stays as it is.</small></section>`;
+        <small class="mu-muted">${extra.length ? `This card has its own <span data-notr>${extra.join(', ')}</span>, which fight the world in Mundi. ` : ''}Mundify makes a copy for Mundi with only their appearance, clothing and style, backstory, personality and details. This card stays as it is.</small></section>`;
 }
 // Export, tokens, chats and the Mundi saves the character is in (30, 31, 33).
 const STATS: Record<string, { chats: number; msgs: number } | 'loading'> = {};
@@ -616,6 +619,20 @@ function rowHtml(r: Row) {
     return `<button class="mu-lib-item ${L.sel === r.id && !L.picked.length ? 'is-on' : ''} ${picked ? 'is-picked' : ''}" data-act="lib-sel" data-id="${esc(r.id)}" draggable="true" title="${esc(r.name)}">${box}${pic}<span data-notr>${esc(r.name)}</span>${badges}${count}</button>`;
 }
 
+const needsStyle = (a: string) => { const c = charOf(a); return !!c && (!!mundifiedOf(c) || madeForMundi(c)) && !hasStyle(c); };
+// Adds the clothing and style section to each card, one by one; a card that fails is said and the others go on.
+async function doStyle(ids: string[]) {
+    let done = 0; const failed: string[] = [];
+    for (const [k, id] of ids.entries()) {
+        const name = nameOfId('characters', id);
+        try { await busy(ids.length > 1 ? `Writing ${name}'s clothing and style (${k + 1} of ${ids.length})` : `Writing ${name}'s clothing and style`, () => addStyle(id)); done++; }
+        catch (e: any) { failed.push(`${name}: ${String(e?.message ?? e)}`); }
+    }
+    if (failed.length) toast(failed.join('\n'), 'error');
+    if (done) toast(done === 1 ? 'Clothing and style added to the card.' : `Clothing and style added to ${done} cards.`, 'success');
+    L.draft = {}; notify();
+}
+
 function bulkBar(tab: ListTab) {
     const n = L.picked.length;
     if (!n && !L.picking) return '';
@@ -626,6 +643,7 @@ function bulkBar(tab: ListTab) {
             ${tab === 'backgrounds' ? '' : btn('lib-bulk-fav', allFav ? 'star' : 'starFill', allFav ? 'Unfavorite' : 'Favorite', '', dis)}
             ${btn('lib-bulk-folder', 'move', 'Move', '', dis)}
             ${tab === 'characters' ? btn('lib-bulk-mfy', 'sparkles', 'Mundify', '', dis) : ''}
+            ${tab === 'characters' && L.picked.some(needsStyle) ? btn('lib-bulk-style', 'sparkles', 'Add clothing and style', '', dis) : ''}
             ${tab === 'characters' || tab === 'lorebooks' ? btn('lib-bulk-zip', 'download', 'Zip', '', dis) : ''}
             ${btn('lib-bulk-del', 'trash', 'Delete', 'mu-danger', dis)}
             ${ibtn('lib-pick-clear', 'x', 'Cancel selection')}</div></div>`;
@@ -724,7 +742,7 @@ function dialogHtml() {
             ${ids.length > 1 ? `<p class="mu-muted mu-dlg-names" data-notr>${esc(ids.map(i => nameOfId('characters', i)).join(', '))}</p>` : ''}
             <p>Mundi makes a copy of ${ids.length === 1 ? 'the card' : 'each card'} for its worlds. The original is not changed.</p>
             <p class="mu-muted"><b>Kept:</b> appearance, backstory, personality and other details about the character.<br><b>Removed:</b> scenario, greetings, example dialogue, main prompt override, post-history instructions and Character's note. The world handles all of these. Linked lorebooks stay linked.</p>
-            <label class="mu-check"><input type="checkbox" data-input="lib-mfy-ai" ${m.ai ? 'checked' : ''}><span>Clean up with the AI<small>The AI sorts the card into appearance, backstory, personality and details, and saves facts about the character hidden in the scenario, greetings or notes. Without it, the description and personality are copied word for word.</small></span></label>
+            <label class="mu-check"><input type="checkbox" data-input="lib-mfy-ai" ${m.ai ? 'checked' : ''}><span>Clean up with the AI<small>The AI sorts the card into appearance, clothing and style (chosen to fit them where the card says little), backstory, personality and details, and saves facts about the character hidden in the scenario, greetings or notes. Without it, the description and personality are copied word for word.</small></span></label>
             <div class="mu-row mu-dlg-btns"><button data-act="lib-dlg-close">Cancel</button>${btn('lib-mfy-yes', 'sparkles', 'Mundify', 'mu-primary')}</div>`;
     } else if (m.type === 'lib-dlg-mfylore') {
         body = `<h3>Mundify “${esc(m.id)}”?</h3>
@@ -1067,6 +1085,8 @@ Object.assign(ACT, {
         if (!ids.length) { toast('These are made for Mundi already.', 'info'); return; }
         state.modal = { type: 'lib-dlg-mfy', ids, ai: true }; notify();
     },
+    'lib-style': () => { if (L.sel && guard()) void doStyle([L.sel]); },
+    'lib-bulk-style': () => { const ids = L.picked.filter(needsStyle); if (ids.length && guard()) void doStyle(ids); },
     'lib-mfy-go': (el) => { if (guard()) void select(el.dataset.id!); },
     'lib-mfy-yes': () => void doMundify(),
     'lib-mfylore': () => { if (L.sel && guard()) { state.modal = { type: 'lib-dlg-mfylore', id: L.sel, ai: true }; notify(); } },
