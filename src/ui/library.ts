@@ -237,7 +237,7 @@ const EXP = { open: false };   // the export menu by the favorite star
 const STRIPPED: [string, (c: any) => any][] = [
     ['scenario', c => c.scenario], ['greetings', c => c.first_mes || c.data?.alternate_greetings?.length], ['example dialogue', c => c.mes_example],
     ['main prompt override', c => c.data?.system_prompt], ['post-history instructions', c => c.data?.post_history_instructions],
-    ["Character's note", c => c.data?.extensions?.depth_prompt?.prompt], ['linked lorebook', c => c.data?.extensions?.world],
+    ["Character's note", c => c.data?.extensions?.depth_prompt?.prompt],
 ];
 function mfyHtml(c: any, avatar: string) {
     const m = mundifiedOf(c);
@@ -707,7 +707,7 @@ function dialogHtml() {
         body = `<h3>${ids.length === 1 ? `Mundify “${esc(nameOfId('characters', ids[0]))}”?` : `Mundify ${ids.length} characters?`}</h3>
             ${ids.length > 1 ? `<p class="mu-muted mu-dlg-names" data-notr>${esc(ids.map(i => nameOfId('characters', i)).join(', '))}</p>` : ''}
             <p>Mundi makes a copy of ${ids.length === 1 ? 'the card' : 'each card'} for its worlds. The original is not changed.</p>
-            <p class="mu-muted"><b>Kept:</b> appearance, backstory, personality and other details about the character.<br><b>Removed:</b> scenario, greetings, example dialogue, main prompt override, post-history instructions, Character's note and the linked lorebook. The world handles all of these.</p>
+            <p class="mu-muted"><b>Kept:</b> appearance, backstory, personality and other details about the character.<br><b>Removed:</b> scenario, greetings, example dialogue, main prompt override, post-history instructions and Character's note. The world handles all of these. Linked lorebooks stay linked.</p>
             <label class="mu-check"><input type="checkbox" data-input="lib-mfy-ai" ${m.ai ? 'checked' : ''}><span>Clean up with the AI<small>The AI sorts the card into appearance, backstory, personality and details, and saves facts about the character hidden in the scenario, greetings or notes. Without it, the description and personality are copied word for word.</small></span></label>
             <div class="mu-row mu-dlg-btns"><button data-act="lib-dlg-close">Cancel</button>${btn('lib-mfy-yes', 'sparkles', 'Mundify', 'mu-primary')}</div>`;
     } else if (m.type === 'lib-dlg-newfolder') {
