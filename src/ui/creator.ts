@@ -8,10 +8,10 @@ import { DEFAULT_EXPENSES } from '../sim/bills.js';
 import { lex, lexGroups, lexDefault } from '../core/lexicon.js';
 import { slidesHtml, toneTag } from './slides.js';
 import { houseMapsHtml } from './planedit.js';
-import { MEDIEVAL_RPG, MODERN_RPG, POWERS_RPG } from '../core/rpgdef.js';
+import { RPG_SYSTEMS } from '../core/systems.js';
 import { TIE_TYPES, TIE_TONES } from '../sim/living.js';
 import { GOVERNMENTS, POWERS } from '../sim/realm.js';
-import { state, notify, esc, toast, busy } from '../core/store.js';
+import { state, notify, esc, toast, busy, settings, saveSettings } from '../core/store.js';
 import { getWorld, shortDesc, WORLD_DESC_MAX, worldFile, worlds, styleOf, isCustom, gameMode, GAME_MODES, SYSTEMS, systemOn, appSystem, isScenario, worldTags, allTags, WORLD_TAGS, RPG_LOCKED, RPG_NOTE, worldLocked, type WorldDef, type GameMode } from '../core/world.js';
 import { STYLES, inWorld } from './styles.js';
 import { SKINS } from './skins.js';
@@ -37,6 +37,8 @@ export const CW = {
     sel: { courses: 0, needs: 0, actions: 0, jobs: 0, zones: 0, kinds: '', traits: 0, origins: 0, people: 0, routine: '', lore: 0 } as Record<string, any>,
     start: null as null | { name: string; style: string; base: string; mode: 'copy' | 'empty' | 'lore'; game: GameMode; scenario?: boolean },
     allTabs: false,
+    /** RPG tab: the system about to replace the world's RPG (asked first) */
+    rpgSwap: '' as string,
 };
 export const W = () => CW.w!;
 
@@ -371,26 +373,38 @@ function tabCustoms(w: WorldDef) {
 }
 
 // The world's RPG: attributes, skills, classes and subclasses, schools of magic, spells, titles.
+const rpgSystemList = () => [...RPG_SYSTEMS, ...(settings().rpgSystems ?? [])];
+const rpgSystemButtons = (act = 'cw-rpg-preset') => rpgSystemList().map(x => `<button class="${act === 'cw-rpg-preset' ? 'mu-primary' : 'mu-ghost'}" data-act="${act}" data-v="${esc(x.id)}" title="${esc(x.desc)}">${icon('sparkles')}<span>${esc(x.name)}</span></button>`).join('');
 function tabRpg(w: WorldDef) {
     const r = w.rpg;
     if (!r) return `<div class="mu-cw-grid"><section class="mu-cw-sec mu-cw-wide"><h4>RPG</h4>
-        <p class="mu-muted">The RPG mode needs the world's RPG: attributes, skills, classes (with a subclass at level 3 or 5), magic and titles. Start from the medieval one and change what you like, or from nothing.</p>
-        <div class="mu-row"><button class="mu-primary" data-act="cw-rpg-preset" data-v="medieval">${icon('sparkles')}<span>Use the medieval RPG</span></button><button class="mu-primary" data-act="cw-rpg-preset" data-v="modern">${icon('sparkles')}<span>Use the martial arts RPG (realistic)</span></button><button class="mu-primary" data-act="cw-rpg-preset" data-v="powers">${icon('sparkles')}<span>Use the superpowers RPG (fantasy)</span></button><button class="mu-ghost" data-act="cw-rpg-empty">${icon('plus')}<span>Start an empty one</span></button></div></section></div>`;
+        <p class="mu-muted">The RPG mode needs the world's RPG: attributes, skills, classes (with a subclass at level 3 or 5), magic and titles. Start from one of these systems and change what you like, or from nothing.</p>
+        <div class="mu-row">${rpgSystemButtons()}<button class="mu-ghost" data-act="cw-rpg-empty">${icon('plus')}<span>Start an empty one</span></button></div></section></div>`;
     const attrs = r.attributes.map(a => [a.id, `${a.short} · ${a.name}`] as [string, string]);
     const skills = r.skills.map(k => [k.id, k.name] as [string, string]);
     const schools = r.schools.map(s => [s.id, s.name] as [string, string]);
     return `<div class="mu-cw-grid">
+        <section class="mu-cw-sec mu-cw-wide"><h4>System</h4>
+            <p class="mu-muted">Players can also choose another system when starting a game. Save this one to offer it in every world, or start over from a system.</p>
+            ${txt('Name of this system (told to the AI)', 'rpg.name', 'Classic fantasy')}
+            <div class="mu-row"><button class="mu-ghost" data-act="cw-rpg-keep">${icon('save')}<span>Save as one of my systems</span></button></div>
+            ${CW.rpgSwap ? `<div class="mu-row"><span class="mu-warn">Replace this world's RPG with ${esc(rpgSystemList().find(x => x.id === CW.rpgSwap)?.name ?? '')}? Your changes to it are lost.</span><button data-act="cw-rpg-swap-no">Cancel</button><button class="mu-danger" data-act="cw-rpg-preset" data-v="${esc(CW.rpgSwap)}">Replace</button></div>`
+                : `<details><summary>Start over from a system</summary><div class="mu-row">${rpgSystemButtons('cw-rpg-swap')}</div></details>`}</section>
         <section class="mu-cw-sec mu-cw-wide"><h4>Numbers</h4>
             <div class="mu-row2">${sel('Hit points grow with', 'rpg.hpAttr', attrs)}${txt(`The resource for ${esc(lexDefault(w, 'spellsNoun'))} is called`, 'rpg.focusName', 'Focus')}</div>
-            <div class="mu-row2">${csv('Experience for level 2, 3, 4… (comma separated)', 'rpg.xp')}${num('Hours on the road before making camp', 'rpg.campEvery', 1)}</div></section>
+            <div class="mu-row2">${csv('Experience for level 2, 3, 4… (comma separated)', 'rpg.xp')}${num('Hours on the road before making camp', 'rpg.campEvery', 1)}</div>
+            <div class="mu-row2">${num('Points for starting skills (class skills cost 1, others 2; empty: 6)', 'rpg.skillPoints', 1)}${num('Attribute points every level (empty: 2 every 4 levels)', 'rpg.levelPoints', 0)}</div></section>
         <section class="mu-cw-sec"><h4>Attributes</h4>${master('rattr', 'rpg.attributes', a => `<b>${esc(a.short)}</b><small>${esc(a.name)}</small>`, i => `<div class="mu-row2">${txt('Name', `rpg.attributes.${i}.name`)}${txt('Short', `rpg.attributes.${i}.short`)}</div>${txt('What it is for', `rpg.attributes.${i}.desc`)}${chk('Faith (hidden while the realm has no gods)', `rpg.attributes.${i}.faith`)}`, 'rattr')}</section>
         <section class="mu-cw-sec"><h4>Skills</h4>${master('rskill', 'rpg.skills', k => `<b>${esc(k.name)}</b><small>${esc(r.attributes.find(a => a.id === k.attr)?.short ?? '')}</small>`, i => `${txt('Name', `rpg.skills.${i}.name`)}${sel('Uses', `rpg.skills.${i}.attr`, attrs)}`, 'rskill')}</section>
+        <section class="mu-cw-sec"><h4>Weapons to choose</h4><p class="mu-muted">A new character can carry one of these instead of their class's weapon. With its weapon skill, it adds their proficiency.</p>${master('rweapon', 'rpg.weapons', k => `<b>${esc(k.name)}</b><small>${k.dice}d${k.sides}${k.ranged ? ' · ranged' : ''}</small>`, i => `<div class="mu-row2">${txt('Name', `rpg.weapons.${i}.name`)}${sel('Uses', `rpg.weapons.${i}.attr`, attrs)}</div>
+            <div class="mu-row2">${num('Damage dice', `rpg.weapons.${i}.dice`, 1)}${num('Sides of each die', `rpg.weapons.${i}.sides`, 2)}</div>
+            <div class="mu-row2">${sel('Weapon skill', `rpg.weapons.${i}.skill`, [['', '(none: anyone is trained)'], ...r.skills.map(k => [k.id, k.name] as [string, string])])}${chk('Ranged', `rpg.weapons.${i}.ranged`)}</div>`, 'rweapon')}</section>
         <section class="mu-cw-sec mu-cw-wide"><h4>Classes</h4>${master('rclass', 'rpg.classes', c => `<b>${esc(c.name)}</b><small>d${c.hit}${c.schools?.length ? ' · spells' : ''}</small>`, i => {
             const p = `rpg.classes.${i}`; const c = r.classes[i];
             return `${txt('Name', `${p}.name`)}${area('What it is', `${p}.desc`, 2)}
                 <div class="mu-row2">${chk('Faith class', `${p}.faith`)}${txt('Its name with no gods in the realm', `${p}.secular`, 'Healer')}</div>
                 <div class="mu-row2">${num('Hit points at level 1', `${p}.hit`, 1)}${sel('Key attribute', `${p}.key`, attrs)}</div>
-                <div class="mu-field"><span>Skills to choose from (2 at the start)</span>${pairChips(skills, `${p}.skills`)}</div>
+                <div class="mu-field"><span>Class skills (cost 1 point at the start; any other skill costs 2)</span>${pairChips(skills, `${p}.skills`)}</div>
                 <div class="mu-field"><span>${esc(lexDefault(w, 'schoolsWord'))} (none: no ${esc(lexDefault(w, 'spellsNoun'))})</span>${pairChips(schools, `${p}.schools`)}</div>
                 ${sel('Subclass at level', `${p}.subAt`, [['3', '3'], ['5', '5']], 'num')}
                 <h4>In a fight</h4>
@@ -586,7 +600,7 @@ function tabCharacter(w: WorldDef) {
             ${(s.appearance ?? []).map((_a, k) => `<div class="mu-row mu-cw-inline">${txt('Trait', `sheet.appearance.${k}.label`)}${csv('Options (comma separated)', `sheet.appearance.${k}.options`)}<button class="mu-ghost mu-ibtn" data-act="cw-del" data-path="sheet.appearance.${k}">${icon('x')}</button></div>`).join('')}
             <button class="mu-ghost" data-act="cw-add" data-what="look">${icon('plus')}<span>Add</span></button></section>
         <section class="mu-cw-sec"><h4>Traits the player picks</h4>
-            ${(s.traits ?? []).map((_t, k) => `<div class="mu-cw-trait"><div class="mu-row2">${txt('Group', `sheet.traits.${k}.label`)}${num('Pick up to', `sheet.traits.${k}.max`, 1)}</div>${csv('Options (comma separated)', `sheet.traits.${k}.options`)}<button class="mu-ghost" data-act="cw-del" data-path="sheet.traits.${k}">${icon('trash')}<span>Remove</span></button></div>`).join('')}
+            ${(s.traits ?? []).map((_t, k) => `<div class="mu-cw-trait"><div class="mu-row2">${txt('Group', `sheet.traits.${k}.label`)}${num('Pick up to (0: no limit)', `sheet.traits.${k}.max`, 0)}</div>${csv('Options (comma separated)', `sheet.traits.${k}.options`)}<button class="mu-ghost" data-act="cw-del" data-path="sheet.traits.${k}">${icon('trash')}<span>Remove</span></button></div>`).join('')}
             <button class="mu-ghost" data-act="cw-add" data-what="trait">${icon('plus')}<span>Add a group</span></button></section>
         <section class="mu-cw-sec mu-cw-wide"><h4>Origins (how you start)</h4>
             ${master('origins', 'catalogs.origins', o => `<b>${esc(o.name)}</b><small>${esc(money(w, o.money))}</small>`, i => {
@@ -792,6 +806,7 @@ export const leaveHtml = (k: string) => `<div class="mu-dlg-veil" data-act="${k}
 function close() { FL.on = false; CW.leaveAsk = false; CW.confirmDel = false; CW.dirty = false; CW.w = null; CW.start = null; state.view = (backTo === 'creator' ? 'newgame' : backTo) as any; notify(); }
 
 const NEW: Record<string, () => [string, any]> = {
+    rweapon: () => ['rpg.weapons', { id: newId('weapon'), name: 'New weapon', dice: 1, sides: 6, attr: W().rpg?.attributes[0]?.id ?? 'str' }],
     rattr: () => ['rpg.attributes', { id: newId('attr'), name: 'New attribute', short: 'NEW' }],
     rskill: () => ['rpg.skills', { id: newId('skill'), name: 'New skill', attr: W().rpg?.attributes[0]?.id ?? 'str' }],
     rclass: () => ['rpg.classes', { id: newId('class'), name: 'New class', hit: 8, key: W().rpg?.attributes[0]?.id ?? 'str', skills: [], subAt: 3, subclasses: [] }],
@@ -829,12 +844,27 @@ const NEW: Record<string, () => [string, any]> = {
     lore: () => ['lore', { keys: [], content: '', constant: false }],
     period: () => ['time.periods', { id: newId('p'), name: 'New period', from: 720 }],
     look: () => ['sheet.appearance', { id: newId('look'), label: 'New trait', options: [] }],
-    trait: () => ['sheet.traits', { id: newId('trait'), label: 'New group', max: 2, options: [] }],
+    trait: () => ['sheet.traits', { id: newId('trait'), label: 'New group', options: [] }],
 };
 const listKey: Record<string, string> = { 'rpg.attributes': 'rattr', 'rpg.skills': 'rskill', 'rpg.classes': 'rclass', 'rpg.schools': 'rschool', 'rpg.spells': 'rspell', 'rpg.titles': 'rtitle', 'rpg.bestiary': 'rfoe', habits: 'habit', festivals: 'festival', cityEvents: 'cevent', hobbies: 'hobby', pets: 'pet', 'realm.pantheon': 'god', factions: 'faction', institutions: 'inst', 'rpg.talents': 'rtal', goods: 'good', recipes: 'recipe', towers: 'tower', blades: 'blade', crops: 'crop', businesses: 'biz', 'skies.events': 'sky', 'skies.hazards': 'hazard', 'catalogs.shop': 'shop', 'homes.breakables': 'breakables', 'catalogs.courses': 'courses', 'homes.expenses': 'expenses', statuses: 'needs', actions: 'actions', occupations: 'jobs', 'homes.zones': 'zones', 'catalogs.origins': 'origins', 'cast.examples': 'people', lore: 'lore' };
 
 Object.assign(ACT, {
-    'cw-rpg-preset': (el) => { W().rpg = structuredClone(el.dataset.v === 'modern' ? MODERN_RPG : el.dataset.v === 'powers' ? POWERS_RPG : MEDIEVAL_RPG); CW.dirty = true; notify(); },
+    'cw-rpg-preset': (el) => {
+        const id = el.dataset.v === 'medieval' ? 'classic' : el.dataset.v === 'modern' ? 'martial' : el.dataset.v;
+        const x = rpgSystemList().find(k => k.id === id); if (!x) return;
+        W().rpg = structuredClone(x.def); CW.rpgSwap = ''; CW.dirty = true; notify();
+    },
+    'cw-rpg-swap': (el) => { CW.rpgSwap = el.dataset.v ?? ''; notify(); },
+    'cw-rpg-swap-no': () => { CW.rpgSwap = ''; notify(); },
+    'cw-rpg-keep': () => {
+        const r = W().rpg; if (!r) return;
+        const name = (r.name || `${W().name} RPG`).trim();
+        const list = (settings().rpgSystems ??= []);
+        const id = `mine_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+        const row = { id, name, desc: `Saved from ${W().name}: ${r.classes.map(c => c.name).join(', ')}.`, def: structuredClone({ ...r, name }) };
+        const i = list.findIndex(x => x.id === id); if (i >= 0) list[i] = row; else list.push(row);
+        saveSettings(); toast(`Saved "${name}": you can choose it when starting a game in any world.`, 'success');
+    },
     'cw-rpg-empty': () => { W().rpg = { attributes: [], hpAttr: '', skills: [], classes: [], xp: [100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500, 6600], schools: [], spells: [], titles: [] }; CW.dirty = true; notify(); },
 });
 Object.assign(ACT, {
