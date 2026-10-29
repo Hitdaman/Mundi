@@ -60,7 +60,8 @@ export function applyTimedRules(g: Save, w: WorldDef): string[] {
         }
         const v = g.player.stats[s.id] ?? s.start;
         // (Home: an empty need only shows, and the AI is told; nobody faints)
-        if (v > 0 || !s.zero || isScenario(w)) { delete g.tick[`zero:${s.id}`]; delete g.tick[`crisis0:${s.id}`]; continue; }
+        // (the drain's clock starts again too: it would otherwise charge every hour since the need was last empty)
+        if (v > 0 || !s.zero || isScenario(w)) { delete g.tick[`zero:${s.id}`]; delete g.tick[`crisis0:${s.id}`]; delete g.tick[`drain:${s.id}`]; continue; }
         out.push(...crisisCheck(g, w, s));
         if (s.zero.drain) {
             const n = periods(g, `drain:${s.id}`, s.zero.drain.everyMinutes);
