@@ -59,6 +59,8 @@ import { adventureActs } from './adventureui.js';
 import { discoveryActs } from './discoveryui.js';
 import { careActs, doorActs, findActs, gearActs, roomActs, waitActs, moreHtml } from './moreacts.js';
 import { rpgOf } from '../core/rpgdef.js';
+import { metersOf } from '../sim/meters.js';
+import { meterBars } from './metersui.js';
 
 /* ---------- you ---------- */
 
@@ -77,15 +79,15 @@ function personaCard(g: Save, w: WorldDef) {
     const fName = rpgOf(w)?.focusName ?? 'Focus';
     const focusBar = sh ? (() => { const fv = Math.round((sh.focus / Math.max(1, focusMax(w, sh))) * 100); return `<div class="mh-bar ${fv <= 20 ? 'is-low' : ''}" data-stat="focus" data-word="${esc(`${sh.focus}/${focusMax(w, sh)}`)}" style="--c:#7b5cff;--v:${fv}">
                 <span class="mh-bar-ic">${icon('sparkles')}</span><span class="mh-bar-name">${esc(fName)}</span><span class="mh-bar-track"><i></i></span></div>`; })() : '';
-    const bars = shown.filter(isBar).length + (sh ? 1 : 0), rings = shown.length - shown.filter(isBar).length;
+    const bars = shown.filter(isBar).length + (sh ? 1 : 0) + metersOf(g).length, rings = shown.length - shown.filter(isBar).length;
     const size = bars >= 3 || rings >= 6 ? 'is-tight' : bars === 2 || rings === 5 ? 'is-snug' : '';
-    const bare = !shown.length && !sh;   // nothing to look after (needs off): the money goes under the name
+    const bare = !shown.length && !sh && !metersOf(g).length;   // nothing to look after (needs off): the money goes under the name
     return `<aside class="mh-persona mh-glass ${size} ${bare ? 'no-needs' : ''}" aria-label="${esc(personaName())}">
         <button class="mh-face" data-act="pa-open" title="Play as…">${img ? `<img src="${esc(img)}" alt="">` : icon('user')}<i class="mh-face-swap">${icon('users')}</i></button>
         <div class="mh-needs">
             <div class="mh-who"><b>${esc(personaName())}</b>${levelChip()}${isScenario(w) ? '' : `<span class="mu-cash">${esc(money(w, g.player.money))}</span>`}</div>
             ${shown.filter(isBar).map(s => `<div class="mh-bar ${v(s) <= 20 ? 'is-low' : ''}" data-stat="${esc(s.id)}" data-word="${esc(sh && (s.id === 'life' || s.id === 'health') ? `${sh.hp}/${hpMax(w, sh)} HP${mortalOn(g, w) && bandOf(sh.hp, hpMax(w, sh)) !== 'fine' ? ` · ${BAND_WORD[bandOf(sh.hp, hpMax(w, sh))]}` : ''}${(g as any).mortal?.form ? ` · ${(g as any).mortal.form}` : ''}` : needWord(s, v(s)))}" style="--c:${esc(s.color)};--v:${v(s)}">
-                <span class="mh-bar-ic">${needIcon(s)}</span><span class="mh-bar-name">${esc(s.name)}</span><span class="mh-bar-track"><i></i></span></div>`).join('')}${focusBar}
+                <span class="mh-bar-ic">${needIcon(s)}</span><span class="mh-bar-name">${esc(s.name)}</span><span class="mh-bar-track"><i></i></span></div>`).join('')}${focusBar}${meterBars(g)}
             <div class="mh-rings">${shown.filter(s => !isBar(s)).map(s => `<div class="mh-ring ${v(s) <= 20 ? 'is-low' : ''}" data-stat="${esc(s.id)}" data-word="${esc(`${s.name}: ${needWord(s, v(s))}`)}" aria-label="${esc(s.name)}" style="--c:${esc(s.color)};--v:${v(s)}">
                 <span class="mh-ring-ic">${needIcon(s)}</span><small>${esc(s.name)}</small></div>`).join('')}</div>
         </div></aside>`;

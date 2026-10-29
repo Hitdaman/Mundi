@@ -6,6 +6,7 @@ import { rpgOf, withRpg, type RpgDef } from '../core/rpgdef.js';
 import { SCHEMA } from '../core/saves.js';
 import { worldFile, isScenario, SCENARIO_STARTS } from '../core/world.js';
 import { DIFFICULTIES, type Difficulty } from './bills.js';
+import { makeMeters, type Meter } from './meters.js';
 import { placeOf as placeOf2 } from './places.js';
 import { TUT, settings as settings2 } from '../core/store.js';
 import { note, placeName } from './facts.js';
@@ -154,7 +155,7 @@ export interface NewGame {
     /** households made at the start (people who share a home, and their ties), your household, and your chosen home */
     households?: { members: string[]; ties: { a: string; b: string; type: TieType; tone: TieTone }[]; home?: { zone: string; x: number; y: number; n: number } }[];
     family?: { avatar: string; type: TieType; tone: TieTone }[];
-    home?: { zone: string; x: number; y: number; n: number };
+    home?: { zone: string; x: number; y: number; n: number; /** a home inside a building (a place id), and its room's name */ in?: string; room?: string };
     difficulty?: Difficulty;
     /** where people stand with you at the start (−100 … 100), from a preset */
     approval?: Record<string, number>;
@@ -178,6 +179,9 @@ export interface NewGame {
     memoriesFrom?: string;
     /** attach the world to the open chat (one of your own) instead of making a new group chat (sim/attach.ts) */
     attach?: boolean;
+    /** filled from your persona (sim/personafill.ts): your own meters, the money you have, and the people of this
+     *  game who already know you (by name; where they stand with you) */
+    meters?: Meter[]; money?: number; known?: { name: string; approval: number }[];
 }
 
 export async function startNewGame(o: NewGame) {
@@ -228,7 +232,8 @@ export async function startNewGame(o: NewGame) {
     if (picked) taken.add(spotKey(o.home!.zone, o.home!.x, o.home!.y));
     // homes chosen for households are nobody else's
     for (const h of o.households ?? []) if (h.home && w.homes.zones.some(z => z.id === h.home!.zone)) taken.add(spotKey(h.home.zone, h.home.x, h.home.y));
-    const home = picked ? { zone: o.home!.zone, x: o.home!.x, y: o.home!.y, n: o.home!.n } : homeSpot(w, origin?.home ?? w.homes.zones[0].id, taken);
+    const inside = o.home?.in ? w.places.find(p => p.id === o.home!.in) : undefined;
+    const home = picked ? { zone: o.home!.zone, x: o.home!.x, y: o.home!.y, n: o.home!.n, ...(inside ? { in: inside.id, room: String(o.home!.room ?? '').trim().slice(0, 60) } : {}) } : homeSpot(w, origin?.home ?? w.homes.zones[0].id, taken);
     const zone = w.homes.zones.find(z => z.id === home.zone)!;
     const save: Save = {
         v: 1, world: w.id, lang: lang(), day: w.time.startDay, minutes: w.time.startMinutes, speed: w.time.speed,
@@ -241,7 +246,9 @@ export async function startNewGame(o: NewGame) {
         ...({ cfg: { difficulty: o.difficulty ?? 'normal', ...(o.mode ? { mode: o.mode } : {}) }, schema: SCHEMA } as any),
     };
     // a persona's words about you in this world (its own description stays as it is)
-    if (o.persona && o.hero.bio?.trim()) (save.player as any).bio = o.hero.bio.trim().slice(0, 1200);
+    if (o.persona && o.hero.bio?.trim()) (save.player as any).bio = o.hero.bio.trim().slice(0, 3000);
+    if (o.meters?.length) (save as any).meters = makeMeters(o.meters);
+    if (o.money !== undefined && Number.isFinite(o.money)) save.player.money = Math.max(0, Math.round(o.money));
     // nobody lives in your home unless you chose them (your household)
     for (const a of cast) save.cast[a] = resident(w, a, taken, save.player.home);
     // jobs chosen at the start: the job, and a routine that goes to work (or none that does)
@@ -298,6 +305,11 @@ export async function startNewGame(o: NewGame) {
             if (!r.met) { (soc.bond ??= {})[r.avatar] ??= st0.bond ?? 0; (liv.approval ??= {})[r.avatar] ??= st0.approval ?? 0; }
             r.met = true;
         }
+    }
+    // the people who already know you (filled from your persona): met, and where they stand with you
+    for (const k of o.known ?? []) {
+        const r = Object.values(save.cast).find(x => x.name.toLowerCase() === k.name.toLowerCase()); if (!r || !Number.isFinite(k.approval)) continue;
+        (o.approval ??= {})[r.avatar] ??= k.approval;
     }
     // where each one stands with you, from a preset
     for (const [a, v] of Object.entries(o.approval ?? {})) {

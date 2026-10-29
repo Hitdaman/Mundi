@@ -906,6 +906,22 @@ export function setDefaultPersona(file: string | null) {
     power_user.default_persona = file;
     ctx().saveSettingsDebounced();
 }
+// A persona's own settings entry (SillyTavern's persona_descriptions); `make`: created when missing.
+export function personaData(file: string, make = true): any {
+    if (!make) return power_user.persona_descriptions?.[file] ?? null;
+    power_user.persona_descriptions ??= {};
+    return (power_user.persona_descriptions[file] ??= { description: '', position: 0 });
+}
+export const savePersonaData = () => ctx().saveSettingsDebounced();
+// One chat's messages (a character's chat file, without the .jsonl): its first line is the chat's header.
+export async function readCharChat(avatar: string, file: string): Promise<any[]> {
+    const c = charOf(avatar);
+    if (!c) throw new Error('This character no longer exists.');
+    const res = await fetch('/api/chats/get', { method: 'POST', headers: headers(), body: JSON.stringify({ ch_name: c.name, file_name: file.replace(/\.jsonl$/, ''), avatar_url: avatar }) });
+    if (!res.ok) throw new Error('Could not read the chat.');
+    const data = await res.json();
+    return (Array.isArray(data) ? data : []).filter((m: any) => m && typeof m.mes === 'string');
+}
 // Mundi's own record inside a persona (the sheet it was made from).
 export const personaSheet = (file: string): any => power_user.persona_descriptions?.[file]?.mundi ?? null;
 export function setPersonaSheet(file: string, sheet: any) {

@@ -16,7 +16,9 @@ import { DIFFICULTIES } from '../sim/bills.js';
 import { slidesHtml, toneTag } from './slides.js';
 import { presetChipsHtml } from './castpresets.js';
 import { isScenario, SCENARIO_STARTS } from '../core/world.js';
-import { lorebooks, loadLore, quiet } from '../st/bridge.js';
+import { lorebooks, loadLore, quiet, personaLore, characterChats, readCharChat } from '../st/bridge.js';
+import { fillFromPersona, fillBio, type Fill } from '../sim/personafill.js';
+import { makeMeters, meterWord } from '../sim/meters.js';
 import { worlds, getWorld, shortDesc, worldFile, isCustom, exampleTag, styleOf, GAME_MODES, worldLocked, lockedFor, hasTag, type WorldDef } from '../core/world.js';
 import { openCreatorNew, openCreatorEdit, importWorldFile } from './creator.js';
 import { setWorldDicts } from '../core/tr.js';
@@ -28,7 +30,7 @@ import { styleName, inWorld, LOCKED_NOTE } from './styles.js';
 import { pickAndCrop, pickFile } from './cropper.js';
 import { uploadWorldPicture } from '../sim/creator.js';
 import { icon } from './icons.js';
-import { stepHouseholds, yourHouseholdHtml, stepHome } from './ngfamily.js';
+import { stepHouseholds, yourHouseholdHtml, stepHome, homeInside } from './ngfamily.js';
 import { traitsHtml, toggleTrait, addOwnTrait } from './traits.js';
 import { charPicker, shownChars, resetPick } from './charpick.js';
 
@@ -280,7 +282,55 @@ function stepHeroExisting() {
         <div class="mu-castgrid" data-keep="personas">${list.length ? list.map(p => `
             <button class="mu-castcard ${wz.persona === p.file ? 'is-on' : ''}" data-act="ng-persona" data-file="${esc(p.file)}" title="${esc(p.name)}">
                 <img src="${esc(personaThumb(p.file))}" alt="" loading="lazy"><span data-notr>${esc(p.name)}</span><i>✓</i></button>`).join('') : '<p class="mu-muted">You have no personas yet.</p>'}</div>
-        ${wz.persona ? `<p class="mu-muted mu-persona-desc" data-notr>${esc(personas().find(p => p.file === wz.persona)?.description.slice(0, 400) ?? '')}</p>` : ''}`;
+        ${wz.persona ? `<p class="mu-muted mu-persona-desc" data-notr>${esc(personas().find(p => p.file === wz.persona)?.description.slice(0, 400) ?? '')}</p>${fillHtml()}` : ''}`;
+}
+
+// "Fill from my persona": your AI reads the persona (its description, its lorebook, lorebooks you add, a chat you
+// played it in) and fills in this page: origin, about you, traits, class, attributes, weapon, money, who knows you, meters.
+const fillOf = () => {
+    const wz = state.wizard;
+    if (wz.fill?.persona !== wz.persona) {   // another persona: its own lorebooks, the ones named after it picked
+        const p = personas().find(x => x.file === wz.persona), first = String(p?.name ?? '').split(/\s+/)[0].toLowerCase(), own = personaLore(wz.persona);
+        wz.fill = { persona: wz.persona, open: false, busy: false, bq: '', books: first.length > 2 ? lorebooks().filter(b => b !== own && b.toLowerCase().includes(first)) : [], cq: '', who: '', chats: null, chat: '', done: null as null | { fill: Fill; meters: any[] } };
+    }
+    return wz.fill;
+};
+function fillHtml() {
+    const f = fillOf(), p = personas().find(x => x.file === state.wizard.persona); if (!p) return '';
+    const own = personaLore(p.file);
+    if (!f.open) return `<section class="mu-panel mu-fill"><div class="mu-row"><button class="mu-primary" data-act="ng-fill-open">${icon('sparkles')}<span>Fill from my persona</span></button>
+        <small class="mu-muted">Your AI reads <span data-notr>${esc(p.name)}</span>${own ? ` and the lorebook <span data-notr>${esc(own)}</span>` : ''} (and a chat, if you pick one) and fills in your origin, about you, ${rpgState() ? 'class, attributes, weapon, ' : ''}money, the people who already know you and your own meters.</small></div>${f.done ? fillDoneHtml(f) : ''}</section>`;
+    const books = lorebooks().filter(b => b !== own && (!f.bq || b.toLowerCase().includes(String(f.bq).toLowerCase()))).sort((a, b) => Number(f.books.includes(b)) - Number(f.books.includes(a)) || a.localeCompare(b));
+    const cq = String(f.cq ?? '').toLowerCase();
+    const chars = cq.length > 1 ? characters().filter(c => String(c.name).toLowerCase().includes(cq)).slice(0, 12) : [];
+    const who = f.who ? charOf(f.who) : null;
+    return `<section class="mu-panel mu-fill"><h4>${icon('sparkles')} Fill from my persona</h4>
+        <p class="mu-muted">Your AI reads <span data-notr>${esc(p.name)}</span>'s description${own ? ` and lorebook (<span data-notr>${esc(own)}</span>)` : ''}, plus what you pick here, and fills in this page. You can change everything afterwards.</p>
+        <div class="mu-field"><span>More lorebooks about you (a campaign ledger…)</span>
+            <input class="mu-search" type="search" data-input="ng-fill-bq" data-focus="ngfillbq" placeholder="Search lorebooks" value="${esc(f.bq)}">
+            <div class="mu-chips mu-situation-books">${books.slice(0, 40).map(b => `<button class="mu-chip ${f.books.includes(b) ? 'is-on' : ''}" data-act="ng-fill-book" data-name="${esc(b)}" data-notr>${esc(b)}</button>`).join('') || '<span class="mu-muted">No lorebooks.</span>'}</div></div>
+        <div class="mu-field"><span>A chat you played as <span data-notr>${esc(p.name)}</span> (optional: where you left off, from its latest status)</span>
+            ${who ? `<div class="mu-row"><span class="mu-chip is-on" data-notr>${esc(who.name)}</span><button class="mu-ghost" data-act="ng-fill-who" data-id="">${icon('x')}<span>Another character</span></button></div>
+                <div class="mu-chips">${f.chats === null ? '<span class="mu-muted">Reading the chats…</span>' : f.chats.length ? f.chats.slice(0, 12).map((c: any) => `<button class="mu-chip ${f.chat === c.file ? 'is-on' : ''}" data-act="ng-fill-chat" data-file="${esc(c.file)}" title="${esc(c.last)}" data-notr>${esc(c.file.replace(/\.jsonl$/, ''))} <small>${c.count}</small></button>`).join('') : '<span class="mu-muted">No chats with this character.</span>'}</div>`
+            : `<input class="mu-search" type="search" data-input="ng-fill-cq" data-focus="ngfillcq" placeholder="Search the character you chatted with" value="${esc(f.cq)}">
+                ${chars.length ? `<div class="mu-chips">${chars.map(c => `<button class="mu-chip" data-act="ng-fill-who" data-id="${esc(c.avatar)}" data-notr>${esc(c.name)}</button>`).join('')}</div>` : ''}`}</div>
+        <div class="mu-row"><button class="mu-primary" data-act="ng-fill-go" ${f.busy ? 'aria-disabled="true"' : ''}>${icon('sparkles')}<span>${f.busy ? 'Reading…' : f.done ? 'Fill it in again' : 'Fill it in'}</span></button><button class="mu-ghost" data-act="ng-fill-close">Close</button>
+            <small class="mu-muted">${[own ? 1 : 0, f.books.length].reduce((a, b) => a + b, 0)} lorebook(s)${f.chat ? ' and a chat' : ''}</small></div>
+        ${f.done ? fillDoneHtml(f) : ''}</section>`;
+}
+// What the AI filled in, and your meters (which you can remove or add to).
+function fillDoneHtml(f: any) {
+    const d: Fill = f.done.fill, w = W();
+    const origin = w.catalogs.origins?.find(o => o.id === d.origin);
+    const meters: any[] = state.wizard.meters ?? [];
+    const outCards = (state.wizard.fillCards ?? []) as { avatar: string; name: string }[];
+    return `<div class="mu-fill-done">
+        <p><b>Filled in:</b> ${[origin ? `origin ${esc(origin.name)}` : '', d.background ? `background “${esc(d.background)}”` : '', d.bio ? 'about you' : '', Object.keys(d.traits).length ? 'traits' : '', d.cls || d.newClass ? `class ${esc(d.newClass?.name ?? rpgState()?.r.classes.find(c => c.id === d.cls)?.name ?? '')}${d.newClass ? ' (made for you)' : ''}` : '', Object.keys(d.attrs).length ? 'attributes' : '', d.weapon || d.newWeapon ? 'weapon' : '', d.gear.length ? `${d.gear.length} belongings (in about you)` : '', d.money !== undefined ? `money ${esc(money(w, d.money))}` : '', d.home ? `home: ${esc(d.home.room || 'a room')} in ${esc(w.places.find(p => p.id === d.home!.place)?.name ?? '')}` : ''].filter(Boolean).join(' · ') || 'nothing the world could use'}.</p>
+        ${d.people.length ? `<p><b>Already know you</b> (they start as people you have met): <span data-notr>${esc(d.people.map(x => x.name).join(', '))}</span>.</p>` : ''}
+        ${outCards.length ? `<p><b>Have a card but are not in this game:</b> ${outCards.map(c => `<button class="mu-chip" data-act="ng-fill-addcard" data-id="${esc(c.avatar)}" title="Add to this game">${icon('plus')} <span data-notr>${esc(c.name)}</span></button>`).join(' ')}</p>` : ''}
+        ${d.missing.length ? `<p class="mu-muted">Also know you, with no card here: <span data-notr>${esc(d.missing.join(', '))}</span> (noted in about you).</p>` : ''}
+        <div class="mu-field"><span>Your own meters (shown in the HUD; the AI keeps them up to date)</span><div class="mu-chips">${meters.map((m, i) => `<span class="mu-chip is-on" title="${esc(m.note ?? '')}"><span data-notr>${esc(m.name)}</span> <small>${esc(meterWord(m))}</small><button class="mu-ibtn" data-act="ng-meter-x" data-i="${i}" title="Remove">${icon('x')}</button></span>`).join('') || '<span class="mu-muted">None.</span>'}</div>
+            <div class="mu-row"><input data-input="ng-meter-f" data-k="name" data-focus="ngmname" maxlength="30" placeholder="Name (Warmth)" value="${esc(f.mName ?? '')}"><input data-input="ng-meter-f" data-k="value" type="number" placeholder="Now" value="${esc(f.mValue ?? '')}"><input data-input="ng-meter-f" data-k="max" type="number" placeholder="Max (optional)" value="${esc(f.mMax ?? '')}"><button data-act="ng-meter-add">${icon('plus')}<span>Add</span></button></div></div></div>`;
 }
 
 function stepHero() {
@@ -460,14 +510,97 @@ export function newGameHtml() {
     </div>`;
 }
 
+// The people the AI can match: the cards chosen for this game, the world's own people, and your other cards.
+function fillPeople() {
+    const wz = state.wizard, w = W();
+    const inCast = wz.cast.map((a: string) => ({ key: a, name: String(charOf(a)?.name ?? '') }));
+    const ex = wz.examples ? w.cast.examples.map(e => ({ key: `ex:${e.name}`, name: e.name })) : [];
+    const others = characters().filter(c => !wz.cast.includes(c.avatar)).map(c => ({ key: `card:${c.avatar}`, name: String(c.name ?? '') }));
+    return [...inCast, ...ex, ...others].filter(x => x.name);
+}
+// Puts what the AI filled in into the page (your sheet, and a system of your own when it made you a class or weapon).
+function applyFill(d: Fill) {
+    const wz = state.wizard, h: Hero = wz.hero;
+    if (d.origin) h.origin = d.origin;
+    for (const [k, v] of Object.entries(d.traits)) h.traits[k] = v;
+    h.bio = fillBio(d);
+    wz.meters = d.meters.map(m => ({ ...m }));
+    if (d.home) { const h = homeInside(W(), d.home.place, d.home.room); if (h) { wz.home = h; wz.homeRoom = h.room; } }
+    wz.money = d.money;
+    wz.known = d.people.filter(p => !p.key.startsWith('card:')).map(p => ({ name: p.name, approval: p.approval }));
+    wz.fillCards = d.people.filter(p => p.key.startsWith('card:')).map(p => ({ avatar: p.key.slice(5), name: p.name, approval: p.approval }));
+    let x = rpgState(); if (!x) return;
+    if (d.newClass || d.newWeapon) {   // a class or weapon made for you: a copy of the system with it, saved to your systems
+        const base = systemOf()!, def: RpgDef = structuredClone(x.r);
+        const pname = personas().find(p => p.file === wz.persona)?.name ?? 'you';
+        if (d.newClass) {
+            const id = `own-${d.newClass.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`.slice(0, 40);
+            def.classes = [...def.classes.filter(c => c.id !== id), { id, name: d.newClass.name, desc: d.newClass.desc, hit: 8, key: d.newClass.key, skills: d.skills.slice(0, 4).length ? d.skills.slice(0, 4) : def.skills.slice(0, 4).map(k => k.id), subAt: 3, subclasses: [] }];
+            d.cls = id;
+        }
+        if (d.newWeapon) {
+            const id = `own-${d.newWeapon.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`.slice(0, 40);
+            def.weapons = [...(def.weapons ?? []).filter(k => k.id !== id), { id, ...d.newWeapon }];
+            d.weapon = id;
+        }
+        const sys = { id: `fill-${Date.now()}`, name: `${def.name ?? base.name} · ${pname}`, desc: `${base.name}, with ${[d.newClass ? `the class ${d.newClass.name}` : '', d.newWeapon ? `the weapon ${d.newWeapon.name}` : ''].filter(Boolean).join(' and ')} made for ${pname}.`, def };
+        (settings().rpgSystems ??= []).push(sys as any); saveSettings();
+        wz.system = sys.id; wz.rpg = null;
+        x = rpgState(); if (!x) return;
+    }
+    const c = x.r.classes.find(k => k.id === d.cls) ?? x.c;
+    const attrs = { ...defaultAttrs(x.r, c), ...d.attrs };
+    const free = !!Object.keys(d.attrs).length && (pointsUsed(attrs, x.r) > buyOf(x.r).points || Object.values(attrs).some(v => v < buyOf(x!.r).min || v > buyOf(x!.r).max));
+    x.wz.rpg = { cls: c.id, attrs, skills: d.skills.length ? fitSkills(x.r, c, d.skills, free || x.s.free) : defaultSkills(x.r, c), free: free || x.s.free, weapon: d.weapon };
+}
+
 Object.assign(ACT, {
+    'ng-fill-open': () => { fillOf().open = true; notify(); },
+    'ng-fill-close': () => { fillOf().open = false; notify(); },
+    'ng-fill-book': (el) => { const f = fillOf(), n = el.dataset.name!; f.books = f.books.includes(n) ? f.books.filter((b: string) => b !== n) : [...f.books, n]; notify(); },
+    'ng-fill-who': async (el) => {
+        const f = fillOf(); f.who = el.dataset.id || ''; f.chat = ''; f.chats = f.who ? null : []; notify();
+        if (!f.who) return;
+        const who = f.who, list = await characterChats(who);
+        if (fillOf().who !== who) return;
+        f.chats = list.sort((a, b) => b.file.localeCompare(a.file)); f.chat = f.chats[0]?.file ?? ''; notify();
+    },
+    'ng-fill-chat': (el) => { const f = fillOf(); f.chat = f.chat === el.dataset.file ? '' : el.dataset.file!; notify(); },
+    'ng-fill-go': async () => {
+        const f = fillOf(), wz = state.wizard; if (f.busy || !wz.persona) return;
+        f.busy = true; notify();
+        try {
+            const x = rpgState();
+            const chat = f.who && f.chat ? await readCharChat(f.who, f.chat) : undefined;
+            const d = await fillFromPersona({ file: wz.persona, world: W(), rpg: x?.r ?? null, range: x ? freeRange(x.r) : undefined, people: fillPeople(), books: f.books, chat });
+            applyFill(d);
+            f.done = { fill: d };
+            toast('Filled in from your persona. Check it and change what you like.', 'success');
+        } catch (e: any) { console.error('[Mundi] fill from persona', e); toast(String(e?.message ?? e), 'error'); }
+        f.busy = false; notify();
+    },
+    'ng-fill-addcard': (el) => {
+        const wz = state.wizard, a = el.dataset.id!; const c = (wz.fillCards ?? []).find((x: any) => x.avatar === a); if (!c) return;
+        if (!wz.cast.includes(a)) wz.cast = [...wz.cast, a];
+        wz.fillCards = wz.fillCards.filter((x: any) => x.avatar !== a);
+        (wz.known ??= []).push({ name: c.name, approval: c.approval });
+        toast(`${c.name} is in this game now.`, 'success'); notify();
+    },
+    'ng-meter-x': (el) => { const l = state.wizard.meters ?? []; l.splice(Number(el.dataset.i), 1); notify(); },
+    'ng-meter-add': () => {
+        const f = fillOf(), wz = state.wizard;
+        const add = makeMeters([...(wz.meters ?? []), { name: f.mName, value: f.mValue, max: f.mMax }]);
+        if (add.length === (wz.meters ?? []).length) { toast('Give the meter a new name.', 'info'); return; }
+        wz.meters = add; f.mName = f.mValue = f.mMax = ''; notify();
+    },
     'ng-world-new': () => openCreatorNew(styleOf(W()), state.wizard.mode === 'scenario'),
     'ng-world-edit': (el) => openCreatorEdit(el.dataset.id!),
     'ng-world-import': async () => { const w = await importWorldFile(); if (w) { state.wizard.world = w.id; state.wizard.hero = freshHero(w); notify(); } },
     'ng-diff': (el) => { state.wizard.difficulty = el.dataset.v; notify(); },
     'ng-heromode': (el) => { state.wizard.heroMode = el.dataset.v || null; notify(); },
     'ng-persona': (el) => {
-        const wz = state.wizard; wz.persona = el.dataset.file;
+        const wz = state.wizard; if (wz.persona !== el.dataset.file) { wz.meters = []; wz.money = undefined; wz.known = []; wz.fillCards = []; }
+        wz.persona = el.dataset.file;
         const sheet = personaSheet(wz.persona!); const w = W();
         if (sheet && sheet.world === w.id) { wz.hero.traits = JSON.parse(JSON.stringify(sheet.traits ?? {})); if (w.catalogs.origins?.some(o => o.id === sheet.origin)) wz.hero.origin = sheet.origin; wz.hero.bio = sheet.bio ?? ''; }
         notify();
@@ -596,7 +729,8 @@ Object.assign(ACT, {
         try {
             await startNewGame({ world: W(), cast: wz.cast, examples: wz.examples, hero: { ...wz.hero, name: wz.hero.name.trim() }, persona: wz.heroMode === 'existing' ? wz.persona : undefined, lore: chosenLore(),
                 households: (wz.hh ?? []).filter((h: any) => h.members.length), family: wz.family ?? [], home: wz.home ?? undefined, difficulty: wz.difficulty ?? 'normal',
-                approval: wz.approval ?? undefined, ties: (wz.rels ?? []).filter((t: any) => t.a !== t.b), mode: rpgOf(W()) ? playMode() as any : undefined, rpg: rpgState()?.s, rpgDef: rpgState() ? chosenDef() : undefined, memoriesFrom: wz.memories || undefined, jobs: wz.jobs ?? undefined, rooms: isScenario(W()) ? roomsOf() : undefined, extraRooms: isScenario(W()) ? extraOf() : undefined, roomActs: isScenario(W()) ? wz.roomActs : undefined, start: isScenario(W()) ? { id: startOf().id, text: startOf().text } : undefined });
+                approval: wz.approval ?? undefined, ties: (wz.rels ?? []).filter((t: any) => t.a !== t.b), mode: rpgOf(W()) ? playMode() as any : undefined, rpg: rpgState()?.s, rpgDef: rpgState() ? chosenDef() : undefined, memoriesFrom: wz.memories || undefined, jobs: wz.jobs ?? undefined,
+                ...(wz.heroMode === 'existing' && wz.persona ? { meters: wz.meters ?? [], money: wz.money, known: wz.known ?? [] } : {}), rooms: isScenario(W()) ? roomsOf() : undefined, extraRooms: isScenario(W()) ? extraOf() : undefined, roomActs: isScenario(W()) ? wz.roomActs : undefined, start: isScenario(W()) ? { id: startOf().id, text: startOf().text } : undefined });
             state.wizard = null;
             if (wz.examples && wz.exDraw) {   // the world's people: their sprites, and from them their card pictures
                 const mine = characters().filter(c => w.cast.examples.some(e => exampleTag(w, e) === c.data?.extensions?.mundi?.example)).map(c => c.avatar);
@@ -613,6 +747,9 @@ Object.assign(ACT, {
 
 Object.assign(INPUT, {
     'ng-examples': (el) => { state.wizard.examples = el.checked; notify(); },
+    'ng-fill-bq': (el) => { fillOf().bq = el.value; notify(); },
+    'ng-fill-cq': (el) => { fillOf().cq = el.value; notify(); },
+    'ng-meter-f': (el) => { const f = fillOf(), k = el.dataset.k; if (k === 'name') f.mName = el.value; else if (k === 'value') f.mValue = el.value; else f.mMax = el.value; },
     'ng-ex-draw': (el) => { state.wizard.exDraw = el.checked; },
     'ng-rpg-free': (el) => {
         const x = rpgState(); if (!x) return; x.s.free = (el as HTMLInputElement).checked;
