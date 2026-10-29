@@ -24,7 +24,7 @@ import { mapEditorHtml, ME } from './mapedit.js';
 import { pickFile } from './cropper.js';
 import { icon, ICON_NAMES } from './icons.js';
 import { ACT, INPUT } from './reg.js';
-import { FL, fromLoreHtml, openFromLore } from './fromlore.js';
+import { FL, fromLoreHtml, openFromLore, redoHtml } from './fromlore.js';
 import { paintHtml } from './worldpaint.js';
 
 type Tab = 'economy' | 'realm' | 'customs' | 'rpg' | 'general' | 'features' | 'needs' | 'maps' | 'homes' | 'actions' | 'jobs' | 'courses' | 'shop' | 'words' | 'character' | 'people' | 'lore' | 'books';
@@ -772,7 +772,7 @@ export function creatorHtml(): string {
 </div>
         <div class="mu-settings-layout mu-cw-layout">
             <nav class="mu-tabs">${TABS.filter(([id]) => !(RPG_LOCKED && id === 'rpg')).filter(([id]) => CW.allTabs || !isScenario(W()) || !SCENARIO_HIDES.includes(id)).map(([id, l]) => `<button class="${CW.tab === id ? 'is-on' : ''}" data-act="cw-tab" data-tab="${esc(id)}">${l}</button>`).join('')}</nav>
-            <div class="mu-settings-body mu-panel ${CW.tab === 'maps' ? 'is-maps' : ''}" data-keep="cw-body">${body}</div>
+            <div class="mu-settings-body mu-panel ${CW.tab === 'maps' ? 'is-maps' : ''}" data-keep="cw-body">${redoHtml(w, CW.tab)}${body}</div>
         </div>
         <div class="mu-row mu-cw-new-go mu-cw-foot">
             ${CW.confirmDel ? `<span class="mu-warn">Delete "${esc(w.name)}"? This cannot be undone.</span><button data-act="cw-delete-no">Cancel</button><button class="mu-danger" data-act="cw-delete-yes">${icon('trash')}<span>Delete</span></button>`

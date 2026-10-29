@@ -1,11 +1,14 @@
 // World creator, "From lorebooks": pick lorebooks → your AI reads them a part at a time → you choose what to keep →
 // Mundi builds the world and opens it in the World creator. The reading is saved as it goes (Mundi's settings), so
 // closing SillyTavern halfway picks up at the next part. The data side lives in sim/fromlore.ts.
-import { notify, esc, toast, busy, settings, saveSettings } from '../core/store.js';
+import { notify, esc, toast, busy, settings, saveSettings, state } from '../core/store.js';
 import { type GameMode } from '../core/world.js';
 import { lorebooks, loadLore, quiet } from '../st/bridge.js';
 import { newWorldFrom, saveWorld } from '../sim/creator.js';
 import { readBook, chunk, sketchPrompt, summaryPrompt, parseJson, mergeSketch, emptySketch, buildWorld, BUCKETS, type LoreItem, type Sketch, type Bucket, type Chunk } from '../sim/fromlore.js';
+import { DETAILS, TAB_GROUP, detailLore, detailPrompt, applyDetail, type DetailGroup } from '../sim/lorebits.js';
+import { systemFromLore } from '../sim/rpgfromlore.js';
+import type { WorldDef } from '../core/world.js';
 import { CW } from './creator.js';
 import { openPaint } from './worldpaint.js';
 import { styleName } from './styles.js';
@@ -14,10 +17,15 @@ import { ACT, INPUT } from './reg.js';
 
 type Step = 'books' | 'reading' | 'review';
 type ReviewTab = 'areas' | 'places' | 'people' | 'groups' | 'jobs';
+type FlTab = ReviewTab | 'details';
 // A run of the reading, as saved between sessions.
-interface Draft { name: string; style: string; base: string; game: GameMode; books: string[]; skip: Bucket[]; done: number; failed: number[]; sketch: Sketch }
+// `details`: the groups of tabs to fill from the lorebooks once the map is built (unticked ones keep the style's);
+// `got`: the AI's answers so far, so a build stopped halfway does not ask again.
+interface Draft { name: string; style: string; base: string; game: GameMode; books: string[]; skip: Bucket[]; done: number; failed: number[]; sketch: Sketch; details?: DetailGroup[]; got?: Record<string, any> }
 export const FL = {
-    on: false, step: 'books' as Step, tab: 'places' as ReviewTab, bq: '', busy: false, stop: false,
+    on: false, step: 'books' as Step, tab: 'places' as FlTab, bq: '', busy: false, stop: false,
+    /** the detail group being redone in the World creator (one at a time) */
+    redo: '' as DetailGroup | '',
     run: null as Draft | null,
     chunks: [] as Chunk[],
     // the chosen books' entries, read once per book
@@ -31,7 +39,7 @@ const R = () => FL.run!;
 
 export function openFromLore(s: { name: string; style: string; base: string; game: GameMode }) {
     FL.on = true; FL.step = 'books'; FL.tab = 'places'; FL.bq = ''; FL.stop = false;
-    FL.run = { name: s.name.trim(), style: s.style, base: s.base, game: s.game, books: [], skip: ['rules'], done: 0, failed: [], sketch: emptySketch() };
+    FL.run = { name: s.name.trim(), style: s.style, base: s.base, game: s.game, books: [], skip: ['rules'], done: 0, failed: [], sketch: emptySketch(), details: groupsFor(s.game), got: {} };
     notify();
 }
 
@@ -42,6 +50,10 @@ async function itemsOf(book: string) {
     return FL.items.get(book)!;
 }
 const chosen = () => R().books.flatMap(b => FL.items.get(b) ?? []).filter(i => !R().skip.includes(i.bucket));
+// The world details read every entry of the books (rules and history too: that is where the economy and the realm are).
+const allItems = () => R().books.flatMap(b => FL.items.get(b) ?? []);
+// The RPG is only made for a world played as an RPG (a Life-Sim never shows it).
+const groupsFor = (game: GameMode): DetailGroup[] => DETAILS.map(d => d.id).filter(id => id !== 'rpg' || game !== 'lifesim');
 const plan = () => chunk(chosen());
 
 /* ---------- screens ---------- */
@@ -90,20 +102,34 @@ function readingHtml(): string {
 
 const TABS: [ReviewTab, string][] = [['places', 'Places'], ['areas', 'Maps'], ['people', 'People'], ['groups', 'Groups'], ['jobs', 'Jobs']];
 function reviewHtml(): string {
-    const r = R(), sk = r.sketch, list: any[] = sk[FL.tab];
+    const sk = R().sketch;
+    if (FL.tab === 'details') return reviewShell(detailsHtml());
+    const list: any[] = sk[FL.tab];
     const kept = list.filter(x => x.keep !== false).length;
     const detail = (x: any): string => FL.tab === 'areas' ? [x.kind, x.in ? `in ${x.in}` : 'the top map', x.desc].filter(Boolean).join(' · ')
         : FL.tab === 'places' ? [x.kind, x.area, x.desc].filter(Boolean).join(' · ')
         : FL.tab === 'people' ? [x.age, x.gender, x.job || x.role, x.work ? `at ${x.work}` : '', x.aka?.length ? `also: ${x.aka.join(', ')}` : ''].filter(Boolean).join(' · ')
         : FL.tab === 'groups' ? [x.kind, x.hq ? `HQ: ${x.hq}` : '', x.ranks?.length ? `ranks: ${x.ranks.join(' → ')}` : '', x.secret ? 'secret' : ''].filter(Boolean).join(' · ')
         : [x.place ? `at ${x.place}` : '', x.ranks?.length ? x.ranks.join(' → ') : ''].filter(Boolean).join(' · ');
-    return `<p class="mu-muted">Untick what should not be in the world, and fix names if you like. Maps are the areas: a city, its districts, a building with floors. Places sit on them.${r.failed.length ? ` ${r.failed.length} part${r.failed.length === 1 ? '' : 's'} could not be read: <button class="mu-ghost" data-act="fl-retry">Try them again</button>` : ''}</p>
-        <nav class="mu-tabs mu-fl-tabs">${TABS.map(([id, l]) => `<button class="${FL.tab === id ? 'is-on' : ''}" data-act="fl-tab" data-tab="${id}">${l} (${sk[id].filter((x: any) => x.keep !== false).length})</button>`).join('')}</nav>
-        ${kept > CAPS[FL.tab] ? `<p class="mu-warn">Only the first ${CAPS[FL.tab]} are used. Untick the ones that matter least.</p>` : ''}
+    return reviewShell(`${kept > CAPS[FL.tab] ? `<p class="mu-warn">Only the first ${CAPS[FL.tab]} are used. Untick the ones that matter least.</p>` : ''}
         <div class="mu-fl-list">${list.map((x, i) => `<div class="mu-fl-row ${x.keep === false ? 'is-off' : ''}"><input type="checkbox" data-act="fl-keep" data-i="${i}" ${x.keep === false ? '' : 'checked'} title="Keep">
-            <input class="mu-fl-name" data-input="fl-name" data-i="${i}" data-focus="fl-${FL.tab}-${i}" value="${esc(x.name)}" data-notr><small class="mu-muted" data-notr>${esc(detail(x))}</small></div>`).join('') || '<p class="mu-muted">Nothing found.</p>'}</div>
+            <input class="mu-fl-name" data-input="fl-name" data-i="${i}" data-focus="fl-${FL.tab}-${i}" value="${esc(x.name)}" data-notr><small class="mu-muted" data-notr>${esc(detail(x))}</small></div>`).join('') || '<p class="mu-muted">Nothing found.</p>'}</div>`);
+}
+function reviewShell(body: string): string {
+    const r = R(), sk = r.sketch;
+    const on = (r.details ?? []).length;
+    return `<p class="mu-muted">Untick what should not be in the world, and fix names if you like. Maps are the areas: a city, its districts, a building with floors. Places sit on them.${r.failed.length ? ` ${r.failed.length} part${r.failed.length === 1 ? '' : 's'} could not be read: <button class="mu-ghost" data-act="fl-retry">Try them again</button>` : ''}</p>
+        <nav class="mu-tabs mu-fl-tabs">${TABS.map(([id, l]) => `<button class="${FL.tab === id ? 'is-on' : ''}" data-act="fl-tab" data-tab="${id}">${l} (${sk[id].filter((x: any) => x.keep !== false).length})</button>`).join('')}<button class="${FL.tab === 'details' ? 'is-on' : ''}" data-act="fl-tab" data-tab="details">Details (${on})</button></nav>
+        ${body}
         <div class="mu-row mu-cw-new-go"><button data-act="fl-books">← Lorebooks</button><span class="mu-grow"></span>
             <button class="mu-primary mu-big" data-act="fl-build" ${sk.places.length + sk.areas.length ? '' : 'aria-disabled="true"'}>${icon('map')}<span>Build the world</span></button></div>`;
+}
+// The other World creator tabs: filled from the lorebooks after the map is built, one AI call per group.
+function detailsHtml(): string {
+    const r = R(), on = r.details ?? [];
+    const rows = DETAILS.filter(d => d.id !== 'rpg' || r.game !== 'lifesim').map(d => `<label class="mu-check"><input type="checkbox" data-act="fl-detail" data-id="${d.id}" ${on.includes(d.id) ? 'checked' : ''}><span>${d.name}${r.got?.[d.id] ? ' ✓' : ''}<small>${d.tabs}</small></span></label>`).join('');
+    return `<p class="mu-muted">Once the map is built, your AI reads the lorebooks again (rules and history too) for each group ticked here, and fills those World creator tabs with what it finds: one AI call each${on.includes('rpg') ? ', two for the RPG' : ''}. Untick a group to keep the style's usual entries there. Anything the lorebooks do not mention keeps the style's entries either way, and each tab has a "Redo from the lorebooks" button later.</p>
+        <div class="mu-fl-buckets">${rows}</div>`;
 }
 
 /* ---------- reading ---------- */
@@ -139,7 +165,7 @@ const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a) 
 async function build() {
     const r = R();
     try {
-        const w = await busy('Building the world', async () => {
+        const { w, notes, failed } = await busy('Building the world', async () => {
             const base = await newWorldFrom(r.base, 'empty', r.name);
             let sum = {};
             const hints = (FL.chunks[0]?.text ?? '').slice(0, 3000);
@@ -148,15 +174,70 @@ async function build() {
             for (const k of Object.keys(CAPS) as ReviewTab[]) { let n = 0; for (const x of sk[k] as any[]) if (x.keep !== false && ++n > CAPS[k]) x.keep = false; }
             const out = buildWorld(base, sk, sum, r.books);
             out.mode = r.game;
+            // the other tabs, one group at a time (each answer is kept, so a stop here does not ask again)
+            const groups = DETAILS.map(d => d.id).filter(id => (r.details ?? []).includes(id) && (id !== 'rpg' || r.game !== 'lifesim'));
+            const notes: string[] = [], failed: string[] = [];
+            for (const [i, g] of groups.entries()) {
+                const name = DETAILS.find(d => d.id === g)!.name;
+                state.busy = `Filling the world from the lorebooks: ${name} (${i + 1} of ${groups.length})`; notify();
+                try {
+                    r.got ??= {};
+                    r.got[g] ??= await askDetail(out, g, allItems(), r.books);
+                    save();
+                    const line = putDetail(out, g, r.got[g]);
+                    if (line) notes.push(`${name}: ${line}`);
+                } catch (e) { console.warn('[Mundi] from lorebooks, details', g, e); failed.push(name); }
+            }
             await saveWorld(out);
-            return out;
+            return { w: out, notes, failed };
         });
         FL.on = false; FL.run = null; save();
         CW.w = w; CW.start = null; CW.tab = 'maps'; CW.dirty = false; CW.confirmDel = false;
-        toast(`“${w.name}” built: ${w.maps.length} maps, ${w.places.filter(p => !p.link).length} places, ${w.cast.examples.length} people. Paint its maps and places with ComfyUI, or move the pins in Maps & places.`, 'success');
+        toast(`“${w.name}” built: ${w.maps.length} maps, ${w.places.filter(p => !p.link).length} places, ${w.cast.examples.length} people.${notes.length ? ` From the lorebooks too: ${notes.join('; ')}.` : ''}${failed.length ? ` Could not read (the style's entries stay, try "Redo from the lorebooks" in their tabs): ${failed.join(', ')}.` : ''} Paint its maps and places with ComfyUI, or move the pins in Maps & places.`, failed.length ? 'warn' : 'success');
         void openPaint();
     } catch (e: any) { toast(String(e?.message ?? e), 'error'); }
     notify();
+}
+
+/* ---------- the other tabs: the world details ---------- */
+
+/** Asks the AI for one group of tabs of the world `w` (built already, so the AI uses its names). */
+async function askDetail(w: WorldDef, g: DetailGroup, items: LoreItem[], books: string[]): Promise<any> {
+    if (g === 'rpg') return (await systemFromLore(books, `for the world "${w.name}"`)).def;
+    const prompt = detailPrompt(g, w, detailLore(items, g));
+    try { return parseJson(await quiet(prompt, 3500)); }
+    catch (e: any) { return parseJson(await quiet(`${prompt}\n\nYour last answer could not be read (${String(e?.message ?? e)}). Reply with the JSON object only.`, 3500)); }
+}
+function putDetail(w: WorldDef, g: DetailGroup, got: any): string {
+    if (g !== 'rpg') return applyDetail(w, g, got);
+    if (!got?.classes?.length) return '';
+    w.rpg = structuredClone(got);
+    if (!(w.tags ?? []).includes('rpg')) w.tags = [...(w.tags ?? ['lifesim']), 'rpg'];
+    return `${got.classes.length} classes, ${got.spells?.length ?? 0} powers, ${got.bestiary?.length ?? 0} foes`;
+}
+
+/** "Redo from the lorebooks" at the top of a World creator tab (a world with lorebooks; the group that fills the tab). */
+export function redoHtml(w: WorldDef, tab: string): string {
+    const g = TAB_GROUP[tab];
+    if (!g || !w.lorebooks?.length) return '';
+    const d = DETAILS.find(x => x.id === g)!;
+    const on = FL.redo === g;
+    return `<div class="mu-row mu-fl-redo"><button class="mu-ghost" data-act="fl-redo" data-id="${g}" ${FL.redo ? 'aria-disabled="true"' : ''}>${icon('sparkles')}<span>${on ? 'Reading the lorebooks…' : 'Redo from the lorebooks'}</span></button>
+        <small class="mu-muted">Your AI reads ${w.lorebooks.map(b => `<span data-notr>${esc(b)}</span>`).join(', ')} again and fills ${esc(d.tabs)}. What the lorebooks do not mention stays as it is.</small></div>`;
+}
+async function redo(g: DetailGroup) {
+    const w = CW.w; if (!w || FL.redo) return;
+    FL.redo = g; notify();
+    try {
+        const books = (w.lorebooks ?? []).filter(b => lorebooks().includes(b));
+        if (!books.length) throw new Error('None of this world\'s lorebooks is in SillyTavern any more.');
+        const items: LoreItem[] = [];
+        for (const b of books) items.push(...await itemsOf(b));
+        const line = putDetail(w, g, await askDetail(w, g, items, books));
+        CW.dirty = true;
+        toast(line ? `From the lorebooks: ${line}. Save the world to keep it.` : 'The lorebooks did not say anything new for these tabs.', line ? 'success' : 'info');
+    } catch (e: any) { console.warn('[Mundi] redo from lorebooks', g, e); toast(`Could not read that from the lorebooks: ${String(e?.message ?? e)}`, 'error'); }
+    FL.redo = ''; notify();
 }
 
 // A new name for something: whatever pointed at the old name follows it.
@@ -183,7 +264,7 @@ Object.assign(ACT, {
     'fl-bucket': (el) => { const r = R(), id = el.dataset.id as Bucket; r.skip = r.skip.includes(id) ? r.skip.filter(x => x !== id) : [...r.skip, id]; notify(); },
     'fl-read': () => {
         const r = R(); FL.chunks = plan(); if (!FL.chunks.length || FL.busy) return;
-        r.done = 0; r.failed = []; r.sketch = emptySketch();
+        r.done = 0; r.failed = []; r.sketch = emptySketch(); r.got = {};
         void readParts(range(0, FL.chunks.length));
     },
     'fl-stop': () => { FL.stop = true; notify(); },
@@ -194,16 +275,19 @@ Object.assign(ACT, {
     'fl-resume': async () => {
         const old = draft(); if (!old) return;
         FL.run = structuredClone(old);
+        FL.run.details ??= groupsFor(old.game);   // a reading saved before the world details
         try { for (const b of old.books) await itemsOf(b); } catch { toast('A lorebook of that reading is gone.', 'error'); return; }
         FL.chunks = plan();
         FL.step = old.done >= FL.chunks.length ? 'review' : 'reading'; notify();
     },
     'fl-forget': () => { (settings() as any).fromLore = undefined; saveSettings(); notify(); },
-    'fl-tab': (el) => { FL.tab = el.dataset.tab as ReviewTab; notify(); },
-    'fl-keep': (el) => { const x: any = R().sketch[FL.tab][Number(el.dataset.i)]; if (x) { x.keep = x.keep === false; save(); notify(); } },
+    'fl-tab': (el) => { FL.tab = el.dataset.tab as FlTab; notify(); },
+    'fl-keep': (el) => { if (FL.tab === 'details') return; const x: any = R().sketch[FL.tab][Number(el.dataset.i)]; if (x) { x.keep = x.keep === false; save(); notify(); } },
     'fl-build': () => { if (!FL.busy) void build(); },
+    'fl-detail': (el) => { const r = R(), id = el.dataset.id as DetailGroup, on = r.details ?? []; r.details = on.includes(id) ? on.filter(x => x !== id) : [...on, id]; save(); notify(); },
+    'fl-redo': (el) => { void redo(el.dataset.id as DetailGroup); },
 });
 Object.assign(INPUT, {
     'fl-bq': (el) => { FL.bq = el.value; notify(); },
-    'fl-name': (el) => { const x: any = R().sketch[FL.tab][Number(el.dataset.i)]; const v = el.value.trim(); if (x && v && v !== x.name) { rename(R().sketch, FL.tab, x.name, v); x.name = v; save(); } },
+    'fl-name': (el) => { if (FL.tab === 'details') return; const x: any = R().sketch[FL.tab][Number(el.dataset.i)]; const v = el.value.trim(); if (x && v && v !== x.name) { rename(R().sketch, FL.tab, x.name, v); x.name = v; save(); } },
 });

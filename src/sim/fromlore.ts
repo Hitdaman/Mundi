@@ -13,7 +13,7 @@ export const BUCKETS: { id: Bucket; name: string; desc: string }[] = [
     { id: 'places', name: 'Places', desc: 'cities, districts, buildings, sites' },
     { id: 'people', name: 'People', desc: 'characters, NPCs, who is who' },
     { id: 'groups', name: 'Groups', desc: 'guilds, companies, factions, governments' },
-    { id: 'rules', name: 'Rules & history', desc: 'systems, magic, history, events: kept as lore, rarely needed to build the map' },
+    { id: 'rules', name: 'Rules & history', desc: 'systems, magic, history, events: rarely needed for the map, but always read for the world details (shops, rent, realm…)' },
     { id: 'other', name: 'Other', desc: 'anything the titles and keys do not say' },
 ];
 const RE: [Bucket, RegExp][] = [
@@ -330,6 +330,7 @@ export function buildWorld(w: WorldDef, sk: Sketch, sum: Summary, books: string[
     for (const o of w.catalogs.origins ?? []) o.home = zones[0].id;
     for (const s of w.statuses) if (s.zero && /life|health/.test(s.id)) { const h = out.find(p => p.roles?.includes('healer')); if (h) s.zero.place = h.id; }
     if (scale !== 1) scaleMoney(w, scale);
+    w.moneyScale = scale;
     prune(w);
     return w;
 }
@@ -376,8 +377,31 @@ function prune(w: WorldDef) {
     w.cityEvents = (w.cityEvents ?? []).filter(x => has(x.place));
     w.towers = (w.towers ?? []).filter(x => has(x.place));
     for (const f of w.festivals ?? []) if (f.place && !has(f.place)) delete f.place;
-    // an action tied to a place the world lacks is never offered; a doctor's visit moves to this world's healer
-    const healer = w.places.find(p => p.roles?.includes('healer'));
-    for (const a of w.actions) if (a.place && !has(a.place) && healer && /doctor|heal|hospital|clinic/i.test(`${a.id} ${a.place}`)) a.place = healer.id;
+    // goods cheap or dear in the style's maps, animals sold at its places
+    const isMap = (id: string) => w.maps.some(m => m.id === id);
+    for (const g of w.goods ?? []) { if (g.cheap) g.cheap = g.cheap.filter(isMap); if (g.dear) g.dear = g.dear.filter(isMap); }
+    const sells = (x: string) => w.places.some(p => !p.link && (p.id === x || (p.tags ?? []).includes(x) || p.name.toLowerCase().includes(x.toLowerCase())));
+    for (const p of w.pets ?? []) if (p.where) { p.where = p.where.filter(sells); if (!p.where.length) delete p.where; }   // none: any shop
+    // an action tied to a place the world lacks is never offered: it moves to a place of the same sort if there is one
+    retarget(w);
     delete w.retired;
+}
+// An action tied to a place the world does not have goes to a place of the same sort (the docks, a shrine, an inn…).
+const SORTS: [RegExp, RegExp][] = [
+    [/dock|harbou?r|port|pier|fish/i, /dock|harbou?r|port|pier|wharf|marina|beach|river|lake/i],
+    [/chapel|church|pray|temple|shrine/i, /chapel|church|temple|shrine|cathedral|monaster|sanctum/i],
+    [/inn|bath|tavern/i, /inn|bath|hotel|tavern|spa|lodge|\bbar\b|pub/i],
+    [/cinema|theat/i, /cinema|theat|movie|arcade|stage/i],
+    [/field|snare|farm|hunt/i, /field|farm|forest|wood|meadow|wild|hunting/i],
+    [/hospital|doctor|clinic|heal/i, /hospital|clinic|heal|infirm|doctor/i],
+];
+export function retarget(w: WorldDef): number {
+    let n = 0;
+    for (const a of w.actions) {
+        if (!a.place || w.places.some(p => p.id === a.place)) continue;
+        const sort = SORTS.find(([key]) => key.test(`${a.id} ${a.place}`));
+        const p = sort && w.places.find(q => !q.link && (sort[1].test(q.name) || (sort === SORTS[1] && q.roles?.includes('shrine')) || (sort === SORTS[5] && q.roles?.includes('healer'))));
+        if (p) { a.place = p.id; n++; }
+    }
+    return n;
 }
