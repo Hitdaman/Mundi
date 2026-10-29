@@ -228,11 +228,12 @@ async function paint(prompt: string, width: number, height: number, plan?: Blob)
 /* ---------- prompts (the AI turns the world into tags once) ---------- */
 
 // The look of Mundi's own maps: a detailed isometric game illustration seen from high above.
-const MAP_BASE = 'masterpiece, best quality, highly detailed, no humans, scenery, isometric, from above, high angle view, aerial view, game map, detailed illustration, sharp focus';
-const MAP_TOWN = `${MAP_BASE}, cityscape, town, many buildings, rooftops, streets, cars, trees, plaza`;
+const MAP_BASE = 'masterpiece, best quality, highly detailed, no humans, scenery, isometric, from above, high angle, wide shot, game map, 2d game art, detailed illustration';
+const MAP_TOWN = `${MAP_BASE}, cityscape, town, many buildings, rooftops, streets, trees, plaza`;
 const MAP_COUNTRY = `${MAP_BASE}, landscape, countryside, forest, fields, winding road, village, hills, river`;
-const MAP_INDOOR = 'masterpiece, best quality, highly detailed, no humans, scenery, indoors, isometric, cutaway, from above, rooms, walls, furniture, floor, detailed illustration';
-const MAP_NEG = 'grid, blueprint, diagram, chart, flat colors, simple background, blurry, lowres, abstract, pixelated, frame, border';
+const MAP_INDOOR = 'masterpiece, best quality, highly detailed, no humans, scenery, isometric, cutaway, dollhouse view, building interior, multiple rooms, floor plan, from above, wide shot, walls, furniture, 2d game art, detailed illustration';
+// tested on SDXL (Illustrious): without these the maps tilt into a photo with a skyline and fake shop signs
+const MAP_NEG = 'grid, blueprint, diagram, chart, flat colors, simple background, blurry, lowres, abstract, pixelated, frame, border, sky, horizon, fisheye, sign, signboard, billboard, neon sign, english text, logo, photorealistic';
 const mapTags = (w: WorldDef, m: MapDef) => (indoor(m) ? MAP_INDOOR : isCountry(w, m) ? MAP_COUNTRY : MAP_TOWN);
 async function tagsFor(w: WorldDef, places: Place[]): Promise<Map<string, string>> {
     const out = new Map<string, string>();
