@@ -44,6 +44,7 @@ import { stFormat, avatarHtml, cardPicHtml, portraitHtml, lightboxHtml, lookPane
 import { avatarUrl } from '../st/bridge.js';
 import { charPicker } from './charpick.js';
 import { RAD, radialHtml } from './radial.js';
+import { spriteBadge } from './spritegen.js';
 
 const LOG_SIZE = 40;
 
@@ -220,7 +221,7 @@ export function sceneHtml() {
     const sv = stageVars(here.map(r => r.avatar), a => !!spriteFor(a, ex[a] ?? null)); void withSprite;
     const sprites = here.map((r, k) => {
         const src = spriteFor(r.avatar, ex[r.avatar] ?? null);
-        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}</figcaption>${radialHtml(r.avatar, r)}</figure>`;
+        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>${spriteBadge(r.avatar)}`}<figcaption>${esc(r.met ? r.name : 'Someone')}</figcaption>${radialHtml(r.avatar, r)}</figure>`;
     }).join('');
     return `<div class="mu-scene">
         <div class="mu-scene-bg" data-morph-skip data-keep="scene-bg" data-place="${esc(g.player.loc)}" style="${background(g, w)}"></div>

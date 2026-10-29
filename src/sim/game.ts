@@ -445,6 +445,7 @@ export function syncScene(): Promise<void> {
         followBackground(g, w);
         refreshPrompt();
         saveGame();
+        void import('../ui/spritegen.js').then(m => m.spritesFor(here.map(r => r.avatar)));   // sprites for people who have none
     }).catch(e => console.warn('[Mundi] scene sync', e));
     return syncing;
 }
