@@ -222,10 +222,10 @@ async function upload(b: Blob, name: string): Promise<string> {
     const d = await res.json();
     return d.subfolder ? `${d.subfolder}/${d.name}` : d.name;
 }
-async function paint(prompt: string, width: number, height: number, plan?: Blob): Promise<Blob> {
-    let g = fill(structuredClone(await loadWorkflow(prefs().workflow)) as Graph, { prompt, width, height, negative: plan ? MAP_NEG : '' });
-    if (plan) g = toImg2Img(g, await upload(plan, `mundi-plan-${Date.now().toString(36)}.png`), prefs().strength);
-    const out = await runJob(g as any);
+async function paint(prompt: string, width: number, height: number, plan?: Blob, strength = prefs().strength, negative = plan ? MAP_NEG : ''): Promise<Blob> {
+    let g = fill(structuredClone(await loadWorkflow(prefs().workflow)) as Graph, { prompt, width, height, negative });
+    if (plan) g = toImg2Img(g, await upload(plan, `mundi-plan-${Date.now().toString(36)}.png`), strength);
+    const out = await runJob(g as any, 'maps');
     const saved = Object.keys(out).find(id => g[id]?.class_type === 'SaveImage') ?? Object.keys(out)[0];
     if (!saved) throw new Error('ComfyUI gave back no picture.');
     return out[saved];

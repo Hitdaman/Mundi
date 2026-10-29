@@ -25,6 +25,7 @@ import { lookPrefs, stateTags, stateNames, matchOutfit, RULE_LABELS, STATES, typ
 import { isMinor } from '../sim/family.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
+import { withLoras, type Kind } from './loras.js';
 import { Stopped, isStopped, stopCount, checkStop, stoppable, jobStarted, jobEnded, cancelJobs } from './comfystop.js';
 
 type Mode = 'off' | 'ask' | 'auto';
@@ -243,9 +244,10 @@ export function cgBlocked(k: string): string {
 }
 
 // Stop (comfystop.ts) takes it off ComfyUI and makes it throw Stopped.
-export async function runJob(graph: Graph, onStep?: () => void): Promise<Record<string, Blob>> {
+export async function runJob(graph: Graph, kind: Kind, onStep?: () => void): Promise<Record<string, Blob>> {
     const url = comfyUrl(), at = stopCount();
     const res = await fetch(`${url}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: graph, client_id: `mundi-${Date.now()}` }) });
+    graph = withLoras(graph, kind);
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.prompt_id) {
         const why = Object.values(data.node_errors ?? {}).flatMap((n: any) => (n.errors ?? []).map((e: any) => `${n.class_type}: ${e.details || e.message}`))[0] || data.error?.message || res.statusText;
@@ -459,7 +461,7 @@ async function draw(o: Order): Promise<number> {
         S.step = `${done}/${todo.length}`; S.now = `${sub || sheet.outfits[0]?.name || ''} · ${t.l}`; notify();
         const { graph, save } = job(base, p, sheet, t.i, t.l);
         checkStop(S.at);
-        const png = (await runJob(graph))[save];
+        const png = (await runJob(graph, 'sprites'))[save];
         if (!png) throw new Error('ComfyUI gave no picture.');
         await uploadSprite(o.who, t.l, png, t.l, sub);
         done++;
@@ -486,7 +488,7 @@ async function drawCg(o: Order, base: Graph, p: Parts, sheet: Sheet, before = 0)
         S.step = `${before + done}/${before + todo.length}`; S.now = `CG · ${pos}`; notify();
         const { graph, save } = cgJob(base, p, sheet, i);
         checkStop(S.at);
-        const png = (await runJob(graph))[save];
+        const png = (await runJob(graph, 'cg'))[save];
         if (!png) throw new Error('ComfyUI gave no picture.');
         await uploadSprite(o.who, pos, png, pos, CG_FOLDER);
         done++;
@@ -517,7 +519,7 @@ async function drawVariant(o: Order, v: Variant, base: Graph, p: Parts, sheet: S
         S.step = `${done}/${todo.length}`; S.now = `${v.folder} · ${l}`; notify();
         const { graph, save } = job(base, p, sheet, i, l, tags);
         checkStop(S.at);
-        const png = (await runJob(graph))[save];
+        const png = (await runJob(graph, 'sprites'))[save];
         if (!png) throw new Error('ComfyUI gave no picture.');
         await uploadSprite(o.who, l, png, l, v.folder);
         done++;
