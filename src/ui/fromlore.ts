@@ -107,7 +107,7 @@ function reviewHtml(): string {
     const list: any[] = sk[FL.tab];
     const kept = list.filter(x => x.keep !== false).length;
     const detail = (x: any): string => FL.tab === 'areas' ? [x.kind, x.in ? `in ${x.in}` : 'the top map', x.desc].filter(Boolean).join(' · ')
-        : FL.tab === 'places' ? [x.kind, x.area, x.desc].filter(Boolean).join(' · ')
+        : FL.tab === 'places' ? [x.kind, x.floor ? `${x.floor} of ${x.area}` : x.area, x.hidden ? 'hidden until found' : '', x.restricted ? `restricted: ${x.restricted}` : '', x.desc].filter(Boolean).join(' · ')
         : FL.tab === 'people' ? [x.age, x.gender, x.job || x.role, x.work ? `at ${x.work}` : '', x.aka?.length ? `also: ${x.aka.join(', ')}` : ''].filter(Boolean).join(' · ')
         : FL.tab === 'groups' ? [x.kind, x.hq ? `HQ: ${x.hq}` : '', x.ranks?.length ? `ranks: ${x.ranks.join(' → ')}` : '', x.secret ? 'secret' : ''].filter(Boolean).join(' · ')
         : [x.place ? `at ${x.place}` : '', x.ranks?.length ? x.ranks.join(' → ') : ''].filter(Boolean).join(' · ');

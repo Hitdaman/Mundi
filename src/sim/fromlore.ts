@@ -69,7 +69,7 @@ export const PLACE_KINDS = ['residential', 'office', 'shop', 'market', 'restaura
     'school', 'park', 'gym', 'temple', 'guild', 'lab', 'warehouse', 'dock', 'factory', 'station', 'prison', 'dungeon', 'landmark', 'other'] as const;
 export const AREA_KINDS = ['region', 'city', 'district', 'building'] as const;
 export interface SkArea { name: string; in?: string; kind?: string; desc?: string; keep?: boolean }
-export interface SkPlace { name: string; area?: string; kind?: string; desc?: string; keep?: boolean }
+export interface SkPlace { name: string; area?: string; kind?: string; desc?: string; floor?: string; hidden?: boolean; restricted?: string; keep?: boolean }
 export interface SkTie { to: string; type?: string; tone?: string }
 export interface SkPerson { name: string; aka?: string[]; gender?: string; age?: number; role?: string; job?: string; work?: string; lives?: string; looks?: string; personality?: string; greeting?: string; ties?: SkTie[]; keep?: boolean }
 export interface SkGroup { name: string; kind?: string; hq?: string; desc?: string; ranks?: string[]; allies?: string[]; rivals?: string[]; secret?: boolean; keep?: boolean }
@@ -89,7 +89,7 @@ export function sketchPrompt(part: string, known: Sketch, style: string): string
 
 Read the notes below and reply with ONE JSON object, nothing else (no code fences, no comments):
 {"areas":[{"name":"","in":"the bigger area it is inside, or empty","kind":"region|city|district|building","desc":"one line"}],
- "places":[{"name":"","area":"the area it is in","kind":"${PLACE_KINDS.join('|')}","desc":"one line: what it is and what it looks like"}],
+ "places":[{"name":"","area":"the area it is in","kind":"${PLACE_KINDS.join('|')}","desc":"one line: what it is and what it looks like","floor":"its floor or wing, when it is part of a building (Floor 3, Basement, East wing), else empty","hidden":false,"restricted":"who may go in, when not everyone may (S-rank hunters only, staff only), else empty"}],
  "people":[{"name":"full name","aka":["other names or titles used for them"],"gender":"man|woman|other","age":30,"role":"what they are in this world, one line","job":"their job title","work":"the place where they work","lives":"the area or place where they live","looks":"appearance, one line","personality":"one line","greeting":"one short line they would say when meeting someone new","ties":[{"to":"another person's full name","type":"${TIES.join('|')}","tone":"${TONES.join('|')}"}]}],
  "groups":[{"name":"","kind":"guild|company|government|gang|order|house|school|other","hq":"the place that is its headquarters","desc":"one line","ranks":["lowest rank","…","highest rank"],"allies":["group names"],"rivals":["group names"],"secret":false}],
  "jobs":[{"name":"job title","place":"where it is done","ranks":["lowest","…","highest"]}]}
@@ -97,7 +97,9 @@ Read the notes below and reply with ONE JSON object, nothing else (no code fence
 Rules:
 - Only what the notes state or clearly imply. Leave out anything not there; empty lists are fine.
 - Keep names exactly as written. Use the names already found (below) for the same things.
-- A building with floors or wings: the building is an area with kind "building"; each floor or wing that matters is a place in it.
+- A building with floors or wings: the building is an area with kind "building"; each floor or wing that matters is a place in it, with its "floor".
+- "hidden": true for a place most people do not know of or cannot find without being told or taken there (a secret base, an unlisted hideout, someone's private home).
+- "restricted": for a place only some may enter (members, staff, a rank, a pass); leave it empty for public places.
 - People's homes are areas or places, not separate entries in "places" unless the notes describe them.
 - Story events, contracts and secrets are not places, people or groups: leave them out.
 ${seen ? `\nAlready found (reuse these names):\n${seen}\n` : ''}
@@ -163,8 +165,8 @@ export function mergeSketch(sk: Sketch, raw: any): Sketch {
     };
     for (const a of Array.isArray(r.areas) ? r.areas : []) add(sk.areas, { name: str(a?.name, 80), in: str(a?.in, 80), kind: str(a?.kind, 20), desc: str(a?.desc) },
         (o, x) => { o.in ||= x.in; o.kind ||= x.kind; o.desc = longer(o.desc, x.desc); });
-    for (const p of Array.isArray(r.places) ? r.places : []) add(sk.places, { name: str(p?.name, 80), area: str(p?.area, 80), kind: str(p?.kind, 20), desc: str(p?.desc) },
-        (o, x) => { o.area ||= x.area; o.kind = o.kind && o.kind !== 'other' ? o.kind : x.kind; o.desc = longer(o.desc, x.desc); });
+    for (const p of Array.isArray(r.places) ? r.places : []) add(sk.places, { name: str(p?.name, 80), area: str(p?.area, 80), kind: str(p?.kind, 20), desc: str(p?.desc), floor: str(p?.floor, 30), hidden: p?.hidden === true || p?.hidden === 'true', restricted: str(p?.restricted, 80).replace(/^(none|no|everyone|anyone|open|public)$/i, '') },
+        (o, x) => { o.area ||= x.area; o.kind = o.kind && o.kind !== 'other' ? o.kind : x.kind; o.desc = longer(o.desc, x.desc); o.floor ||= x.floor; o.hidden ||= x.hidden; o.restricted ||= x.restricted; });
     for (const p of Array.isArray(r.people) ? r.people : []) {
         const ties = (Array.isArray(p?.ties) ? p.ties : []).map((t: any) => ({ to: str(t?.to, 80), type: str(t?.type, 20), tone: str(t?.tone, 20) })).filter((t: SkTie) => t.to);
         const age = Number(p?.age);
@@ -229,6 +231,10 @@ export function buildWorld(w: WorldDef, sk: Sketch, sum: Summary, books: string[
     if (roots.length === 1) areaKey.set(norm(roots[0].name), top);
     const kindOf = new Map<MapDef, string>();
     kindOf.set(top, roots.length === 1 ? roots[0].kind || 'city' : 'region');
+    // a building (an area of kind "building" with no areas inside) is not a map: it is one pin on its map, and its
+    // places are its floors
+    const isBuilding = (a: SkArea) => a.kind === 'building' && !areas.some(b => b !== a && norm(b.in) === norm(a.name));
+    const buildingMap = new Map<string, MapDef>();
     // parents before children: walk down from the top
     const pending = areas.filter(a => !areaKey.has(norm(a.name)));
     for (let guard = 0; pending.length && guard < 20; guard++) {
@@ -237,6 +243,7 @@ export function buildWorld(w: WorldDef, sk: Sketch, sum: Summary, books: string[
             const parent = a.in ? areaKey.get(norm(a.in)) : top;
             if (!parent && areas.some(b => norm(b.name) === norm(a.in))) continue;   // its parent is not made yet
             const p = parent ?? top;
+            if (isBuilding(a)) { buildingMap.set(norm(a.name), p); pending.splice(i--, 1); continue; }
             const m = mk(a.name, a.kind || 'district');
             const pk = kindOf.get(p) ?? 'city';
             m.parent = p.id; m.area = p.area ?? top.area;
@@ -251,17 +258,29 @@ export function buildWorld(w: WorldDef, sk: Sketch, sum: Summary, books: string[
     const placeKey = new Map<string, Place>();
     const night = w.time.periods.filter(p => p.from < 360 || p.from >= 1260).map(p => p.id);
     const morning = w.time.periods.filter(p => p.from < 720).map(p => p.id);
+    const buildings = new Map<string, Place>();
+    for (const a of areas) {
+        const m = buildingMap.get(norm(a.name)); if (!m) continue;
+        const b: Place = { id: uniq(used, idOf(a.name)), name: a.name, map: m.id, x: 0, y: 0, tags: ['leisure'], desc: a.desc || '' };
+        (b as any).kind = 'other';
+        out.push(b); placeKey.set(norm(a.name), b); buildings.set(norm(a.name), b);
+    }
     for (const p of places) {
-        const map = areaKey.get(norm(p.area)) ?? top;
+        const inB = buildings.get(norm(p.area));
+        const map = inB ? maps.find(m => m.id === inB.map)! : areaKey.get(norm(p.area)) ?? top;
         const k = KIND[p.kind ?? ''] ?? (p.kind === 'residential' ? { tags: ['leisure'] } : KIND.other);
         const pl: Place = { id: uniq(used, idOf(p.name)), name: p.name, map: map.id, x: 0, y: 0, tags: [...k.tags], desc: p.desc || '' };
         if (k.roles) pl.roles = [...k.roles];
         if (k.shut) pl.closed = k.shut === 'night' ? night : morning;
+        if (inB) { pl.in = inB.id; if (p.floor) pl.floor = p.floor; }
+        if (p.hidden) pl.hidden = true;
+        if (p.restricted) pl.restricted = p.restricted;
         (pl as any).kind = p.kind;   // read by the routines below, removed before saving
         out.push(pl); placeKey.set(norm(p.name), pl);
     }
     for (const m of maps) if (m.parent) out.push({ id: uniq(used, `to_${m.id.slice(2)}`), name: m.name, map: m.parent, x: 0, y: 0, link: m.id });
-    for (const m of maps) layout(out.filter(p => p.map === m.id), m.id);
+    for (const m of maps) layout(out.filter(p => p.map === m.id && !p.in), m.id);
+    for (const p of out) if (p.in) { const b = out.find(x => x.id === p.in); if (b) { p.x = b.x; p.y = b.y; } }   // a floor sits on its building's pin
     // an empty map still gets one place, so it can be visited
     for (const m of maps) if (!out.some(p => p.map === m.id && !p.link)) out.push({ id: uniq(used, `${m.id.slice(2)}_streets`), name: `${m.name} streets`, map: m.id, x: 50, y: 50, tags: ['leisure'], desc: `the streets of ${m.name}` });
 
@@ -269,7 +288,7 @@ export function buildWorld(w: WorldDef, sk: Sketch, sum: Summary, books: string[
     const findMap = (name?: string) => { if (!name) return undefined; const p = findPlace(name); return areaKey.get(norm(name)) ?? (p ? maps.find(m => m.id === p.map) : undefined); };
     const firstWork = out.find(p => !p.link && p.tags?.includes('work')) ?? out.find(p => !p.link)!;
     // where a job is done: the place named, or the first workplace in the area (a building) named
-    const workAt = (name?: string) => { const p = findPlace(name); if (p) return p; const m = name ? areaKey.get(norm(name)) : undefined; return (m && out.find(x => x.map === m.id && !x.link && x.tags?.includes('work'))) || firstWork; };
+    const workAt = (name?: string) => { const p = findPlace(name); if (p) return (buildings.has(norm(p.name)) && out.find(x => x.in === p.id && x.tags?.includes('work'))) || p; const m = name ? areaKey.get(norm(name)) : undefined; return (m && out.find(x => x.map === m.id && !x.link && x.tags?.includes('work'))) || firstWork; };
 
     // homes: one housing area for each map people live on (and the top map, for the player)
     const kindIds = Object.keys(w.homes.kinds);
@@ -336,9 +355,10 @@ export function buildWorld(w: WorldDef, sk: Sketch, sum: Summary, books: string[
         const ids = (l?: string[]) => (l ?? []).map(n => gid.get(norm(n))).filter((x): x is string => !!x && x !== f.id);
         if (ids(g.allies).length) f.allies = ids(g.allies);
         if (ids(g.rivals).length) f.rivals = ids(g.rivals);
-        if (g.secret) f.secret = true;
+        if (g.secret) { f.secret = true; if (hq && !hq.in) hq.hidden = true; }
         return f;
     });
+    for (const b of buildings.values()) { const fl = out.filter(p => p.in === b.id); if (fl.length && fl.every(p => p.hidden)) b.hidden = true; }
 
     // the world
     for (const p of out) delete (p as any).kind;
