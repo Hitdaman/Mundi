@@ -51,6 +51,8 @@ export interface Settings {
     castPresets?: CastPreset[];
     /** worlds attached to your own chats (sim/attach.ts) */
     attached?: AttachedEntry[];
+    /** RPG systems you made (from lorebooks, or saved from a world): chosen like the built-in ones */
+    rpgSystems?: { id: string; name: string; desc: string; def: any }[];
 }
 export interface CastPreset { id: string; name: string; cast: string[]; hh: { members: string[]; ties: { a: string; b: string; type: string; tone: string }[] }[]; rels: { a: string; b: string; type: string; tone: string }[]; approval: Record<string, number> }
 // Favorites and folders for personas and lorebooks (SillyTavern only has them for characters, as folder tags).

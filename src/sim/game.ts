@@ -2,7 +2,7 @@
 // cast is used), the player's persona, the world's lorebook and a group chat. The save lives in that chat.
 import { pictureAt } from './daynight.js';
 import { addXp, makeSheet, syncLife, type NewSheet } from './rpg.js';
-import { rpgOf } from '../core/rpgdef.js';
+import { rpgOf, withRpg, type RpgDef } from '../core/rpgdef.js';
 import { SCHEMA } from '../core/saves.js';
 import { worldFile, isScenario, SCENARIO_STARTS } from '../core/world.js';
 import { DIFFICULTIES, type Difficulty } from './bills.js';
@@ -157,6 +157,8 @@ export interface NewGame {
     mode?: GameMode;
     /** RPG: the class, attributes and skills chosen */
     rpg?: Omit<NewSheet, 'origin'>;
+    /** RPG: the system chosen, when it is not the world's own */
+    rpgDef?: RpgDef;
     /** a scenario: the rooms the house has in this game */
     rooms?: string[];
     /** a scenario: rooms added for this game, and the actions chosen for some rooms (room id → action ids) */
@@ -247,7 +249,10 @@ export async function startNewGame(o: NewGame) {
         }
     }
     // RPG: the character sheet (class, attributes, skills; the background adds its own)
-    if ((o.mode ?? w.mode) === 'rpg' && rpgOf(w) && o.rpg) { (save as any).rpg = makeSheet(w, { ...o.rpg, origin }); syncLife(save, w); }
+    if ((o.mode ?? w.mode) === 'rpg' && rpgOf(w) && o.rpg) {
+        if (o.rpgDef) (save as any).rpgDef = structuredClone(o.rpgDef);   // another system than the world's
+        withRpg(o.rpgDef ?? w.rpg, () => { (save as any).rpg = makeSheet(w, { ...o.rpg!, origin }); syncLife(save, w); });
+    }
     // memories carried over from another life (another game with some of the same people): memories only
     if (o.memoriesFrom) { try { await portMemories(save, o.memoriesFrom); } catch (e) { console.warn('[Mundi] memories', e); } }
     // your household moves in with you; each other household shares the home of its first member
