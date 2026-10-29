@@ -45,7 +45,9 @@ import { P as phone, phoneUnread } from './phone.js';
 import { PL, facePlanHtml } from './plans.js';
 import { relBar } from './relui.js';
 import { openNow } from '../sim/daynight.js';
-import { questsHere, doStep } from '../sim/quests.js';
+import { doStep } from '../sim/quests.js';
+import { questActs } from './rpgui.js';
+import { refreshPrompt } from '../sim/prompt.js';
 import { weatherHere, crowdLevel, crowdWord, regionState, regionOf, moodWord, tensionWord } from '../sim/worldstate.js';
 import { chanceOf } from '../sim/dice.js';
 import { isRpg, sheetOf, focusMax, hpMax, mortalOn } from '../sim/rpg.js';
@@ -202,7 +204,7 @@ function actsColumn(g: Save, w: WorldDef) {
         doorActs(g, w),
         findActs(g, w),
         gearActs(g, w),
-        ...questsHere(g).map(q => `<button class="mh-act is-quest mh-glass" data-act="quest-step" data-id="${esc(q.id)}"><i>📜</i><b>${esc(q.steps[q.step].what)}</b><small>${esc(q.title)}</small></button>`),
+        questActs(g, w),
         ...(job ? [`<button class="mh-act is-work mh-glass ${offScreenWork(w) ? 'is-outing' : ''}" data-act="work" ${isOpen(g, job) ? '' : 'aria-disabled="true"'}><i>${icon('briefcase')}</i><b>${offScreenWork(w) ? 'Go to work' : 'Work a shift'} · ${job.shift} h</b><small>${isOpen(g, job) ? `${money(w, payOf(g, job.ranks[g.player.job!.rank].pay * job.shift))}` : `Open ${String(job.hours?.[0] ?? 0).padStart(2, '0')}:00–${String(job.hours?.[1] ?? 24).padStart(2, '0')}:00`}</small></button>`] : []),
         ...jobs.map(o => `<button class="mh-act mh-glass" data-act="apply" data-id="${esc(o.id)}" ${missingCourses(g, w, o).length || triedToday(g, o.id) ? 'aria-disabled="true"' : ''}><i>${icon('briefcase')}</i><b>Apply: ${esc(o.name)}</b><small>${missingCourses(g, w, o).length ? `${lex(w, 'needsCourse')}: ${esc(missingCourses(g, w, o).join(', '))}` : `${money(w, payOf(g, o.ranks[0].pay))}/h · interview 🎲 ${interviewChance(g, o, traitsOf(g))}%`}</small></button>`),
         ...(atHome && lockedOut(g) ? [`<button class="mh-act mh-glass is-warn" data-act="ph-open-homes"><i>${icon('home')}</i><b>${lex(w, 'lockedOutShort')}</b><small>${lex(w, 'lockedOutHint', appRef(w, 'homes'))}</small></button>`] : []),
@@ -247,7 +249,7 @@ Object.assign(ACT, {
         const r = doStep(g, w, el.dataset.id!); if (!r) return;
         if (r.check) setPrompt('mundi_roll', `[Rules — a ${r.check.skill} check for a quest: d20 ${r.check.d20} ${r.check.bonus >= 0 ? '+' : '−'} ${Math.abs(r.check.bonus)} = ${r.check.total} vs DC ${r.check.dc}: ${r.check.grade.replace('-', ' ')}. Narrate {{user}} ${r.check.grade.includes('success') ? 'succeeding' : 'failing'} at it.]`, 0);
         toast(r.text, r.done ? 'success' : r.fight ? 'warn' : 'info'); r.msgs.forEach(m => toast(m, 'success'));
-        saveGame(); notify();
+        saveGame(); refreshPrompt(); notify();
     },
 });
 Object.assign(ACT, {

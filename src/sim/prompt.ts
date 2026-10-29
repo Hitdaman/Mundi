@@ -30,7 +30,7 @@ import { openNow } from './daynight.js';
 import { neighbors } from './happenings.js';
 import { sheetLine } from './rpg.js';
 import { mortalLine } from './mortal.js';
-import { questLines } from './quests.js';
+import { questLines, questAware } from './quests.js';
 import { partyLine } from './party.js';
 import { combatLine } from './combat.js';
 import { festivalLine } from './festivals.js';
@@ -145,7 +145,7 @@ export function sceneBlocks(): Built[] {
         plans: planLines(g, present, w),
         focus: [eventLine(g, w), combatLine(g, w), prisonLine(g, w), ...towerLines(g, w), ...gateLines(g, w), ...buildingLines(g, w), lockedHereLine(g, w), ...contractLines(g, w), ...institutionLines(g, w), focusLine(g, w, present), ...whyHereLines(g, w, present), ...questLines(g)],
         feelings: [feelingLine(g, met)],
-        you: [(g.player as any).bio ? `About {{user}} in this world: ${(g.player as any).bio}` : '', sheetLine(g, w), mortalLine(g, w), afflictionLine(g, w), ...artifactLines(g, w), partyLine(g, w), standingLine(g, w), bountyLine(g, w), tradeLine(g, w), holdingsLine(g, w), habitLine(g, w), hobbyLine(g, w), petLine(g, w), mentorLine(g, w, present.map(r => r.avatar)), physiqueLine(g), aspirationOf(g) && systemOn(w, 'goals') ? `{{user}}'s life goal: ${aspirationOf(g)!.name.toLowerCase()}.` : ''],
+        you: [(g.player as any).bio ? `About {{user}} in this world: ${(g.player as any).bio}` : '', sheetLine(g, w), mortalLine(g, w), afflictionLine(g, w), ...artifactLines(g, w), partyLine(g, w), standingLine(g, w), bountyLine(g, w), tradeLine(g, w), holdingsLine(g, w), habitLine(g, w), hobbyLine(g, w), petLine(g, w), mentorLine(g, w, present.map(r => r.avatar)), physiqueLine(g), aspirationOf(g) && systemOn(w, 'goals') ? `{{user}}'s life goal: ${aspirationOf(g)!.name.toLowerCase()}.` : '', ...questAware(g, w)],
         solo: [soloLine(g, present)],
         approval: [approvalLine(g, met)],
         couples: [couplesLine(g, present)],

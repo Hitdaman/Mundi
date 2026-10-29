@@ -59,6 +59,7 @@ export const PLACE_ROLES: { id: string; name: string; re: RegExp }[] = [
     { id: 'tavern', name: 'Tavern or bar (rumors and clues)', re: /tavern|inn|mead|mug|goose|dog|plough|lantern|camel|mermaid|torch|pickaxe|caf[eé]|\bbar\b|pub|club/i },
     { id: 'hire', name: 'Companions for hire', re: /tavern|inn|barrack|guild|plough|saltdog|fort|\bbar\b|pub|club/i },
     { id: 'contracts', name: 'Contracts board', re: /guild|lodge|hunter|board/i },
+    { id: 'quests', name: 'Quest board (requests for help)', re: /guild|board|notice|adventur|association|town ?hall|city ?hall|mission|request/i },
     { id: 'guarded', name: 'Guarded (wanted people are stopped)', re: /guard|barrack|police|customs|fort|station|gate|castle|palace|civic|jarl|watch|square|market|bazaar/i },
     { id: 'jail', name: 'Jail', re: /barrack|fort|castle|jarl|palace|civic|police|guard/i },
     { id: 'blackmarket', name: 'Black market (night auctions)', re: /dock|bazaar|warehouse|black|underground|industrial/i },
