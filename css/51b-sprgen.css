@@ -1,0 +1,10 @@
+/* Sprites drawn on ComfyUI (ui/spritegen.ts): the button or progress under a card shown in place of a sprite. */
+#mundi-root .mu-sprite .mu-sprgen { position: absolute; left: 50%; bottom: 36vh; transform: translate(-50%, calc(100% + 8px)); z-index: 3; pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: 13px; white-space: nowrap; background: color-mix(in srgb, var(--bg) 85%, transparent); border: 1px solid var(--line); color: var(--fg, #fff); box-shadow: var(--shadow); backdrop-filter: blur(6px); }
+#mundi-root .mu-sprite button.mu-sprgen { cursor: pointer; }
+#mundi-root .mu-sprite button.mu-sprgen:hover { border-color: var(--accent); }
+#mundi-root .mu-sprite .mu-sprgen.is-busy { opacity: .9; }
+#mundi-root .mu-sprite .mu-sprgen svg { width: 15px; height: 15px; }
+#mundi-root[data-layout="classic"] .mu-sprite .mu-sprgen { bottom: 20vh; }
+#mundi-root .mu-sprsheet { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; }
+#mundi-root .mu-sprsheet summary { cursor: pointer; font-weight: 600; }
+#mundi-root .mu-sprsheet textarea { width: 100%; font-family: inherit; font-size: 13px; }
