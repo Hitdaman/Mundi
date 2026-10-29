@@ -9,6 +9,9 @@
 #mundi-root .mu-fromlore .mu-fl-row.is-off { opacity: .45; }
 #mundi-root .mu-fromlore .mu-fl-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 640px) { #mundi-root .mu-fromlore .mu-fl-row { grid-template-columns: auto 1fr; } #mundi-root .mu-fromlore .mu-fl-row small { grid-column: 1 / -1; white-space: normal; } }
+/* World creator tabs: Redo from the lorebooks */
+#mundi-root .mu-fl-redo { align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+#mundi-root .mu-fl-redo small { flex: 1 1 260px; }
 /* Paint with ComfyUI (the world creator's Paint button) */
 #mundi-root .mu-paint { width: min(560px, 100%); }
 #mundi-root .mu-paint-opts { display: grid; gap: 6px; }

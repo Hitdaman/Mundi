@@ -165,6 +165,8 @@ export interface WorldDef {
     /** One currency per world. `after`: the symbol goes after the amount ("40 g" instead of "$40").
      *  (`tiers`, coins of several metals, is no longer used: amounts were always counted in the smallest coin.) */
     currency: { name: string; symbol: string; after?: boolean; tiers?: { symbol: string; value: number }[] };
+    /** How many of this world's money one of its style's (a world in won: about 1300), so new prices fit (worlds built from lorebooks). */
+    moneyScale?: number;
     /** The style it is built on (modern, medieval…): the look of the game and the base the world creator copies. */
     style?: string;
     /** The game mode: Life-Sim (daily life, the base), RPG (adds health, and later factions, missions and fights)
