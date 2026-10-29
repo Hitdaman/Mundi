@@ -55,6 +55,7 @@ import { factionActs } from './factionsui.js';
 import { holdingsActs } from './holdingsui.js';
 import { adventureActs } from './adventureui.js';
 import { discoveryActs } from './discoveryui.js';
+import { careActs, doorActs, findActs, gearActs, roomActs, waitActs, moreHtml } from './moreacts.js';
 import { rpgOf } from '../core/rpgdef.js';
 
 /* ---------- you ---------- */
@@ -191,24 +192,30 @@ function actsColumn(g: Save, w: WorldDef) {
     const atHome = g.player.loc === playerHomeId;
     const rows = [
         ...apptActions(g, w),
+        careActs(g, w),
         lifeActs(g, w),
         schoolActs(g, w),
         factionActs(g, w),
         holdingsActs(g, w),
         adventureActs(g, w),
         discoveryActs(g, w),
+        doorActs(g, w),
+        findActs(g, w),
+        gearActs(g, w),
         ...questsHere(g).map(q => `<button class="mh-act is-quest mh-glass" data-act="quest-step" data-id="${esc(q.id)}"><i>📜</i><b>${esc(q.steps[q.step].what)}</b><small>${esc(q.title)}</small></button>`),
         ...(job ? [`<button class="mh-act is-work mh-glass ${offScreenWork(w) ? 'is-outing' : ''}" data-act="work" ${isOpen(g, job) ? '' : 'aria-disabled="true"'}><i>${icon('briefcase')}</i><b>${offScreenWork(w) ? 'Go to work' : 'Work a shift'} · ${job.shift} h</b><small>${isOpen(g, job) ? `${money(w, payOf(g, job.ranks[g.player.job!.rank].pay * job.shift))}` : `Open ${String(job.hours?.[0] ?? 0).padStart(2, '0')}:00–${String(job.hours?.[1] ?? 24).padStart(2, '0')}:00`}</small></button>`] : []),
         ...jobs.map(o => `<button class="mh-act mh-glass" data-act="apply" data-id="${esc(o.id)}" ${missingCourses(g, w, o).length || triedToday(g, o.id) ? 'aria-disabled="true"' : ''}><i>${icon('briefcase')}</i><b>Apply: ${esc(o.name)}</b><small>${missingCourses(g, w, o).length ? `${lex(w, 'needsCourse')}: ${esc(missingCourses(g, w, o).join(', '))}` : `${money(w, payOf(g, o.ranks[0].pay))}/h · interview 🎲 ${interviewChance(g, o, traitsOf(g))}%`}</small></button>`),
         ...(atHome && lockedOut(g) ? [`<button class="mh-act mh-glass is-warn" data-act="ph-open-homes"><i>${icon('home')}</i><b>${lex(w, 'lockedOutShort')}</b><small>${lex(w, 'lockedOutHint', appRef(w, 'homes'))}</small></button>`] : []),
         ...((atHome && !lockedOut(g)) || stayHere(g) ? [`<button class="mh-act mh-glass" data-act="sleep"><i>${icon('moon')}</i><b>Sleep until morning</b><small>${atHome ? 'Rest' : 'Staying the night here'}</small></button>`] : []),
+        roomActs(g, w),
         ...acts.map(a => `<button class="mh-act mh-glass ${a.outing ? 'is-outing' : ''}" data-act="do" data-id="${esc(a.id)}" ${canAfford(g, a) ? '' : 'aria-disabled="true" title="Not enough money"'}><i>${a.icon ?? ''}</i><b>${esc(a.label)}</b><small>${isScenario(w) ? '' : `${a.cost < 0 ? `+${money(w, -a.cost)}` : a.cost ? money(w, a.cost) : 'Free'} · `}${a.minutes} min${a.roll && !isScenario(w) ? ` · 🎲 ${chanceOf(g, a)}% chance` : ''}</small></button>`),
     ];
     { const cr = courseRow(g, w); if (cr) rows.splice(rows.length, 0, cr); }
+    rows.push(waitActs(g, w));
     rows.push(customActionRow());   // an action you name yourself
     const open = actsOpen();
     return `<aside class="mh-acts ${open ? '' : 'is-closed'}" aria-label="Things to do">
-        <button class="mh-acts-head mh-glass" data-act="dock-toggle">${icon(open ? 'up' : 'down')}<span>Things to do</span>${onPhone() ? `<em>${rows.length}</em>` : ''}</button>
+        <button class="mh-acts-head mh-glass" data-act="dock-toggle">${icon(open ? 'up' : 'down')}<span>Things to do</span>${onPhone() ? `<em>${rows.join('').split('class="mh-act ').length - 1}</em>` : ''}</button>
         ${open ? `<div class="mh-acts-list" data-keep="dock">${rows.join('')}</div>` : ''}</aside>`;
 }
 
@@ -231,7 +238,7 @@ export function hudHtml() {
     const g = game(); const w = g && getWorld(g.world);
     if (!g || !w) return '';
     // Home: no card of your own (no money, no needs); your persona is in the menu, as in a chat
-    return `${isScenario(w) ? '' : personaCard(g, w)}${houseBar(g, w)}${clockCard(g, w)}${corner(g, w)}${eventPanelHtml(g, w)}${hereBar(g, w)}${peopleColumn(g, w)}${actsColumn(g, w)}${phoneButton(w)}${bumpHtml()}${apptReminderHtml(g, w)}${conflictHtml(g, w)}${facePlanHtml()}${customModalHtml()}${skipAskHtml(g, w)}${detachHtml()}${personaPickHtml()}${isScenario(w) ? `${outingHtml()}${residentsHtml()}${guestDialogsHtml()}` : ''}${doingHtml()}${lifeOverlays()}`;
+    return `${isScenario(w) ? '' : personaCard(g, w)}${houseBar(g, w)}${clockCard(g, w)}${corner(g, w)}${eventPanelHtml(g, w)}${hereBar(g, w)}${peopleColumn(g, w)}${actsColumn(g, w)}${phoneButton(w)}${bumpHtml()}${apptReminderHtml(g, w)}${conflictHtml(g, w)}${facePlanHtml()}${customModalHtml()}${skipAskHtml(g, w)}${detachHtml()}${moreHtml()}${personaPickHtml()}${isScenario(w) ? `${outingHtml()}${residentsHtml()}${guestDialogsHtml()}` : ''}${doingHtml()}${lifeOverlays()}`;
 }
 
 Object.assign(ACT, {

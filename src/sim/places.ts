@@ -1,6 +1,6 @@
 // Places: the world's public places plus homes (the player's and each resident's). Distances and travel time.
 import { travelFactor } from './life.js';
-import { cfg, type Save } from '../core/store.js';
+import { cfg, nowAbs, type Save } from '../core/store.js';
 import { isScenario, type WorldDef, type Place } from '../core/world.js';
 
 export const playerHomeId = 'home:player';
@@ -56,6 +56,9 @@ export function hiddenNow(g: Save | null | undefined, w: WorldDef, p: Place): bo
 /** Why you cannot go in ('' when you can): restricted and not opened in this game, or in a building that is. */
 export function lockedNow(g: Save | null | undefined, w: WorldDef, p: Place): string {
     const open = found(g).open ?? [];
+    // let in for this visit (knocked, or sneaked in: sim/moreacts.ts), until you leave or the hours run out
+    const guest = (g as any)?.discovery?.guest as { id: string; until: number } | undefined;
+    if (guest && g && guest.until > nowAbs(g) && (guest.id === p.id || guest.id === p.in)) return '';
     if (p.restricted && !open.includes(p.id)) return p.restricted;
     const b = p.in ? w.places.find(x => x.id === p.in) : null;
     return b && b.id !== p.id && b.restricted && !open.includes(b.id) ? b.restricted : '';
