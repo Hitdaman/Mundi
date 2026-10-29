@@ -8,6 +8,8 @@ import { newWorldFrom, saveWorld } from '../sim/creator.js';
 import { readBook, chunk, sketchPrompt, summaryPrompt, parseJson, mergeSketch, emptySketch, buildWorld, BUCKETS, type LoreItem, type Sketch, type Bucket, type Chunk } from '../sim/fromlore.js';
 import { DETAILS, TAB_GROUP, detailLore, detailPrompt, applyDetail, type DetailGroup } from '../sim/lorebits.js';
 import { systemFromLore } from '../sim/rpgfromlore.js';
+import { mundifyLore, loreMundifiedOf, loreCopies } from '../sim/mundifylore.js';
+import { needs, basicsPrompt, readBasics, guessBasics, fnName } from '../sim/basics.js';
 import type { WorldDef } from '../core/world.js';
 import { CW } from './creator.js';
 import { openPaint } from './worldpaint.js';
@@ -17,13 +19,16 @@ import { ACT, INPUT } from './reg.js';
 
 type Step = 'books' | 'reading' | 'review';
 type ReviewTab = 'areas' | 'places' | 'people' | 'groups' | 'jobs';
-type FlTab = ReviewTab | 'details';
+type FlTab = ReviewTab | 'details' | 'basics';
 // A run of the reading, as saved between sessions.
 // `details`: the groups of tabs to fill from the lorebooks once the map is built (unticked ones keep the style's);
 // `got`: the AI's answers so far, so a build stopped halfway does not ask again.
-interface Draft { name: string; style: string; base: string; game: GameMode; books: string[]; skip: Bucket[]; done: number; failed: number[]; sketch: Sketch; details?: DetailGroup[]; got?: Record<string, any> }
+// `mfyAi`: whether "Mundify them first" uses the AI (on unless unticked).
+interface Draft { name: string; style: string; base: string; game: GameMode; books: string[]; skip: Bucket[]; done: number; failed: number[]; sketch: Sketch; details?: DetailGroup[]; got?: Record<string, any>; mfyAi?: boolean }
 export const FL = {
     on: false, step: 'books' as Step, tab: 'places' as FlTab, bq: '', busy: false, stop: false,
+    /** the AI is naming the basics */
+    basics: false,
     /** the detail group being redone in the World creator (one at a time) */
     redo: '' as DetailGroup | '',
     run: null as Draft | null,
@@ -80,13 +85,46 @@ function booksHtml(): string {
         <p class="mu-muted">Your AI reads the lorebooks you choose, a part at a time, and finds the places, people, groups and jobs in them. You choose what to keep, then Mundi builds the world. You can change everything afterwards in the World creator.</p>
         <h3>Lorebooks</h3>
         <input class="mu-search" type="search" data-input="fl-bq" data-focus="flbq" placeholder="Search lorebooks" value="${esc(FL.bq)}">
-        <div class="mu-chips mu-situation-books">${books.slice(0, 80).map(b => `<button class="mu-chip ${r.books.includes(b) ? 'is-on' : ''}" data-act="fl-book" data-name="${esc(b)}" data-notr>${esc(b)}</button>`).join('') || '<span class="mu-muted">No lorebooks.</span>'}</div>
+        <div class="mu-chips mu-situation-books">${books.slice(0, 80).map(b => `<button class="mu-chip ${r.books.includes(b) ? 'is-on' : ''}" data-act="fl-book" data-name="${esc(b)}" data-notr ${loreMundifiedOf(b) ? 'title="Mundified copy"' : ''}>${loreMundifiedOf(b) ? icon('sparkles') : ''}${esc(b)}</button>`).join('') || '<span class="mu-muted">No lorebooks.</span>'}</div>
+        ${mfyHtml()}
         ${r.books.length ? `<h3>What to read</h3>
         <p class="mu-muted">Sorted by each entry's title and keys. Untick what does not describe the world itself. Everything stays switched on as a lorebook of the world either way.</p>
         <div class="mu-fl-buckets">${BUCKETS.map(b => `<label class="mu-check"><input type="checkbox" data-act="fl-bucket" data-id="${b.id}" ${r.skip.includes(b.id) ? '' : 'checked'}><span>${b.name} (${count(b.id)})<small>${b.desc}</small></span></label>`).join('')}</div>
         <p class="${parts > MAX_CALLS ? 'mu-warn' : 'mu-muted'}">${chosen().length} entries in ${parts} part${parts === 1 ? '' : 's'}: ${parts} AI call${parts === 1 ? '' : 's'}, plus one to sum up.${parts > MAX_CALLS ? ` That is a lot (over ${MAX_CALLS}): untick some kinds or lorebooks, or it will take a long time and many tokens.` : ''}</p>` : ''}
         <div class="mu-row mu-cw-new-go"><span class="mu-muted">${r.books.length} lorebook${r.books.length === 1 ? '' : 's'} chosen</span>
             <button class="mu-primary mu-big" data-act="fl-read" ${parts ? '' : 'aria-disabled="true"'}>${icon('sparkles')}<span>Read the lorebooks</span></button></div>`;
+}
+
+// Lorebooks made for chats tell the AI how to reply, set an opening scene, say who {{user}} is: a mundified copy keeps
+// only the facts about the world, so the reading is cleaner and the world links the copy (sim/mundifylore.ts).
+function mfyHtml(): string {
+    const r = R();
+    if (!r.books.length) return '';
+    const plain = r.books.filter(b => !loreMundifiedOf(b));
+    if (!plain.length) return `<p class="mu-muted">${icon('sparkles')} Reading mundified copies: their instructions, opening scene and {{user}}'s role are left out, and the world uses these copies while you play.</p>`;
+    const made = plain.filter(b => loreCopies(b).length);
+    return `<section class="mu-panel mu-fl-mfy"><p>${plain.length === r.books.length ? (plain.length === 1 ? 'This lorebook is' : 'These lorebooks are') : `${plain.length} of these lorebooks are`} not mundified. Lorebooks made for chats often tell the AI how to reply, set an opening scene or say who {{user}} is, which fight a Mundi world. Mundify makes a copy with only the facts about the world, and the world uses the copy; the original stays as it is.${made.length ? ` <span data-notr>${made.map(esc).join(', ')}</span> ${made.length === 1 ? 'has a copy' : 'have copies'} already: ${made.length === 1 ? 'it is' : 'they are'} used.` : ''}</p>
+        <div class="mu-row"><button class="mu-primary" data-act="fl-mfy">${icon('sparkles')}<span>Mundify ${plain.length === 1 ? 'it' : 'them'} first</span></button>
+            <label class="mu-check"><input type="checkbox" data-act="fl-mfy-ai" ${r.mfyAi === false ? '' : 'checked'}><span>With the AI<small>It reads every entry (one call for a few entries) and rewrites the mixed ones. Without it, only entries that plainly are instructions are switched off.</small></span></label></div></section>`;
+}
+async function mundifyChosen() {
+    const r = R(), ai = r.mfyAi !== false;
+    const notes: string[] = [], failed: string[] = [];
+    for (const b of r.books.filter(x => !loreMundifiedOf(x))) {
+        try {
+            let copy = loreCopies(b)[0];
+            if (!copy) {
+                const out = await busy(`Mundifying ${b}`, () => mundifyLore(b, ai, (i, n) => { if (n > 1) { state.busy = `Mundifying ${b}: part ${i + 1} of ${n}`; notify(); } }));
+                copy = out.name; notes.push(`${b}: ${out.off} off${out.rewritten ? `, ${out.rewritten} rewritten` : ''}`);
+            }
+            await itemsOf(copy);
+            r.books = r.books.map(x => (x === b ? copy! : x));
+        } catch (e: any) { failed.push(`${b}: ${String(e?.message ?? e)}`); }
+    }
+    save();
+    if (failed.length) toast(failed.join('\n'), 'error');
+    else toast(`Using the mundified copies${notes.length ? ` (${notes.join('; ')})` : ''}. The originals are unchanged.`, 'success');
+    notify();
 }
 
 function readingHtml(): string {
@@ -104,6 +142,7 @@ const TABS: [ReviewTab, string][] = [['places', 'Places'], ['areas', 'Maps'], ['
 function reviewHtml(): string {
     const sk = R().sketch;
     if (FL.tab === 'details') return reviewShell(detailsHtml());
+    if (FL.tab === 'basics') return reviewShell(basicsHtml());
     const list: any[] = sk[FL.tab];
     const kept = list.filter(x => x.keep !== false).length;
     const detail = (x: any): string => FL.tab === 'areas' ? [x.kind, x.in ? `in ${x.in}` : 'the top map', x.desc].filter(Boolean).join(' · ')
@@ -119,10 +158,34 @@ function reviewShell(body: string): string {
     const r = R(), sk = r.sketch;
     const on = (r.details ?? []).length;
     return `<p class="mu-muted">Untick what should not be in the world, and fix names if you like. Maps are the areas: a city, its districts, a building with floors. Places sit on them.${r.failed.length ? ` ${r.failed.length} part${r.failed.length === 1 ? '' : 's'} could not be read: <button class="mu-ghost" data-act="fl-retry">Try them again</button>` : ''}</p>
-        <nav class="mu-tabs mu-fl-tabs">${TABS.map(([id, l]) => `<button class="${FL.tab === id ? 'is-on' : ''}" data-act="fl-tab" data-tab="${id}">${l} (${sk[id].filter((x: any) => x.keep !== false).length})</button>`).join('')}<button class="${FL.tab === 'details' ? 'is-on' : ''}" data-act="fl-tab" data-tab="details">Details (${on})</button></nav>
+        <nav class="mu-tabs mu-fl-tabs">${TABS.map(([id, l]) => `<button class="${FL.tab === id ? 'is-on' : ''}" data-act="fl-tab" data-tab="${id}">${l} (${sk[id].filter((x: any) => x.keep !== false).length})</button>`).join('')}<button class="${FL.tab === 'basics' ? 'is-on' : ''}" data-act="fl-tab" data-tab="basics">Basics (${FL.basics ? '…' : (sk.basics ?? []).filter(x => x.keep !== false).length})</button><button class="${FL.tab === 'details' ? 'is-on' : ''}" data-act="fl-tab" data-tab="details">Details (${on})</button></nav>
         ${body}
         <div class="mu-row mu-cw-new-go"><button data-act="fl-books">← Lorebooks</button><span class="mu-grow"></span>
-            <button class="mu-primary mu-big" data-act="fl-build" ${sk.places.length + sk.areas.length ? '' : 'aria-disabled="true"'}>${icon('map')}<span>Build the world</span></button></div>`;
+            <button class="mu-primary mu-big" data-act="fl-build" ${sk.places.length + sk.areas.length && !FL.basics ? '' : 'aria-disabled="true"'}>${icon('map')}<span>Build the world</span></button></div>`;
+}
+// The everyday places the lorebooks did not mention, named for this world by the AI (sim/basics.ts).
+function basicsHtml(): string {
+    const sk = R().sketch, list = sk.basics ?? [];
+    const intro = `<p class="mu-muted">Every town needs a few everyday places so life works there: somewhere to heal, buy food, eat and drink, sleep, find work, the law… These are the ones the lorebooks did not mention, named for this world by your AI (or none, where a place would not have one). Untick the ones you do not want; each comes with its job.</p>`;
+    const again = `<button class="mu-ghost" data-act="fl-basics" ${FL.basics ? 'aria-disabled="true"' : ''}>${icon('sparkles')}<span>${FL.basics ? 'Asking your AI…' : sk.basics ? 'Ask again' : 'Ask your AI'}</span></button><small class="mu-muted">Ask again after changing which places and maps you keep.</small>`;
+    if (FL.basics && !list.length) return `${intro}<p class="mu-muted">Your AI is naming them…</p>`;
+    const rows = list.map((x, i) => `<div class="mu-fl-row ${x.keep === false ? 'is-off' : ''}"><input type="checkbox" data-act="fl-keep" data-i="${i}" ${x.keep === false ? '' : 'checked'} title="Keep">
+        <input class="mu-fl-name" data-input="fl-name" data-i="${i}" data-focus="fl-basics-${i}" value="${esc(x.name)}" data-notr><small class="mu-muted" data-notr>${esc([fnName(x.fn), x.area ? `in ${x.area}` : 'the top map', x.job ? `job: ${x.job}` : '', x.desc, x.guess ? '(the usual one: your AI did not name it)' : ''].filter(Boolean).join(' · '))}</small></div>`).join('');
+    return `${intro}<div class="mu-row mu-fl-redo">${again}</div>
+        <div class="mu-fl-list">${rows || `<p class="mu-muted">${sk.basics ? 'Nothing missing: the lorebooks cover the basics.' : 'Not asked yet.'}</p>`}</div>`;
+}
+// Asks the AI for the basics the kept places do not cover (without an answer: the style's usual places).
+async function askBasics() {
+    const r = R();
+    if (FL.basics) return;
+    const list = needs(r.sketch);
+    if (!list.length) { r.sketch.basics = []; save(); notify(); return; }
+    FL.basics = true; notify();
+    const items = allItems();
+    const hints = (items.filter(i => i.bucket === 'rules' || i.bucket === 'other').map(i => `### ${i.title}\n${i.text}`).join('\n\n') || FL.chunks[0]?.text || '').slice(0, 3000);
+    try { r.sketch.basics = readBasics(parseJson(await quiet(basicsPrompt(r.name, styleName(r.style), list, hints), 3000)), list, r.sketch, r.style); }
+    catch (e) { console.warn('[Mundi] from lorebooks, basics', e); r.sketch.basics = guessBasics(list, r.sketch, r.style); toast('Your AI could not name the basics: the usual ones are listed in the Basics tab instead.', 'warn'); }
+    FL.basics = false; save(); notify();
 }
 // The other World creator tabs: filled from the lorebooks after the map is built, one AI call per group.
 function detailsHtml(): string {
@@ -151,7 +214,7 @@ async function readParts(which: number[]) {
         save(); notify();
     }
     FL.busy = false;
-    if (!FL.stop) FL.step = 'review';
+    if (!FL.stop) { FL.step = 'review'; if (!r.sketch.basics) void askBasics(); }
     notify();
 }
 // One part: asked twice; if both answers cannot be read, or the answer was cut off (a part full of people can run out
@@ -192,6 +255,7 @@ async function build() {
             let sum = {};
             const hints = (FL.chunks[0]?.text ?? '').slice(0, 3000);
             try { sum = parseJson(await quiet(summaryPrompt(r.name, r.sketch, hints), 800)); } catch (e) { console.warn('[Mundi] from lorebooks, summary', e); }
+            if (!r.sketch.basics) { state.busy = 'Naming the basics'; notify(); await askBasics(); state.busy = 'Building the world'; notify(); }
             const sk = structuredClone(r.sketch);
             for (const k of Object.keys(CAPS) as ReviewTab[]) { let n = 0; for (const x of sk[k] as any[]) if (x.keep !== false && ++n > CAPS[k]) x.keep = false; }
             const out = buildWorld(base, sk, sum, r.books);
@@ -266,7 +330,7 @@ async function redo(g: DetailGroup) {
 function rename(sk: Sketch, tab: ReviewTab, from: string, to: string) {
     const fix = (o: any, k: string) => { if (o?.[k] === from) o[k] = to; };
     const fixAll = (l?: string[]) => l?.forEach((x, i) => { if (x === from) l[i] = to; });
-    if (tab === 'areas') { sk.areas.forEach(a => fix(a, 'in')); sk.places.forEach(p => fix(p, 'area')); sk.people.forEach(p => { fix(p, 'lives'); fix(p, 'work'); }); }
+    if (tab === 'areas') { sk.areas.forEach(a => fix(a, 'in')); sk.places.forEach(p => fix(p, 'area')); sk.people.forEach(p => { fix(p, 'lives'); fix(p, 'work'); }); sk.basics?.forEach(b => fix(b, 'area')); }
     if (tab === 'places') { sk.people.forEach(p => { fix(p, 'work'); fix(p, 'lives'); }); sk.jobs.forEach(j => fix(j, 'place')); sk.groups.forEach(g => fix(g, 'hq')); }
     if (tab === 'people') sk.people.forEach(p => p.ties?.forEach(t => fix(t, 'to')));
     if (tab === 'groups') sk.groups.forEach(g => { fixAll(g.allies); fixAll(g.rivals); });
@@ -292,7 +356,10 @@ Object.assign(ACT, {
     'fl-stop': () => { FL.stop = true; notify(); },
     'fl-continue': () => { if (!FL.busy) void readParts(range(R().done, FL.chunks.length)); },
     'fl-retry': () => { if (!FL.busy) void readParts([...R().failed]); },
-    'fl-review': () => { FL.step = 'review'; notify(); },
+    'fl-review': () => { FL.step = 'review'; if (!R().sketch.basics) void askBasics(); notify(); },
+    'fl-mfy': () => { if (!FL.busy) void mundifyChosen(); },
+    'fl-mfy-ai': () => { const r = R(); r.mfyAi = r.mfyAi === false; save(); notify(); },
+    'fl-basics': () => { void askBasics(); },
     'fl-books': () => { FL.step = 'books'; notify(); },
     'fl-resume': async () => {
         const old = draft(); if (!old) return;
@@ -300,16 +367,23 @@ Object.assign(ACT, {
         FL.run.details ??= groupsFor(old.game);   // a reading saved before the world details
         try { for (const b of old.books) await itemsOf(b); } catch { toast('A lorebook of that reading is gone.', 'error'); return; }
         FL.chunks = plan();
-        FL.step = old.done >= FL.chunks.length ? 'review' : 'reading'; notify();
+        FL.step = old.done >= FL.chunks.length ? 'review' : 'reading';
+        if (FL.step === 'review' && !FL.run.sketch.basics) void askBasics();
+        notify();
     },
     'fl-forget': () => { (settings() as any).fromLore = undefined; saveSettings(); notify(); },
     'fl-tab': (el) => { FL.tab = el.dataset.tab as FlTab; notify(); },
-    'fl-keep': (el) => { if (FL.tab === 'details') return; const x: any = R().sketch[FL.tab][Number(el.dataset.i)]; if (x) { x.keep = x.keep === false; save(); notify(); } },
+    'fl-keep': (el) => { if (FL.tab === 'details') return; const x: any = (FL.tab === 'basics' ? R().sketch.basics ?? [] : R().sketch[FL.tab])[Number(el.dataset.i)]; if (x) { x.keep = x.keep === false; save(); notify(); } },
     'fl-build': () => { if (!FL.busy) void build(); },
     'fl-detail': (el) => { const r = R(), id = el.dataset.id as DetailGroup, on = r.details ?? []; r.details = on.includes(id) ? on.filter(x => x !== id) : [...on, id]; save(); notify(); },
     'fl-redo': (el) => { void redo(el.dataset.id as DetailGroup); },
 });
 Object.assign(INPUT, {
     'fl-bq': (el) => { FL.bq = el.value; notify(); },
-    'fl-name': (el) => { if (FL.tab === 'details') return; const x: any = R().sketch[FL.tab][Number(el.dataset.i)]; const v = el.value.trim(); if (x && v && v !== x.name) { rename(R().sketch, FL.tab, x.name, v); x.name = v; save(); } },
+    'fl-name': (el) => {
+        if (FL.tab === 'details') return;
+        const v = el.value.trim();
+        if (FL.tab === 'basics') { const b = R().sketch.basics?.[Number(el.dataset.i)]; if (b && v) { b.name = v; save(); } return; }
+        const x: any = R().sketch[FL.tab][Number(el.dataset.i)]; if (x && v && v !== x.name) { rename(R().sketch, FL.tab, x.name, v); x.name = v; save(); }
+    },
 });

@@ -3,6 +3,7 @@
 // everything with rules (ids, maps, pins, homes, ranks, pay, routines) is done here, so the world always loads.
 // This file is pure data work (no SillyTavern calls): the screen in ui/fromlore.ts asks the AI and calls these.
 import type { WorldDef, Place, MapDef, HomeZone, Occupation, ExampleCharacter, FactionDef, LoreEntry } from '../core/world.js';
+import type { SkBasic } from './basics.js';
 
 /* ---------- reading the lorebooks ---------- */
 
@@ -74,7 +75,8 @@ export interface SkTie { to: string; type?: string; tone?: string }
 export interface SkPerson { name: string; aka?: string[]; gender?: string; age?: number; role?: string; job?: string; work?: string; lives?: string; looks?: string; personality?: string; greeting?: string; ties?: SkTie[]; keep?: boolean }
 export interface SkGroup { name: string; kind?: string; hq?: string; desc?: string; ranks?: string[]; allies?: string[]; rivals?: string[]; secret?: boolean; keep?: boolean }
 export interface SkJob { name: string; place?: string; ranks?: string[]; keep?: boolean }
-export interface Sketch { areas: SkArea[]; places: SkPlace[]; people: SkPerson[]; groups: SkGroup[]; jobs: SkJob[] }
+/** `basics`: the everyday places the lorebooks did not mention (sim/basics.ts); none until the AI was asked. */
+export interface Sketch { areas: SkArea[]; places: SkPlace[]; people: SkPerson[]; groups: SkGroup[]; jobs: SkJob[]; basics?: SkBasic[] }
 export const emptySketch = (): Sketch => ({ areas: [], places: [], people: [], groups: [], jobs: [] });
 
 const TIES = ['parent', 'child', 'sibling', 'spouse', 'partner', 'cousin', 'roommate', 'friend', 'bestfriend', 'ally', 'colleague', 'dating', 'rival', 'enemy', 'ex', 'mentor', 'apprentice'];
@@ -216,6 +218,13 @@ export function mapPicture(name: string, kind = 'city'): string {
 export function buildWorld(w: WorldDef, sk: Sketch, sum: Summary, books: string[]): WorldDef {
     const keep = <T extends { keep?: boolean }>(l: T[]) => l.filter(x => x.keep !== false);
     const areas = keep(sk.areas), places = keep(sk.places), people = keep(sk.people), groups = keep(sk.groups), jobs = keep(sk.jobs);
+    // the basics kept: places like the others, with their job
+    for (const b of keep(sk.basics ?? [])) {
+        if (places.some(p => norm(p.name) === norm(b.name))) continue;
+        places.push({ name: b.name, area: b.area, kind: b.kind, desc: b.desc });
+        // the same job in another settlement's basic place is a job of its own (one job is done at one place)
+        if (b.job) jobs.push({ name: jobs.some(j => norm(j.name) === norm(b.job)) ? `${b.job}, ${b.name}` : b.job, place: b.name, ranks: b.ranks });
+    }
     const used = new Set<string>();
     const scale = moneyScale(sum.currency?.perDollar);
 

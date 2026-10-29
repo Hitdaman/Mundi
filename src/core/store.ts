@@ -53,6 +53,8 @@ export interface Settings {
     attached?: AttachedEntry[];
     /** RPG systems you made (from lorebooks, or saved from a world): chosen like the built-in ones */
     rpgSystems?: { id: string; name: string; desc: string; def: any }[];
+    /** mundified copies of lorebooks, by the copy's name (sim/mundifylore.ts) */
+    mundifiedLore?: Record<string, { from: string; at: number; ai: boolean; off: number; rewritten: number }>;
 }
 export interface CastPreset { id: string; name: string; cast: string[]; hh: { members: string[]; ties: { a: string; b: string; type: string; tone: string }[] }[]; rels: { a: string; b: string; type: string; tone: string }[]; approval: Record<string, number> }
 // Favorites and folders for personas and lorebooks (SillyTavern only has them for characters, as folder tags).
