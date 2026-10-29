@@ -70,16 +70,23 @@ export const sheetOf = (w: WorldDef, h: Hero): PersonaSheet => ({ world: w.id, n
 /* ---------- the cast ---------- */
 
 // The world's example characters become real cards (created once, reused by later games).
-async function exampleCards(w: WorldDef): Promise<string[]> {
+export async function exampleCards(w: WorldDef, onEach?: (done: number, of: number) => void): Promise<string[]> {
     const out: string[] = [];
+    const files = new Set(characters().map(c => String(c.avatar ?? '').toLowerCase()));
     let i = 0;
     for (const ex of w.cast.examples) {
+        onEach?.(i, w.cast.examples.length);
         const tag = exampleTag(w, ex);
-        const slugName = ex.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-        const byFile = new RegExp(`^mundi_(?:${[ex.from, w.id].filter(Boolean).map(x => String(x).replace(/[^a-z0-9_-]/gi, '')).join('|')})_${slugName}(?:_?\\d+)?\\.png$`, 'i');
-        const found = characters().find(c => c.data?.extensions?.mundi?.example === tag) ?? characters().find(c => byFile.test(String(c.avatar ?? '')));
+        const slugName = ex.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        // else by its file name, when the card lost its tag (not someone else's card, and not a name with no plain letters)
+        const byFile = slugName ? new RegExp(`^mundi_(?:${[ex.from, w.id].filter(Boolean).map(x => String(x).replace(/[^a-z0-9_-]/gi, '')).join('|')})_${slugName}(?:_?\\d+)?\\.png$`, 'i') : null;
+        const found = characters().find(c => c.data?.extensions?.mundi?.example === tag) ?? (byFile && characters().find(c => byFile.test(String(c.avatar ?? '')) && !c.data?.extensions?.mundi?.example && !out.includes(c.avatar)));
         if (found) { out.push(found.avatar); i++; continue; }
-        const file = `mundi_${w.id}_${ex.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+        // a file of its own: SillyTavern writes over a card with the same file name
+        const base = `mundi_${w.id.replace(/[^a-z0-9_-]/gi, '')}_${slugName || 'person'}`;
+        let file = base;
+        for (let k = 2; files.has(`${file}.png`.toLowerCase()); k++) file = `${base}_${k}`;
+        files.add(`${file}.png`.toLowerCase());
         const avatar = await createCharacter({
             name: ex.name, description: ex.description, first_mes: ex.first_mes ?? '', personality: ex.personality ?? '',
             scenario: w.setting, tags: ['Mundi', w.name], file,
@@ -180,7 +187,7 @@ export async function startNewGame(o: NewGame) {
     if (o.attach && !host) throw new Error('Open a chat first.');
     if (o.attach && game()) throw new Error('This chat already has a world.');
     state.busy = 'Creating the cast'; notify();
-    const cast = [...new Set([...(o.examples ? await exampleCards(w) : []), ...o.cast])];
+    const cast = [...new Set([...(o.examples ? await exampleCards(w, (n, of) => { state.busy = `Creating the cast (${n + 1} of ${of})`; notify(); }) : []), ...o.cast])];
     if (!cast.length) throw new Error('Choose at least one person to live in the world.');
 
     // your character: a persona you already have, or a new one saved to your personas
