@@ -72,7 +72,7 @@ export const AREA_KINDS = ['region', 'city', 'district', 'building'] as const;
 export interface SkArea { name: string; in?: string; kind?: string; desc?: string; keep?: boolean }
 export interface SkPlace { name: string; area?: string; kind?: string; desc?: string; floor?: string; hidden?: boolean; restricted?: string; keep?: boolean }
 export interface SkTie { to: string; type?: string; tone?: string }
-export interface SkPerson { name: string; aka?: string[]; gender?: string; age?: number; role?: string; job?: string; work?: string; lives?: string; looks?: string; personality?: string; greeting?: string; ties?: SkTie[]; keep?: boolean }
+export interface SkPerson { name: string; aka?: string[]; gender?: string; age?: number; role?: string; job?: string; work?: string; lives?: string; looks?: string; clothes?: string; personality?: string; greeting?: string; ties?: SkTie[]; keep?: boolean }
 export interface SkGroup { name: string; kind?: string; hq?: string; desc?: string; ranks?: string[]; allies?: string[]; rivals?: string[]; secret?: boolean; keep?: boolean }
 export interface SkJob { name: string; place?: string; ranks?: string[]; keep?: boolean }
 /** `basics`: the everyday places the lorebooks did not mention (sim/basics.ts); none until the AI was asked. */
@@ -92,7 +92,7 @@ export function sketchPrompt(part: string, known: Sketch, style: string): string
 Read the notes below and reply with ONE JSON object, nothing else (no code fences, no comments):
 {"areas":[{"name":"","in":"the bigger area it is inside, or empty","kind":"region|city|district|building","desc":"one line"}],
  "places":[{"name":"","area":"the area it is in","kind":"${PLACE_KINDS.join('|')}","desc":"one line: what it is and what it looks like","floor":"its floor or wing, when it is part of a building (Floor 3, Basement, East wing), else empty","hidden":false,"restricted":"who may go in, when not everyone may (S-rank hunters only, staff only), else empty"}],
- "people":[{"name":"full name","aka":["other names or titles used for them"],"gender":"man|woman|other","age":30,"role":"what they are in this world, one line","job":"their job title","work":"the place where they work","lives":"the area or place where they live","looks":"appearance, one line","personality":"one line","greeting":"one short line they would say when meeting someone new","ties":[{"to":"another person's full name","type":"${TIES.join('|')}","tone":"${TONES.join('|')}"}]}],
+ "people":[{"name":"full name","aka":["other names or titles used for them"],"gender":"man|woman|other","age":30,"role":"what they are in this world, one line","job":"their job title","work":"the place where they work","lives":"the area or place where they live","looks":"appearance (body, face, hair), one line","clothes":"their style and the clothes they usually wear, plus anything they always wear (a hijab, glasses…); chosen to fit them when the lorebook does not say, one line","personality":"one line","greeting":"one short line they would say when meeting someone new","ties":[{"to":"another person's full name","type":"${TIES.join('|')}","tone":"${TONES.join('|')}"}]}],
  "groups":[{"name":"","kind":"guild|company|government|gang|order|house|school|other","hq":"the place that is its headquarters","desc":"one line","ranks":["lowest rank","…","highest rank"],"allies":["group names"],"rivals":["group names"],"secret":false}],
  "jobs":[{"name":"job title","place":"where it is done","ranks":["lowest","…","highest"]}]}
 
@@ -172,8 +172,8 @@ export function mergeSketch(sk: Sketch, raw: any): Sketch {
     for (const p of Array.isArray(r.people) ? r.people : []) {
         const ties = (Array.isArray(p?.ties) ? p.ties : []).map((t: any) => ({ to: str(t?.to, 80), type: str(t?.type, 20), tone: str(t?.tone, 20) })).filter((t: SkTie) => t.to);
         const age = Number(p?.age);
-        add(sk.people, { name: str(p?.name, 80), aka: strs(p?.aka), gender: str(p?.gender, 20), age: age > 0 && age < 1000 ? Math.round(age) : undefined, role: str(p?.role), job: str(p?.job, 80), work: str(p?.work, 80), lives: str(p?.lives, 80), looks: str(p?.looks), personality: str(p?.personality), greeting: str(p?.greeting, 300), ties },
-            (o, x) => { o.aka = union(o.aka, x.aka); o.gender ||= x.gender; o.age ??= x.age; o.role = longer(o.role, x.role); o.job ||= x.job; o.work ||= x.work; o.lives ||= x.lives; o.looks = longer(o.looks, x.looks); o.personality = longer(o.personality, x.personality); o.greeting ||= x.greeting; for (const t of x.ties ?? []) if (!(o.ties ??= []).some(y => norm(y.to) === norm(t.to))) o.ties.push(t); },
+        add(sk.people, { name: str(p?.name, 80), aka: strs(p?.aka), gender: str(p?.gender, 20), age: age > 0 && age < 1000 ? Math.round(age) : undefined, role: str(p?.role), job: str(p?.job, 80), work: str(p?.work, 80), lives: str(p?.lives, 80), looks: str(p?.looks), clothes: str(p?.clothes), personality: str(p?.personality), greeting: str(p?.greeting, 300), ties },
+            (o, x) => { o.aka = union(o.aka, x.aka); o.gender ||= x.gender; o.age ??= x.age; o.role = longer(o.role, x.role); o.job ||= x.job; o.work ||= x.work; o.lives ||= x.lives; o.looks = longer(o.looks, x.looks); o.clothes = longer(o.clothes, x.clothes); o.personality = longer(o.personality, x.personality); o.greeting ||= x.greeting; for (const t of x.ties ?? []) if (!(o.ties ??= []).some(y => norm(y.to) === norm(t.to))) o.ties.push(t); },
             x => x.aka ?? []);
     }
     for (const g of Array.isArray(r.groups) ? r.groups : []) add(sk.groups, { name: str(g?.name, 80), kind: str(g?.kind, 20), hq: str(g?.hq, 80), desc: str(g?.desc), ranks: strs(g?.ranks), allies: strs(g?.allies), rivals: strs(g?.rivals), secret: g?.secret === true },
@@ -341,7 +341,8 @@ export function buildWorld(w: WorldDef, sk: Sketch, sum: Summary, books: string[
         const home = zoneFor(findMap(p.lives) ?? (o ? maps.find(m => m.id === out.find(x => x.id === o.place)?.map) : undefined) ?? top);
         const r = rng(p.name);
         const fun = [...new Set([0, 1, 2].map(() => leisure[Math.floor(r() * leisure.length)]?.id).filter(Boolean) as string[])];
-        const desc = [`{{char}} is ${p.name}${p.age ? `, ${p.age}` : ''}${p.role ? `, ${p.role.replace(/\.$/, '')}` : ''}.`, p.looks, p.personality].filter(Boolean).map(s => s!.charAt(0).toUpperCase() + s!.slice(1)).map(s => /[.!?]$/.test(s) ? s : `${s}.`).join(' ');
+        const desc = [`{{char}} is ${p.name}${p.age ? `, ${p.age}` : ''}${p.role ? `, ${p.role.replace(/\.$/, '')}` : ''}.`, p.looks, p.personality].filter(Boolean).map(s => s!.charAt(0).toUpperCase() + s!.slice(1)).map(s => /[.!?]$/.test(s) ? s : `${s}.`).join(' ')
+            + (p.clothes ? `\n\nClothing and style:\n${p.clothes.charAt(0).toUpperCase()}${p.clothes.slice(1)}${/[.!?]$/.test(p.clothes) ? '' : '.'}` : '');
         const ex: ExampleCharacter = { name: p.name, age: p.age ?? 30, occupation: o?.id ?? null, home: home.id, routine: routineFor(o), leisure: fun, description: desc, first_mes: p.greeting ? `*${p.name} looks up.* ${p.greeting}` : '' };
         if (p.personality) ex.personality = p.personality;
         return ex;
