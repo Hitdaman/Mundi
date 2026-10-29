@@ -28,6 +28,22 @@ async function storyPlaces() {
         const { state, notify } = await import('./core/store.js'); if (state.open) notify();
     } catch { /* the judge is offline: the places stay as they are */ }
 }
+// After a reply: did anyone in the scene change clothes, or get wet, muddy, hurt…? (sim/looks.ts)
+async function storyLooks() {
+    const { game, saveGame, state, notify } = await import('./core/store.js');
+    const { getWorld } = await import('./core/world.js');
+    const g = game(); const w = g && getWorld(g.world);
+    if (!g || !w) return;
+    try {
+        const { outfitsOf } = await import('./ui/outfits.js');
+        if (!await (await import('./sim/looks.js')).storyLooks(g, w, a => outfitsOf(a) ?? []) || game() !== g) return;
+        saveGame();
+        await (await import('./sim/game.js')).syncScene();   // the new look goes on (or is drawn)
+        if (state.open) notify();
+    } catch { /* the AI is offline: the looks stay as they are */ }
+}
+// The checks after a reply ask the AI one at a time (their own calls end a generation too, and queue behind).
+let afterReply: Promise<void> = Promise.resolve();
 function emptyReply() {
     if (!state.open) return;
     const list = chat(); const m = list.at(-1);
@@ -105,7 +121,7 @@ function follow() {
         }
         redraw();
     };
-    on('GENERATION_ENDED', () => { emptyReply(); done(); void import('./ui/relui.js').then(m => m.checkAsk()); void import('./ui/events.js').then(m => m.checkEventEnd()); void storyPlaces(); });
+    on('GENERATION_ENDED', () => { emptyReply(); done(); void import('./ui/relui.js').then(m => m.checkAsk()); void import('./ui/events.js').then(m => m.checkEventEnd()); afterReply = afterReply.then(storyPlaces).then(storyLooks).catch(() => {}); });
     on('GENERATION_STOPPED', done);
     on('GROUP_WRAPPER_FINISHED', done);
     on('STREAM_TOKEN_RECEIVED', () => { if (state.open && state.view === 'scene') patchLastLine(); });
