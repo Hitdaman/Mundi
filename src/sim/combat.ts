@@ -10,7 +10,9 @@ import { lex } from '../core/lexicon.js';
 import { esc, type Save } from '../core/store.js';
 import { getWorld, type WorldDef } from '../core/world.js';
 import { rpgOf, roleAttr, type Ability, type Foe, type RpgClass, type Weapon, type Element } from '../core/rpgdef.js';
-import { talentSum, isRpg, sheetOf, classOf, mod, prof, attr, hpMax, changeHp, addXp, addRenown, count, rollCheck, checkWon, weaponOf, type Sheet } from './rpg.js';
+import { talentSum, isRpg, sheetOf, classOf, mod, prof, attr, hpMax, changeHp, addXp, addRenown, count, rollCheck, checkWon, weaponOf, mortalOn, type Sheet } from './rpg.js';
+import { penaltyOf, isDown } from './wounds.js';
+import { afterBattle, merciless, deathOf } from './mortal.js';
 import { partyOf, memberName, memberKey, dismissMerc, type Member, type Row } from './party.js';
 import { bondOf, isPartner, bump } from './social.js';
 import { note } from './facts.js';
@@ -33,6 +35,8 @@ export interface Fighter {
     row: Row; hp: number; max: number; ac: number; atk: number; dice: number; sides: number; dmg: number; ranged: boolean;
     weapon: string; init: number; heavy?: boolean; ability?: Ability; used?: boolean;
     defend?: boolean; guarded?: boolean; riposted?: boolean; shield?: number; hidden?: boolean; inspired?: number; rage?: number; down?: boolean;
+    /** death is real: down at 0 is dead (down above it is unconscious) */
+    dead?: boolean;
     level: number; tags?: string[];
     /** afflictions with the turns left (poison, burn, blind, silence, curse, slow); an element; soaked this round */
     effects?: Record<string, number>; element?: Element; inflict?: Foe['inflict']; wet?: number; wetBy?: string; ticked?: number; icon?: string;
@@ -44,6 +48,8 @@ export interface Combat {
     over?: 'won' | 'lost' | 'fled'; summary?: string; msgs?: string[];
     /** what happened, one line at a time, with everyone's hit points right after it (the screen plays them back) */
     frames?: Frame[]; fn?: number;
+    /** the places it happens (road, wild, town…), and whether death is real in it */
+    tags?: string[]; mortal?: boolean;
 }
 export interface Frame { n: number; text: string; hp: Record<string, number> }
 function snap(c: Combat, lines: string[]) {
@@ -140,7 +146,7 @@ export function startCombat(g: Save, w: WorldDef, o: StartOpts): Combat | null {
     const total: Record<string, number> = {};
     foes.forEach(f => (total[f.id] = (total[f.id] ?? 0) + 1));
     const them = foes.map(f => { seen[f.id] = (seen[f.id] ?? 0) + 1; return foeFighter(f, total[f.id] > 1 ? seen[f.id] : 1); });
-    const c: Combat = { id: `fight${g.day}_${g.minutes}`, where: o.where ?? g.player.loc, why: o.why, quest: o.quest, list: [...us, ...them], order: [], turn: 0, round: 1, log: [], hits: {} };
+    const c: Combat = { id: `fight${g.day}_${g.minutes}`, where: o.where ?? g.player.loc, why: o.why, quest: o.quest, list: [...us, ...them], order: [], turn: 0, round: 1, log: [], hits: {}, ...(o.tags ? { tags: o.tags } : {}), ...(mortalOn(g, w) ? { mortal: true } : {}) };
     // initiative: d20 + quickness (+2 for everyone on your side if a bard-like inspirer is with you)
     const quick = us.some(f => f.ability?.kind === 'inspire') ? 2 : 0;
     const ini = new Map(c.list.map(f => [f.id, d20() + f.init + (f.side === 'us' ? quick : 0)]));
@@ -187,7 +193,7 @@ function hit(g: Save, c: Combat, a: Fighter, target: Fighter, react = true, spel
     const melee = !spell && !a.ranged;
     if (melee && a.row === 'back') { a.row = 'front'; out.push(`${a.name} ${V(a, 'steps', 'step')} forward.`); }
     const r1 = d20(), r2 = a.hidden ? d20() : 0, die = Math.max(r1, r2);
-    let bonus = a.atk + (a.inspired ?? 0) - (a.effects?.blind ? 4 : 0) - (a.effects?.curse ? 2 : 0);
+    let bonus = a.atk + (a.inspired ?? 0) - (a.effects?.blind ? 4 : 0) - (a.effects?.curse ? 2 : 0) - (c.mortal ? penaltyOf(a.hp, a.max) : 0);   // wounds slow everyone down
     const mates = c.hits[t.id] ?? [];
     const together = a.side === 'us' && mates.some(id => id !== a.id && bonded(g, a, F(c, id)));
     if (together) bonus += 1;
@@ -224,18 +230,31 @@ function hit(g: Save, c: Combat, a: Fighter, target: Fighter, react = true, spel
     a.hidden = false;
     if (combo) {   // the lightning arcs through the water to every other foe
         out.push(`⚡ Elemental combo! The lightning arcs through the water.`);
-        for (const o of standing(c, t.side).filter(x => x.id !== t.id)) { const d = Math.max(1, Math.floor(dmg / 4)); o.hp = Math.max(0, o.hp - d); out.push(`${o.name} is struck for ${d}.`); if (o.hp <= 0) { o.down = true; out.push(o.who === 'foe' ? `💀 ${o.name} falls.` : `${o.name} is down!`); } }
+        for (const o of standing(c, t.side).filter(x => x.id !== t.id)) { const d = Math.max(1, Math.floor(dmg / 4)); o.hp = Math.max(0, o.hp - d); out.push(`${o.name} is struck for ${d}.`); fall(c, o, out); }
     }
     // a bite, a hex, a burn: an affliction that lasts a few turns
     if (a.inflict && t.hp > 0 && Math.random() < a.inflict.chance) { (t.effects ??= {})[a.inflict.kind] = a.inflict.turns; out.push(`${t.name} ${V(t, 'is', 'are')} ${DEBUFF_WORD[a.inflict.kind] ?? a.inflict.kind}!`); }
-    if (t.hp <= 0) { t.down = true; out.push(t.who === 'foe' ? `💀 ${t.name} falls.` : t.who === 'merc' ? `💀 ${t.name} falls and does not get up.` : `${t.name} ${V(t, 'is', 'are')} down!`); }
+    fall(c, t, out);
     return out;
 }
+// Someone at 0 (or, when death is real, under a tenth of their hit points) is out of the fight: unconscious, or dead.
+function fall(c: Combat, t: Fighter, out: string[]) {
+    if (c.mortal) {
+        if (t.hp <= 0 && !t.dead) { t.down = true; t.dead = true; out.push(t.who === 'you' ? '💀 You fall, and do not breathe.' : `💀 ${t.name} ${t.who === 'foe' ? 'is dead' : 'falls and lies still'}.`); }
+        else if (!t.down && isDown(t.hp, t.max)) { t.down = true; out.push(t.who === 'you' ? 'You black out.' : `${t.name} collapses, unconscious.`); }
+        return;
+    }
+    if (t.hp <= 0 && !t.down) { t.down = true; out.push(t.who === 'foe' ? `💀 ${t.name} falls.` : t.who === 'merc' ? `💀 ${t.name} falls and does not get up.` : `${t.name} ${V(t, 'is', 'are')} down!`); }
+}
+// When death is real, a healer can bring an unconscious ally back on their feet (never the dead).
+export const healable = (c: Combat, side: Side) => c.list.filter(f => f.side === side && (c.mortal ? !f.dead : !f.down));
 function heal(c: Combat, a: Fighter, pct: number, who?: Fighter): string[] {
-    const t = who ?? [...standing(c, a.side)].sort((x, y) => x.hp / x.max - y.hp / y.max)[0] ?? a;
+    const t = who ?? [...healable(c, a.side)].sort((x, y) => x.hp / x.max - y.hp / y.max)[0] ?? a;
     const n = Math.max(1, Math.round(t.max * pct / 100));
     t.hp = Math.min(t.max, t.hp + n);
-    return [`💚 ${a.name} ${V(a, 'heals', 'heal')} ${t.id === a.id ? V(a, 'themself', 'yourself') : t.name} for ${n}.`];
+    const out = [`💚 ${a.name} ${V(a, 'heals', 'heal')} ${t.id === a.id ? V(a, 'themself', 'yourself') : t.name} for ${n}.`];
+    if (t.down && !t.dead && !isDown(t.hp, t.max)) { t.down = false; out.push(t.who === 'you' ? 'You come to.' : `${t.name} comes to and gets back up.`); }
+    return out;
 }
 function useAbility(c: Combat, a: Fighter, target?: Fighter): string[] {
     const ab = a.ability; if (!ab || a.used) return [];
@@ -257,7 +276,7 @@ function useAbility(c: Combat, a: Fighter, target?: Fighter): string[] {
 function auto(g: Save, c: Combat, a: Fighter): string[] {
     if (a.side === 'us' && a.ability && !a.used) {
         const k = a.ability.kind;
-        const hurt = standing(c, 'us').some(f => f.hp / f.max <= 0.4);
+        const hurt = standing(c, 'us').some(f => f.hp / f.max <= 0.4) || (!!c.mortal && healable(c, 'us').some(f => f.down));
         const back = standing(c, 'us').some(f => f.row === 'back' && f.id !== a.id);
         if ((k === 'heal' && hurt) || (k === 'guard' && a.row === 'front' && back) || k === 'mark' || k === 'inspire' || k === 'hide' || k === 'rage' || (k === 'shield' && a.hp / a.max <= 0.6))
             return useAbility(c, a);
@@ -287,7 +306,7 @@ function tick(c: Combat, f: Fighter): { lines: string[]; skip: boolean } {
     f.ticked = c.round;
     for (const [k, n] of Object.entries(f.effects)) {
         if (n <= 0) { delete f.effects[k]; continue; }
-        if (k === 'poison' || k === 'burn') { const d = roll(1, k === 'burn' ? 6 : 4); f.hp = Math.max(0, f.hp - d); lines.push(`${k === 'burn' ? '🔥' : '🤢'} ${f.name} ${V(f, 'takes', 'take')} ${d} from ${k === 'burn' ? 'the burns' : 'the poison'}.`); if (f.hp <= 0) { f.down = true; lines.push(f.who === 'foe' ? `💀 ${f.name} falls.` : `${f.name} ${V(f, 'is', 'are')} down!`); } }
+        if (k === 'poison' || k === 'burn') { const d = roll(1, k === 'burn' ? 6 : 4); f.hp = Math.max(0, f.hp - d); lines.push(`${k === 'burn' ? '🔥' : '🤢'} ${f.name} ${V(f, 'takes', 'take')} ${d} from ${k === 'burn' ? 'the burns' : 'the poison'}.`); fall(c, f, lines); }
         if (k === 'slow' && Math.random() < 0.5) { skip = true; lines.push(`${f.name} ${V(f, 'is', 'are')} too sluggish to act.`); }
         f.effects[k] = n - 1; if (f.effects[k] <= 0) delete f.effects[k];
     }
@@ -361,7 +380,7 @@ function castIn(g: Save, w: WorldDef, c: Combat, me: Fighter, id: string, target
     if (fail) return [fail];
     const key = classOf(w, s)?.key ?? 'int'; const m = mod(attr(s, key));
     if (sp.effect.kind === 'heal') {
-        const t = target ? c.list.find(f => f.id === target && f.side === 'us' && !f.down) : undefined;
+        const t = target ? healable(c, 'us').find(f => f.id === target) : undefined;
         return [lex(w, 'youCast', sp.name), ...heal(c, me, sp.effect.amount ?? 20, t)];
     }
     if (sp.combat === 'shield' || (!sp.combat && sp.school === 'abjuration')) {
@@ -383,8 +402,11 @@ function finish(g: Save, w: WorldDef, how?: 'fled'): string[] {
     const c = combatOf(g)!; const s = sheetOf(g)!;
     if (c.over) return [];
     c.over = how ?? (standing(c, 'us').length ? 'won' : 'lost');
+    const mortal = !!c.mortal && mortalOn(g, w);
+    // the save a moment before (and before this fight was decided), kept if you die
+    const pre = mortal && c.list.some(f => f.side === 'us' && f.down) ? (() => { const x = structuredClone(g) as any; delete x.combat; return x as Save; })() : null;
     let warded = false;
-    if (c.over === 'lost' && faithOf(g).ward) { faithOf(g).ward = false; warded = true; c.over = 'fled'; F(c, 'you').hp = Math.max(1, F(c, 'you').hp); }   // a god's ward turns a defeat aside
+    if (!mortal && c.over === 'lost' && faithOf(g).ward) { faithOf(g).ward = false; warded = true; c.over = 'fled'; F(c, 'you').hp = Math.max(1, F(c, 'you').hp); }   // a god's ward turns a defeat aside
     const out: string[] = [];
     const msgs: string[] = [];
     const me = F(c, 'you');
@@ -392,6 +414,7 @@ function finish(g: Save, w: WorldDef, how?: 'fled'): string[] {
     const party = partyOf(g);
     // wounds carry over: your hit points, your companions'; fallen sellswords are gone
     for (const f of c.list.filter(x => x.side === 'us' && x.who !== 'you')) {
+        if (mortal) { if (f.who === 'friend' && c.over === 'won' && !f.dead) bump(g, f.ref, 3); continue; }   // the wounded and the dead: afterBattle
         if (f.who === 'merc' && f.down) { dismissMerc(g, f.ref); msgs.push(`${f.name} died in the fight.`); note(g, '{0} died fighting at {u}\'s side.', [f.name], [], g.player.loc, 'event'); continue; }
         const m = party.members.find(x => memberKey(x) === f.ref);
         if (m) m.hp = Math.max(1, f.hp);
@@ -399,7 +422,7 @@ function finish(g: Save, w: WorldDef, how?: 'fled'): string[] {
     }
     const friends = c.list.filter(f => f.who === 'friend').map(f => f.ref);
     if (c.over === 'won') {
-        changeHp(g, w, Math.max(1, me.hp) - s.hp);
+        if (!mortal) changeHp(g, w, Math.max(1, me.hp) - s.hp);
         const xp = Math.round(foes.reduce((a, f) => a + 25 * f.level, 0) * xpMul(w));
         const coins = foes.filter(f => (f.tags ?? []).some(t => t === 'road' || t === 'town')).reduce((a, f) => a + f.level * (3 + Math.floor(Math.random() * 8)), 0);
         if (coins) { g.player.money += coins; book(g, 'Spoils of a fight', coins); }
@@ -409,22 +432,24 @@ function finish(g: Save, w: WorldDef, how?: 'fled'): string[] {
         note(g, '{u} won a fight against {0}.', [foes.map(f => f.name).join(', ')], friends, g.player.loc, 'event');
         c.summary = `{{user}}'s side won the fight against ${foes.map(f => f.name).join(', ')}${friends.length ? ` (with ${friends.map(a => g.cast[a]?.name).join(', ')})` : ''}. ${me.down ? '{{user}} was knocked down but is back on their feet, badly hurt.' : me.hp < me.max / 3 ? '{{user}} is badly hurt.' : ''}`.trim();
     } else if (c.over === 'fled') {
-        changeHp(g, w, Math.max(1, me.hp) - s.hp);
+        if (!mortal) changeHp(g, w, Math.max(1, me.hp) - s.hp);
         note(g, '{u} fled from a fight with {0}.', [foes.map(f => f.name).join(', ')], friends, g.player.loc, 'event');
         c.summary = warded ? `{{user}} was about to fall against ${foes.map(f => f.name).join(', ')}, but a divine ward turned the blow aside and {{user}} escaped.` : `{{user}} fled from a fight with ${foes.map(f => f.name).join(', ')}.`;
         if (warded) msgs.push('A divine ward saved you from defeat!');
     } else {
-        changeHp(g, w, -s.hp);
+        if (!mortal) changeHp(g, w, -s.hp);
         const lose = Math.round(g.player.money * 0.15);
-        if (lose > 0 && foes.some(f => (f.tags ?? []).includes('road') || (f.tags ?? []).includes('town'))) { g.player.money -= lose; book(g, 'Robbed after a lost fight', -lose); msgs.push('They took some of your coins.'); }
+        if (lose > 0 && !(mortal && merciless(w, c)) && foes.some(f => (f.tags ?? []).includes('road') || (f.tags ?? []).includes('town'))) { g.player.money -= lose; book(g, 'Robbed after a lost fight', -lose); msgs.push('They took some of your coins.'); }
         out.push('☠️ Defeat. Everything goes dark…');
         note(g, '{u} was beaten in a fight by {0}.', [foes.map(f => f.name).join(', ')], friends, g.player.loc, 'event');
-        c.summary = `{{user}} lost the fight against ${foes.map(f => f.name).join(', ')} and was knocked out.`;
-        msgs.push(...advance(g, w, 30));   // the world's "at zero" rule (the healer) takes over
+        c.summary = `{{user}} lost the fight against ${foes.map(f => f.name).join(', ')}${mortal ? '.' : ' and was knocked out.'}`;
+        if (!mortal) msgs.push(...advance(g, w, 30));   // the world's "at zero" rule (the healer) takes over
     }
+    // death is real: who died, who bleeds, who gets them through (time may pass, you may wake up elsewhere)
+    if (mortal) { const a = afterBattle(g, w, c, pre); msgs.push(...a.lines); if (a.summary) c.summary = `${c.summary} ${a.summary}`.trim(); }
     // afflictions that outlast the fight, and injuries from going down
-    for (const [k, n] of Object.entries(me.effects ?? {})) if (n > 0) carryDebuff(g, w, k, n);
-    if (me.down || c.over === 'lost') { const m = injure(g, w, c.where); if (m) msgs.push(m); }
+    if (!deathOf(g)) for (const [k, n] of Object.entries(me.effects ?? {})) if (n > 0) carryDebuff(g, w, k, n);
+    if (!deathOf(g) && (me.down || c.over === 'lost')) { const m = injure(g, w, c.where); if (m) msgs.push(m); }
     for (const f of afterFight) msgs.push(...f(g, w, c));
     c.msgs = msgs;
     return out;
