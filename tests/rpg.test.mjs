@@ -73,8 +73,11 @@ const modern = world(ext, 'modern'); W.registerWorld(modern);
     const g = rpgSave('bard');
     WS.regionState(g, w, 'aurenfort').tension = 70;
     let q = null;
-    for (let d = 0; d < 20 && !q; d++) { time.advance(g, w, 1440); q = Q.quests(g).find(x => x.state === 'offered'); }
-    ok(!!q, `the world makes quests (${q?.title})`);
+    for (let d = 0; d < 3; d++) day(g);
+    ok(!Q.offeredQuests(g).length, 'quests do not turn up by themselves: they are found');
+    // what a board in town has on it (the world's state makes the requests)
+    for (let d = 0; d < 20 && !q; d++) { day(g); const f = Q.worldQuest(g, w, { how: 'board', place: g.player.loc, here: [] }); if (f) q = Q.offer(g, f); }
+    ok(!!q, `the world makes quests to be found (${q?.title})`);
     ok(/accepted/.test(Q.acceptQuest(g, q.id)) && Q.activeQuests(g).length === 1, 'accepting one');
     let guard = 0;
     while (q.state === 'active' && guard++ < 30) { g.player.loc = q.steps[q.step].place; const r = Q.doStep(g, w, q.id); if (r?.fight) { C.combatOf(g).list.filter(f => f.side === 'them').forEach(f => (f.hp = 1)); C.chooseMode(g, w, 'quick'); C.closeCombat(g); } if (r && /tomorrow/.test(r.text)) g.day++; }
