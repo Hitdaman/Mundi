@@ -27,7 +27,19 @@ import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
 
 type Mode = 'off' | 'ask' | 'auto';
-interface Sheet { name: string; appearance: string; outfits: { name: string; tags: string }[]; seed: number; drawn?: number; avatarSet?: boolean }
+interface Sheet {
+    name: string; appearance: string; outfits: { name: string; tags: string }[]; seed: number; drawn?: number; avatarSet?: boolean;
+    /** what they always wear, whatever the outfit (a hijab, glasses, a necklace…): tags, '' for nothing; unset: not asked yet */
+    keeps?: string;
+}
+// An outfit's tags with what they always wear (the ones it does not have already).
+export function withKeeps(tags: string, keeps = ''): string {
+    const norm = (t: string) => t.trim().toLowerCase().replace(/[\s_]+/g, ' ');
+    const have = new Set(tags.split(',').map(norm));
+    const add = keeps.split(',').map(t => t.trim()).filter(t => t && !have.has(norm(t)));
+    return add.length ? [tags.trim(), ...add].filter(Boolean).join(', ') : tags;
+}
+const noneish = (v: string) => /^(none|nothing|n\/a|-)?\.?$/i.test(v.trim());
 interface Prefs {
     mode: Mode; workflow: string; url: string; outfits: string[] | null; off: string[]; avatar: boolean; sheets: Record<string, Sheet>;
     /** which expressions: the workflow's own, all of SillyTavern's, or a list of labels */
@@ -185,7 +197,7 @@ function job(base: Graph, p: Parts, sheet: Sheet, outfit: number, label: string,
     const slot = p.outfits[0];
     const o = sheet.outfits[outfit];
     if (slot && o) {
-        g[slot.id].inputs.value = `${o.name}: ${o.tags}${cond && !p.state ? `, ${cond}` : ''}`;
+        g[slot.id].inputs.value = `${o.name}: ${withKeeps(o.tags, sheet.keeps)}${cond && !p.state ? `, ${cond}` : ''}`;
         if (p.list) { const l = g[p.list]; for (const k of Object.keys(l.inputs)) if (isLink(l.inputs[k])) delete l.inputs[k]; l.inputs.value1 = [slot.id, 0]; }
     }
     if (p.state) g[p.state].inputs.value = cond;
@@ -207,7 +219,7 @@ function cgJob(base: Graph, p: Parts, sheet: Sheet, pos: number): { graph: Graph
     for (const id of p.appearance) g[id].inputs.value = sheet.appearance;
     if (p.seed) g[p.seed].inputs.seed = sheet.seed;
     const slot = p.outfits[0], o = sheet.outfits[0];
-    if (slot && o) g[slot.id].inputs.value = `${o.name}: ${o.tags}`;
+    if (slot && o) g[slot.id].inputs.value = `${o.name}: ${withKeeps(o.tags, sheet.keeps)}`;
     const one = cg.positions[pos];
     if (cg.list) { const l = g[cg.list]; for (const k of Object.keys(l.inputs)) if (isLink(l.inputs[k])) delete l.inputs[k]; l.inputs.value1 = [one.id, 0]; }
     if (cg.prefix) { const f = g[cg.prefix].inputs; const key = Object.keys(f).find(k => typeof f[k] === 'string'); if (key) f[key] = `Mundi/${sheet.name.replace(/[^\p{L}\p{N}_-]+/gu, '_')}/cg/`; }
@@ -273,13 +285,32 @@ ${card || name}
 Answer with exactly these lines and nothing else:
 appearance: <the subject count tag first (1girl, 1boy…), then age, body, skin, face, eyes, hair: only what does not change with clothes>
 ${slots.map(o => `${o.name}: <what ${name} wears for "${o.name}"${o.tags ? `, in the spirit of: ${o.tags.split(',').slice(0, 8).join(',')}` : ''}>`).join('\n')}
+always: <what ${name} wears whatever the outfit, if the card says so: a hijab or other religious headwear, glasses, a necklace or keepsake they never take off, a prosthetic… or none>
 
-Comma-separated tags only, no sentences. Take every detail the card gives; invent the rest so it fits the character.`;
+Comma-separated tags only, no sentences. Take every detail the card gives; invent the rest so it fits the character. What is in "always" is part of every outfit too.`;
     const raw = await quiet(prompt, 600);
     const lines = new Map(raw.split('\n').map(l => l.match(/^\s*[-*]?\s*([^:\n]+?)\s*:\s*(.+)$/)).filter(Boolean).map(m => [m![1].toLowerCase(), m![2].trim()]));
     const appearance = lines.get('appearance') ?? '';
     if (!appearance) throw new Error(`The AI did not describe ${name}.`);
-    return { name, appearance, outfits: slots.map(o => ({ name: o.name, tags: lines.get(o.name.toLowerCase()) ?? o.tags })), seed: newSeed() };
+    const always = lines.get('always') ?? '';
+    return { name, appearance, outfits: slots.map(o => ({ name: o.name, tags: lines.get(o.name.toLowerCase()) ?? o.tags })), seed: newSeed(), keeps: !lines.has('always') ? undefined : noneish(always) ? '' : always.slice(0, 300) };
+}
+// A look written before "always wears" existed: asked once, from the card and the usual clothes.
+async function writeKeeps(k: string, sheet: Sheet): Promise<void> {
+    if (sheet.keeps !== undefined) return;
+    const name = nameOf(k);
+    const card = (await cardText(k)).slice(0, 3000);
+    const raw = await quiet(`What does ${name} always wear, whatever the outfit? For example a hijab or other religious headwear, glasses, a necklace or keepsake they never take off, a prosthetic. Only what the card says.
+
+<character>
+${card || name}
+</character>
+Their usual clothes: ${sheet.outfits[0]?.tags ?? ''}
+
+Answer with one line of comma-separated Danbooru tags, or: none`, 120);
+    const line = raw.split('\n').map(l => l.replace(/^\s*[-*]?\s*(always[^:]*:)?\s*/i, '').trim()).find(Boolean) ?? '';
+    sheet.keeps = noneish(line) ? '' : line.slice(0, 300);
+    saveSettings();
 }
 const newSeed = () => Math.floor(Math.random() * 2 ** 31);
 // A new outfit for a look (the story put on a kimono, a rule wants a swimsuit): the AI writes only the clothes.
@@ -292,7 +323,8 @@ async function writeOutfit(k: string, sheet: Sheet, outfit: string): Promise<str
 ${card || name}
 </character>
 Their body and face (do not repeat these): ${sheet.appearance}
-Their usual clothes: ${sheet.outfits[0]?.tags ?? ''}
+Their usual clothes: ${sheet.outfits[0]?.tags ?? ''}${sheet.keeps ? `
+They always wear, whatever the outfit: ${sheet.keeps}. Keep these in it, and make the outfit go with them (modest swimwear with a hijab, say).` : ''}
 
 Answer with one line of comma-separated tags for the clothes only (garments, colors, shoes, accessories), in their style, nothing about the body or face, no sentences.`, 200);
     const line = raw.split('\n').map(l => l.replace(/^\s*[-*]?\s*([^:,\n]{1,30}:)?\s*/, '').trim()).find(l => l.includes(',') || l.length > 3) ?? '';
@@ -383,6 +415,7 @@ async function draw(o: Order): Promise<number> {
     const prefs = sprPrefs();
     const sheet = prefs.sheets[o.who] ??= await writeSheet(o.who, p);
     saveSettings();
+    await writeKeeps(o.who, sheet).catch(() => {});   // asked once; drawing goes on without it
     if (o.lookOnly) return 0;
     if (o.variant) return drawVariant(o, o.variant, base, p, sheet);
     if (o.cg === 'only') return drawCg(o, base, p, sheet);
@@ -547,6 +580,7 @@ export function spriteLookHtml(k: string, outfit: string): string {
         <div class="mu-row">${b('spr-draw-all', 'Draw all', 'mu-primary')}${b('spr-look', 'Only write the look', 'mu-ghost')}</div>${state1}</section>`;
     return `<section class="mu-sprlook"><h4>Draw with ComfyUI</h4>
         <label class="mu-field"><span>Appearance</span><textarea rows="3" data-input="spr-sheet" data-who="${esc(k)}" data-k="appearance">${esc(s.appearance)}</textarea></label>
+        <label class="mu-field"><span>Always wears, whatever the outfit (a hijab, glasses, a necklace…)</span><input type="text" data-input="spr-sheet" data-who="${esc(k)}" data-k="keeps" value="${esc(s.keeps ?? '')}" placeholder="${s.keeps === undefined ? 'Asked from the card the next time they are drawn' : 'Nothing'}"></label>
         ${oi >= 0 && s.outfits[oi] ? `<label class="mu-field"><span>Outfit: <span data-notr>${esc(s.outfits[oi].name)}</span></span><textarea rows="2" data-input="spr-sheet" data-who="${esc(k)}" data-k="${oi}">${esc(s.outfits[oi].tags)}</textarea></label>`
             : `<p class="mu-muted">The look has no outfit called “${esc(outfit)}”: these pictures can be uploaded, not drawn.</p>`}
         <div class="mu-row">
@@ -726,7 +760,7 @@ Object.assign(INPUT, {
     'spr-sheet': (el) => {
         const s = sprPrefs().sheets[el.dataset.who!]; if (!s) return;
         const k = el.dataset.k!;
-        if (k === 'appearance') s.appearance = el.value.trim(); else if (s.outfits[Number(k)]) s.outfits[Number(k)].tags = el.value.trim();
+        if (k === 'appearance') s.appearance = el.value.trim(); else if (k === 'keeps') s.keeps = el.value.trim(); else if (s.outfits[Number(k)]) s.outfits[Number(k)].tags = el.value.trim();
         saveSettings();
     },
 });
