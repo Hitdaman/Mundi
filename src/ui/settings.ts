@@ -13,6 +13,7 @@ import { feedPrefs } from '../sim/feed.js';
 import { setSkin } from './skins.js';
 import { addonsTab } from './addons.js';
 import { spritesSettingsHtml } from './spritegen.js';
+import { lorasSettingsHtml } from './loras.js';
 import { peopleSettingsHtml } from './storypeople.js';
 import { lookPanelHtml, lookConfirmHtml } from './chatlook.js';
 import { DATE_FORMATS, fmtDate, fmtDateTime, fmtClock } from '../core/fmt.js';
@@ -96,7 +97,7 @@ export function settingsHtml() {
     const tab = state.settingsTab;
     if (!TABS.some(t => t[0] === tab) && !ST_TABS.includes(tab)) state.settingsTab = 'game';
     const native = ST_TABS.includes(state.settingsTab);
-    const body = native ? nativeHost(state.settingsTab) : state.settingsTab === 'sound' ? tabSound() : state.settingsTab === 'game' ? tutorialSettingsHtml() + tabGame() : state.settingsTab === 'addons' ? addonsTab() + spritesSettingsHtml() : state.settingsTab === 'aitest' ? aiTestHtml() : tabInterface();
+    const body = native ? nativeHost(state.settingsTab) : state.settingsTab === 'sound' ? tabSound() : state.settingsTab === 'game' ? tutorialSettingsHtml() + tabGame() : state.settingsTab === 'addons' ? addonsTab() + spritesSettingsHtml() + lorasSettingsHtml() : state.settingsTab === 'aitest' ? aiTestHtml() : tabInterface();
     return `<div class="mu-settings">
         <div class="mu-subhead"><button data-act="settings-back" data-sfx="back">← Back</button><h2>Settings</h2></div>
         ${warningsBanner()}
