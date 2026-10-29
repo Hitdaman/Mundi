@@ -219,14 +219,15 @@ async function readParts(which: number[]) {
 }
 // One part: asked twice; if both answers cannot be read, or the answer was cut off (a part full of people can run out
 // of room), its two halves are asked one at a time.
-async function readPart(text: string, halves = true): Promise<any[]> {
-    const ask = (t: string, extra = '') => quiet(`${sketchPrompt(t, R().sketch, styleName(R().style))}${extra}`, 3000).then(parseJson);
+// `run`: the reading it belongs to (the real-AI tests pass their own).
+export async function readPart(text: string, halves = true, run: { sketch: Sketch; style: string } = R()): Promise<any[]> {
+    const ask = (t: string, extra = '') => quiet(`${sketchPrompt(t, run.sketch, styleName(run.style))}${extra}`, 3000).then(parseJson);
     const inHalves = async (first: any[], why: unknown) => {
         const cut = halfAt(text);
         if (!halves || !cut) { if (first.length) return first; throw why; }
         console.warn('[Mundi] from lorebooks: reading a part in two halves', why);
         const out = [...first];
-        for (const t of cut) { try { out.push(...await readPart(t, false)); } catch (e3) { console.warn('[Mundi] from lorebooks, half a part', e3); } }
+        for (const t of cut) { try { out.push(...await readPart(t, false, run)); } catch (e3) { console.warn('[Mundi] from lorebooks, half a part', e3); } }
         if (!out.length) throw why;
         return out;
     };
@@ -288,13 +289,13 @@ async function build() {
 /* ---------- the other tabs: the world details ---------- */
 
 /** Asks the AI for one group of tabs of the world `w` (built already, so the AI uses its names). */
-async function askDetail(w: WorldDef, g: DetailGroup, items: LoreItem[], books: string[]): Promise<any> {
+export async function askDetail(w: WorldDef, g: DetailGroup, items: LoreItem[], books: string[]): Promise<any> {
     if (g === 'rpg') return (await systemFromLore(books, `for the world "${w.name}"`)).def;
     const prompt = detailPrompt(g, w, detailLore(items, g));
     try { return parseJson(await quiet(prompt, 3500)); }
     catch (e: any) { return parseJson(await quiet(`${prompt}\n\nYour last answer could not be read (${String(e?.message ?? e)}). Reply with the JSON object only.`, 3500)); }
 }
-function putDetail(w: WorldDef, g: DetailGroup, got: any): string {
+export function putDetail(w: WorldDef, g: DetailGroup, got: any): string {
     if (g !== 'rpg') return applyDetail(w, g, got);
     if (!got?.classes?.length) return '';
     w.rpg = structuredClone(got);
