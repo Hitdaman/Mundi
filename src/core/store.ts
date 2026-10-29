@@ -26,6 +26,9 @@ export const onPhone = () => !!document.getElementById(ROOT_ID)?.dataset.mobile;
 export interface UiPrefs {
     theme: 'dark'; scale: number; sceneText: number;
     sound: boolean; volume: number; music: boolean; musicVolume: number;
+    /** weather sounds (the rain), apart from the interface sounds */ weatherSound: boolean; weatherVolume: number;
+    /** a thing you do in a scene (shower, cook…): the AI narrates it right away */ narrateActions: boolean;
+    /** characters' texts (answers to invitations, letters…) written by the AI; off: short ready-made replies */ aiTexts: boolean;
     hudAutoHide: boolean; dialogOpacity: number; accent: string;
     layout: 'vn' | 'classic' | 'cards'; vn: 'box' | 'nobox' | 'subtitle';   // how the scene shows the conversation
     dialogPos?: 'center' | 'left'; spriteSize?: number; spriteY?: number; spriteW?: number; cardMode?: boolean;
@@ -51,7 +54,7 @@ export interface LibFolder { id: string; name: string; items: string[] }
 export interface LibPrefs { view: 'list' | 'grid'; fav: Record<string, string[]>; folders: Record<string, LibFolder[]> }
 
 const UI_DEFAULTS: UiPrefs = {
-    theme: 'dark', scale: 100, sceneText: 100, sound: true, volume: 50, music: true, musicVolume: 35,
+    theme: 'dark', scale: 100, sceneText: 100, sound: true, volume: 50, music: true, musicVolume: 35, weatherSound: true, weatherVolume: 60, narrateActions: true, aiTexts: true,
     hudAutoHide: false, dialogOpacity: 80, accent: 'blue', layout: 'vn', vn: 'box',
     dialogPos: 'center', spriteSize: 100, spriteW: 100, spriteY: 0, cardMode: true, font: 'default', avatarShape: 'rect', imgLayout: 'left', dialogBlur: 12, dateFormat: 'DD/MM/YYYY', timeFormat: '24',
     scalePhone: 85, scaleLand: 80, hudPhone: 85, hudLand: 80,

@@ -17,7 +17,7 @@ import { characters, charOf, createCharacter, createPersona, usePersona, createG
 import { playerHomeId } from './places.js';
 import { presentAt } from './people.js';
 import { sceneText, refreshPrompt } from './prompt.js';
-import { liveTogether, setTie, normalizeHomes, startingStand } from './living.js';
+import { liveTogether, setTie, normalizeHomes, startingStand, LOVE_TIES, loveStatus } from './living.js';
 import { applyGameLore } from './lore.js';
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 // A square portrait with initials on a gradient (used when no image is chosen).
@@ -276,25 +276,7 @@ export async function startNewGame(o) {
         if ((t.a !== '__you' && !save.cast[t.a]) || (t.b !== '__you' && !save.cast[t.b]) || t.a === t.b)
             continue;
         setTie(save, t);
-        const other = t.a === '__you' ? t.b : t.b === '__you' ? t.a : '';
-        if (other) { // with you: where you stand with them from day one
-            const st = startingStand(t.type);
-            const soc = (save.social ??= {});
-            (soc.bond ??= {})[other] = st.bond;
-            const liv = (save.living ??= {});
-            (liv.approval ??= {})[other] = st.approval;
-            save.cast[other].met = true;
-            if (['dating', 'partner', 'spouse'].includes(t.type)) {
-                (soc.partner ??= []).push(other);
-                ((save.romance ??= {})[other] = { value: 70, status: t.type === 'spouse' ? 'married' : 'dating' });
-            }
-        }
-        else if (['dating', 'partner', 'spouse'].includes(t.type)) {
-            const liv = (save.living ??= {});
-            (liv.pairs ??= []).push([t.a, t.b]);
-            if (t.type === 'spouse')
-                ((liv.pairInfo ??= {})[[t.a, t.b].sort().join('|')] = { since: save.day, stage: 'married' });
-        }
+        applyTie(save, t);
     }
     // a scenario: how you fit in the house (you know everyone already, or nobody), unless a relation said otherwise
     const st0 = isScenario(w) && o.start ? SCENARIO_STARTS.find(s => s.id === o.start.id) : undefined;
@@ -549,4 +531,40 @@ function followBackground(g, w) {
     const el = document.getElementById('bg1');
     if (el)
         el.style.backgroundImage = url;
+}
+// What a tie means beyond the tie itself: with you, where you stand with them (bond, approval, met, the romance:
+// a spouse is "married", not a stranger); between two others, a couple. Used at the start and when a tie is
+// added in This world → Family and ties. It never lowers what is already there.
+export function applyTie(save, t) {
+    const other = t.a === '__you' ? t.b : t.b === '__you' ? t.a : '';
+    if (other) {
+        if (!save.cast[other])
+            return;
+        const st = startingStand(t.type);
+        const soc = (save.social ??= {});
+        soc.bond ??= {};
+        soc.bond[other] = Math.max(soc.bond[other] ?? -Infinity, st.bond);
+        const liv = (save.living ??= {});
+        liv.approval ??= {};
+        liv.approval[other] = Math.max(liv.approval[other] ?? -Infinity, st.approval);
+        save.cast[other].met = true;
+        if (LOVE_TIES.includes(t.type)) {
+            soc.partner ??= [];
+            if (!soc.partner.includes(other))
+                soc.partner.push(other);
+            const rom = (save.romance ??= {});
+            const rank = ['none', 'dating', 'engaged', 'married'];
+            const cur = rom[other], want = loveStatus(t.type);
+            if (!cur || rank.indexOf(cur.status) < rank.indexOf(want))
+                rom[other] = { ...(cur ?? {}), value: Math.max(cur?.value ?? 0, 70), status: want };
+        }
+    }
+    else if (LOVE_TIES.includes(t.type)) {
+        const liv = (save.living ??= {});
+        liv.pairs ??= [];
+        if (!liv.pairs.some((p) => p.includes(t.a) && p.includes(t.b)))
+            liv.pairs.push([t.a, t.b]);
+        if (t.type === 'spouse' || t.type === 'fiance')
+            (liv.pairInfo ??= {})[[t.a, t.b].sort().join('|')] = { since: save.day, stage: loveStatus(t.type) };
+    }
 }

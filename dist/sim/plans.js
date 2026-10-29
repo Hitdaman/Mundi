@@ -8,6 +8,7 @@ import { addStatus } from './needs.js';
 import { feel } from './life.js';
 import { note as remember } from './facts.js';
 import { nowAbs } from '../core/store.js';
+import { isScenario } from '../core/world.js';
 import { hm, weekday } from './time.js';
 import { placeOf, playerHomeId, travelMinutes } from './places.js';
 import { routineStep, routineAt, whereNow } from './people.js';
@@ -229,8 +230,8 @@ export function planTick(g, w) {
     // old plans are forgotten after a few days
     s.appts = s.appts.filter(a => a.to > now - 3 * 1440).slice(-40);
     for (const c of [...s.with]) {
-        if (now < c.until)
-            continue;
+        if (now < c.until || isScenario(w))
+            continue; // Home: whoever is with you stays until you part (no timer)
         letGo(g, c.avatar);
         out.push({ text: `${nameOf(c.avatar)} had to go.`, kind: 'info' });
     }
@@ -245,7 +246,7 @@ export function beforeTravel(g, w, to) {
             letGo(g, c.avatar);
             continue;
         }
-        if (to === playerHomeId && !close(g, c.avatar, HOME_BOND) && !housemate(g, c.avatar)) {
+        if (!isScenario(w) && to === playerHomeId && !close(g, c.avatar, HOME_BOND) && !housemate(g, c.avatar)) {
             letGo(g, c.avatar);
             out.push(`${r.name} said goodbye: they are not ready to go to your home.`);
         }

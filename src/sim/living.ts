@@ -207,11 +207,32 @@ onDay.push((g, w) => [...lifeGoesOn(g, w), ...spreadRumors(g, w)]);
 
 /* ---------- families and ties between people (like The Sims: who is whose mother, and how they get along) ---------- */
 
-export type TieType = 'parent' | 'child' | 'sibling' | 'spouse' | 'partner' | 'dating' | 'cousin' | 'roommate' | 'friend' | 'bestfriend' | 'ally' | 'colleague' | 'rival' | 'enemy' | 'ex' | 'mentor' | 'apprentice';
+export type TieType = 'parent' | 'child' | 'sibling' | 'halfsibling' | 'grandparent' | 'grandchild' | 'uncle' | 'nephew' | 'cousin'
+    | 'stepparent' | 'stepchild' | 'stepsibling' | 'parentinlaw' | 'childinlaw' | 'siblinginlaw' | 'godparent' | 'godchild' | 'guardian' | 'ward'
+    | 'spouse' | 'fiance' | 'partner' | 'dating' | 'lover' | 'ex'
+    | 'roommate' | 'friend' | 'bestfriend' | 'childhoodfriend' | 'acquaintance' | 'classmate' | 'ally' | 'colleague' | 'boss' | 'employee' | 'rival' | 'enemy' | 'mentor' | 'apprentice';
 export type TieTone = 'close' | 'good' | 'neutral' | 'tense' | 'hostile';
 export interface Tie { a: string; b: string; type: TieType; tone: TieTone }   // `a` is the <type> of `b`; '__you' is the player
-export const TIE_TYPES: [TieType, string][] = [['parent', 'parent of'], ['child', 'child of'], ['sibling', 'sibling of'], ['spouse', 'married to'], ['partner', 'partner of'], ['cousin', 'cousin of'], ['roommate', 'roommate of'], ['friend', 'friend of'], ['bestfriend', 'best friend of'], ['ally', 'ally of'], ['colleague', 'colleague of'], ['dating', 'dating'], ['rival', 'rival of'], ['enemy', 'enemy of'], ['ex', 'ex of'], ['mentor', 'mentor of'], ['apprentice', 'apprentice of']];
-export const TIE_TONES: [TieTone, string][] = [['close', 'Close'], ['good', 'Good'], ['neutral', 'Neutral'], ['tense', 'Tense'], ['hostile', 'Hostile']];
+// Family first (blood, then by marriage and by choice), then love, then everyone else.
+export const TIE_TYPES: [TieType, string][] = [
+    ['parent', 'parent of'], ['child', 'child of'], ['sibling', 'sibling of'], ['halfsibling', 'half-sibling of'], ['grandparent', 'grandparent of'], ['grandchild', 'grandchild of'],
+    ['uncle', 'aunt/uncle of'], ['nephew', 'niece/nephew of'], ['cousin', 'cousin of'],
+    ['stepparent', 'stepparent of'], ['stepchild', 'stepchild of'], ['stepsibling', 'stepsibling of'], ['parentinlaw', 'parent-in-law of'], ['childinlaw', 'son/daughter-in-law of'], ['siblinginlaw', 'brother/sister-in-law of'],
+    ['godparent', 'godparent of'], ['godchild', 'godchild of'], ['guardian', 'guardian of'], ['ward', 'ward of'],
+    ['spouse', 'married to'], ['fiance', 'engaged to'], ['partner', 'partner of'], ['dating', 'dating'], ['lover', 'lover of'], ['ex', 'ex of'],
+    ['roommate', 'roommate of'], ['friend', 'friend of'], ['bestfriend', 'best friend of'], ['childhoodfriend', 'childhood friend of'], ['acquaintance', 'acquaintance of'], ['classmate', 'classmate of'],
+    ['ally', 'ally of'], ['colleague', 'colleague of'], ['boss', 'boss of'], ['employee', 'employee of'], ['rival', 'rival of'], ['enemy', 'enemy of'], ['mentor', 'mentor of'], ['apprentice', 'apprentice of']];
+// The same tie told from the other side ("A is grandparent of B" = "B is grandchild of A"); the others read the same both ways.
+export const TIE_FLIP: Partial<Record<TieType, TieType>> = {
+    parent: 'child', child: 'parent', grandparent: 'grandchild', grandchild: 'grandparent', uncle: 'nephew', nephew: 'uncle',
+    stepparent: 'stepchild', stepchild: 'stepparent', parentinlaw: 'childinlaw', childinlaw: 'parentinlaw', godparent: 'godchild', godchild: 'godparent',
+    guardian: 'ward', ward: 'guardian', mentor: 'apprentice', apprentice: 'mentor', boss: 'employee', employee: 'boss' };
+// Blood relatives: never any romance between them.
+export const BLOOD_TIES: TieType[] = ['parent', 'child', 'sibling', 'halfsibling', 'grandparent', 'grandchild', 'uncle', 'nephew'];
+// Ties that are a romance (a couple from day one); `lover` is a secret one, an affair.
+export const LOVE_TIES: TieType[] = ['dating', 'partner', 'fiance', 'spouse', 'lover'];
+export const loveStatus = (type: TieType) => (type === 'spouse' ? 'married' : type === 'fiance' ? 'engaged' : 'dating');
+export const TIE_TONES: [TieTone, string][] = [['close', 'Close-knit'], ['good', 'Good'], ['neutral', 'Neutral'], ['tense', 'Tense'], ['hostile', 'Hostile']];
 export const ties = (g: Save): Tie[] => ((L(g) as any).ties ??= []);
 export const tiesOf = (g: Save, avatar: string) => ties(g).filter(t => t.a === avatar || t.b === avatar);
 export function setTie(g: Save, t: Tie) {
@@ -242,7 +263,11 @@ export function tiesLine(g: Save, present: Resident[]) {
 void INVERSE;
 // A tie to {{user}} set at the start also sets where you stand with them (friends start close, enemies far apart).
 export function startingStand(type: TieType): { bond: number; approval: number } {
-    const m: Partial<Record<TieType, [number, number]>> = { bestfriend: [70, 30], friend: [45, 15], ally: [40, 20], colleague: [25, 5], dating: [70, 25], partner: [70, 25], spouse: [80, 30], parent: [60, 20], child: [60, 20], sibling: [55, 15], cousin: [35, 10], roommate: [35, 5], rival: [15, -20], enemy: [5, -50], ex: [20, -10], mentor: [55, 25], apprentice: [55, 25] };
+    const m: Partial<Record<TieType, [number, number]>> = { bestfriend: [70, 30], friend: [45, 15], childhoodfriend: [55, 15], acquaintance: [15, 0], classmate: [25, 5], ally: [40, 20], colleague: [25, 5], boss: [20, 5], employee: [20, 5],
+        dating: [70, 25], partner: [70, 25], fiance: [75, 28], spouse: [80, 30], lover: [65, 10],
+        parent: [60, 20], child: [60, 20], sibling: [55, 15], halfsibling: [50, 12], grandparent: [60, 20], grandchild: [60, 20], uncle: [45, 10], nephew: [45, 10], cousin: [35, 10],
+        stepparent: [35, 5], stepchild: [35, 5], stepsibling: [30, 5], parentinlaw: [30, 5], childinlaw: [30, 5], siblinginlaw: [30, 5], godparent: [50, 15], godchild: [50, 15], guardian: [55, 15], ward: [55, 15],
+        roommate: [35, 5], rival: [15, -20], enemy: [5, -50], ex: [20, -10], mentor: [55, 25], apprentice: [55, 25] };
     const [bond, approval] = m[type] ?? [20, 0];
     return { bond, approval };
 }

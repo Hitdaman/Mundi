@@ -6,7 +6,7 @@ import { approvalLine, couplesLine, rumorLines, activeWorldLore } from './living
 import './longlife.js'; // people's lives over the weeks (runs by itself, day by day)
 import { feelingLine, physiqueLine, aspirationOf } from './life.js';
 import { game, settings } from '../core/store.js';
-import { getWorld } from '../core/world.js';
+import { getWorld, homeNeedsOn } from '../core/world.js';
 import { aiLangNote } from '../core/i18n.js';
 import { setPrompt, nameOf } from '../st/bridge.js';
 import { weekday, hm, period, seasonOf } from './time.js';
@@ -38,6 +38,7 @@ import { realmLine } from './realm.js';
 import { legendLines } from './legends.js';
 import { skiesLine } from './skies.js';
 import { bountyLine } from './crime.js';
+import { guestLine } from './guests.js';
 import { tradeLine } from './economy.js';
 import { holdingsLine } from './holdings.js';
 import { afflictionLine } from './afflictions.js';
@@ -81,7 +82,7 @@ export const DEFAULT_RULES = 'Write only what happens in this place and at this 
 // (sent only when the block has something to say). SillyTavern's macros ({{user}}, {{char}}…) work as usual.
 export const applyTemplate = (tpl, text) => (!tpl?.trim() || !text.trim() ? text : tpl.includes('{text}') ? tpl.split('{text}').join(text) : tpl);
 // The blocks this world has: those of a system turned off in it are gone.
-export const blocksOf = (w) => BLOCKS.filter(b => !blockSystem(b.id) || systemOn(w, blockSystem(b.id)));
+export const blocksOf = (w, g) => BLOCKS.filter(b => !blockSystem(b.id) || systemOn(w, blockSystem(b.id)) || (b.id === 'needs' && !!w && isScenario(w) && homeNeedsOn(g))); // (Home: needs turned on for this game)
 export const promptCfg = () => {
     const s = settings();
     s.promptCfg ??= {};
@@ -129,6 +130,7 @@ export function sceneBlocks() {
             `Now: ${weekday(g.day)}, day ${g.day}, ${hm(g.minutes)} (${period(w, g.minutes).name.toLowerCase()}). Weather: ${weatherHere(g, w).name.toLowerCase()}. Season: ${seasonOf(g).name.toLowerCase()}.`,
             `Place: ${here?.name ?? 'somewhere'}${here?.desc ? ` — ${here.desc}` : ''}${here && !here.home && systemOn(w, 'living') && !openNow(g, w, here.id) ? ' (closed at this hour: the doors are shut; only staff, if anyone, is around)' : ''}`,
             names.length ? `Here with {{user}}: ${names.join(', ')}. Only they are in this scene; nobody else speaks or appears.` : 'Nobody else is here right now.',
+            ...(guestLine(g, present) ? [guestLine(g, present)] : []),
             ...(present.some(r => !r.met) ? [`Strangers to {{user}}: ${present.filter(r => !r.met).map(r => r.name).join(', ')}. They and {{user}} have never met: they do not know each other's names until they talk and introduce themselves.`] : []),
         ],
         // only the people in this scene and this place: nobody else's memories, nobody else's whereabouts
@@ -152,7 +154,7 @@ export function sceneBlocks() {
     };
     const tail = [pc.rules.trim() || DEFAULT_RULES, aiLangNote()].filter(Boolean).join('\n');
     // a block whose system is off in this world is not there at all (not even as "off")
-    const out = blocksOf(w).map(b => {
+    const out = blocksOf(w, g).map(b => {
         const own = (raw[b.id] ?? []).filter(Boolean).join('\n');
         const text = b.id === 'core' ? `${own}\n${tail}` : applyTemplate(pc.text[b.id], own);
         return { id: b.id, text, state: !text.trim() ? 'empty' : b.cut && pc.off.includes(b.id) ? 'off' : 'sent' };
@@ -160,7 +162,7 @@ export function sceneBlocks() {
     // over the budget: drop the least important blocks first
     if (pc.budget > 0) {
         const size = () => estTokens(out.filter(x => x.state === 'sent').map(x => x.text).join('\n'));
-        const order = blocksOf(w).filter(b => b.cut).sort((a, b) => a.cut - b.cut);
+        const order = blocksOf(w, g).filter(b => b.cut).sort((a, b) => a.cut - b.cut);
         for (const b of order) {
             if (size() <= pc.budget)
                 break;

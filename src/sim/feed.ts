@@ -1,6 +1,7 @@
 // The social network (short posts, like Twitter/X) and the dating app. Posts are written by the AI in one batch
 // call; who posts and whether posts get a picture are options in the game settings.
 import { romanceBlocked } from './family.js';
+import { scriptText } from '../core/safe.js';
 import { nowAbs, settings, saveSettings, type Save, type Resident } from '../core/store.js';
 import { appsOf, socialKind, aiVoice, systemOn, type WorldDef } from '../core/world.js';
 import { ctx, charOf, personaName, sayLine } from '../st/bridge.js';
@@ -39,7 +40,7 @@ const about = (r: Resident) => String(charOf(r.avatar)?.description ?? '').repla
 async function picture(prompt: string): Promise<string | undefined> {
     if (!feedPrefs().images) return undefined;
     try {
-        const r = await ctx().executeSlashCommandsWithOptions(`/sd quiet=true ${prompt.replace(/\|/g, ' ')}`);
+        const r = await ctx().executeSlashCommandsWithOptions(`/sd quiet=true ${scriptText(prompt.replace(/\|/g, ' '))}`);
         const url = String(r?.pipe ?? '').trim();
         return url && !url.startsWith('Error') ? url : undefined;
     } catch { return undefined; }

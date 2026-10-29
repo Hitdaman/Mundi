@@ -7,7 +7,7 @@ import { onDay } from './hooks.js';
 import { note } from './facts.js';
 import { romOf } from './romance.js';
 import { bump } from './social.js';
-import { setTie, liveTogether, ties } from './living.js';
+import { setTie, liveTogether, ties, BLOOD_TIES } from './living.js';
 import { playerHomeId } from './places.js';
 
 export const PREGNANCY_DAYS = 10;
@@ -36,10 +36,11 @@ export const stageOf = (k: Kid) => STAGES[Math.min(k.stage, STAGES.length - 1)];
 // Children (anyone below the adult stage) are never part of any romance.
 export const isMinor = (g: Save, avatar: string) => { const k = kidOf(g, avatar); return !!k && stageOf(k).id !== 'adult'; };
 
-// No romance at all with your own children (at any age), your parents or siblings, or any minor.
+// No romance at all with your own children (at any age), any blood relative (parents, siblings, grandparents,
+// grandchildren, aunts and uncles, nieces and nephews), or any minor.
 export function romanceBlocked(g: Save, avatar: string) {
     if (kidOf(g, avatar)) return true;
-    return ties(g).some(t => ((t.a === '__you' && t.b === avatar) || (t.b === '__you' && t.a === avatar)) && (t.type === 'parent' || t.type === 'child' || t.type === 'sibling'));
+    return ties(g).some(t => ((t.a === '__you' && t.b === avatar) || (t.b === '__you' && t.a === avatar)) && BLOOD_TIES.includes(t.type));
 }
 
 /* ---------- trying for a baby ---------- */

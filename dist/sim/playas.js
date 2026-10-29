@@ -6,7 +6,7 @@
 import { nowAbs } from '../core/store.js';
 import { charOf, avatarUrl, createPersona, createCharacter, usePersona, persona, personaName, personas } from '../st/bridge.js';
 import { whereNow } from './people.js';
-import { ties, normalizeHomes } from './living.js';
+import { ties, normalizeHomes, LOVE_TIES, loveStatus } from './living.js';
 import { note } from './facts.js';
 import { resident } from './game.js';
 const ORIG = '__orig';
@@ -45,8 +45,8 @@ function fresh(g, who, origCard) {
         if (!other || other === who)
             continue;
         social.bond[other] = Math.max(social.bond[other] ?? 0, TONE_BOND[t.tone] ?? 30);
-        if (t.type === 'spouse' || t.type === 'partner') {
-            romance[other] = { value: 70, status: t.type === 'spouse' ? 'married' : 'dating' };
+        if (LOVE_TIES.includes(t.type)) {
+            romance[other] = { value: 70, status: loveStatus(t.type) };
             social.partner.push(other);
         }
     }
