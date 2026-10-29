@@ -7,6 +7,7 @@ import { lorebooks, loadLore, quiet } from '../st/bridge.js';
 import { newWorldFrom, saveWorld } from '../sim/creator.js';
 import { readBook, chunk, sketchPrompt, summaryPrompt, parseJson, mergeSketch, emptySketch, buildWorld, BUCKETS, type LoreItem, type Sketch, type Bucket, type Chunk } from '../sim/fromlore.js';
 import { CW } from './creator.js';
+import { openPaint } from './worldpaint.js';
 import { styleName } from './styles.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
@@ -152,7 +153,8 @@ async function build() {
         });
         FL.on = false; FL.run = null; save();
         CW.w = w; CW.start = null; CW.tab = 'maps'; CW.dirty = false; CW.confirmDel = false;
-        toast(`“${w.name}” built: ${w.maps.length} maps, ${w.places.filter(p => !p.link).length} places, ${w.cast.examples.length} people. Move the pins and add pictures in Maps & places.`, 'success');
+        toast(`“${w.name}” built: ${w.maps.length} maps, ${w.places.filter(p => !p.link).length} places, ${w.cast.examples.length} people. Paint its maps and places with ComfyUI, or move the pins in Maps & places.`, 'success');
+        void openPaint();
     } catch (e: any) { toast(String(e?.message ?? e), 'error'); }
     notify();
 }

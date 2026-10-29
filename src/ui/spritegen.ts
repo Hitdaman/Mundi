@@ -85,7 +85,7 @@ export type Graph = Record<string, { class_type: string; inputs: Record<string, 
 const titleOf = (g: Graph, id: string) => String(g[id]?._meta?.title ?? '');
 const isLink = (v: any) => Array.isArray(v) && v.length === 2 && typeof v[0] === 'string';
 
-async function loadWorkflow(name = sprPrefs().workflow): Promise<Graph> {
+export async function loadWorkflow(name = sprPrefs().workflow): Promise<Graph> {
     const res = await fetch('/api/sd/comfy/workflow', { method: 'POST', headers: stHeaders(), body: JSON.stringify({ file_name: name }) });
     if (!res.ok) throw new Error(`Could not load the workflow "${name}". Save it in SillyTavern's workflows (user/workflows).`);
     let w = await res.json();
@@ -172,7 +172,7 @@ function job(base: Graph, p: Parts, sheet: Sheet, outfit: number, label: string)
     return { graph: prune(g, [e.save]), save: e.save };
 }
 
-async function runJob(graph: Graph, onStep?: () => void): Promise<Record<string, Blob>> {
+export async function runJob(graph: Graph, onStep?: () => void): Promise<Record<string, Blob>> {
     const url = comfyUrl();
     const res = await fetch(`${url}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: graph, client_id: `mundi-${Date.now()}` }) });
     const data = await res.json().catch(() => ({}));

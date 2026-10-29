@@ -25,6 +25,7 @@ import { pickFile } from './cropper.js';
 import { icon, ICON_NAMES } from './icons.js';
 import { ACT, INPUT } from './reg.js';
 import { FL, fromLoreHtml, openFromLore } from './fromlore.js';
+import { paintHtml } from './worldpaint.js';
 
 type Tab = 'economy' | 'realm' | 'customs' | 'rpg' | 'general' | 'features' | 'needs' | 'maps' | 'homes' | 'actions' | 'jobs' | 'courses' | 'shop' | 'words' | 'character' | 'people' | 'lore' | 'books';
 const TABS: [Tab, string][] = [['general', 'General'], ['features', 'Features'], ['needs', 'Needs'], ['maps', 'Maps & places'], ['homes', 'Homes & rent'],
@@ -764,9 +765,10 @@ export function creatorHtml(): string {
             : `<button class="mu-danger" data-act="cw-delete" title="Delete this ${isScenario(w) ? 'Home' : 'world'}">${icon('trash')}<span>Delete</span></button>
                <button class="mu-ghost" data-act="cw-dup" title="Make a copy of it">${icon('copy')}<span>Duplicate</span></button>
                <button class="mu-ghost" data-act="cw-export" title="Export to a file">${icon('upload')}<span>Export</span></button>
+               <button class="mu-ghost" data-act="wp-open" title="Paint the maps, places and cover with your ComfyUI">${icon('image')}<span>Paint</span></button>
                <span class="mu-grow"></span>${CW.dirty ? '<span class="mu-muted">Not saved</span>' : ''}
                <button class="mu-primary mu-big" data-act="cw-save" ${CW.saving ? 'disabled' : ''}>${icon('save')}<span>${CW.saving ? 'Saving…' : 'Save'}</span></button>`}</div>
-        ${CW.leaveAsk ? leaveHtml('cw') : ''}</div>`;
+        ${CW.leaveAsk ? leaveHtml('cw') : ''}${paintHtml()}</div>`;
 }
 
 /* ---------- opening ---------- */
