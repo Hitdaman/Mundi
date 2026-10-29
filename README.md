@@ -2,7 +2,7 @@
 
 > ## About this fork
 >
-> This is **Seb's fork** of [tjalis/Mundi](https://github.com/tjalis/Mundi). It is Mundi 0.2.1 plus a set of new features, offered back to the author as pull requests (one per feature). Everything below this box is the original README.
+> This fork of [tjalis/Mundi](https://github.com/tjalis/Mundi) is Mundi 0.2.1 plus a set of new features, offered back to the author as pull requests (one per feature). Everything below this box is the original README.
 >
 > **To play it:** install `https://github.com/Hitdaman/Mundi` with the branch **`all-features`** (in SillyTavern, Extensions → Install extension, then fill in the branch). That branch also unlocks the medieval style and the RPG mode, which 0.2.1 keeps locked for a later release. Apart from this box, the `main` branch here is the same as the original.
 >
