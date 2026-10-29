@@ -60,6 +60,21 @@ async function storyHarm() {
         if (state.open) notify();
     } catch { /* the AI is offline: nothing is counted */ }
 }
+// RPG: quests in the story (someone asked for help, a step done) and in the lorebooks (sim/lorequests.ts)
+async function storyQuests() {
+    const { game, saveGame, state, notify, toast } = await import('./core/store.js');
+    const { getWorld } = await import('./core/world.js');
+    const g = game(); const w = g && getWorld(g.world);
+    if (!g || !w) return;
+    try {
+        const lines = await (await import('./sim/lorequests.js')).questsAfterReply(g, w);
+        if (!lines.length || game() !== g) return;
+        saveGame();
+        (await import('./sim/prompt.js')).refreshPrompt();
+        lines.forEach(m => toast(m, 'success'));
+        if (state.open) notify();
+    } catch { /* the AI is offline: the quests stay as they are */ }
+}
 // The checks after a reply ask the AI one at a time (their own calls end a generation too, and queue behind).
 let afterReply: Promise<void> = Promise.resolve();
 function emptyReply() {
@@ -139,7 +154,7 @@ function follow() {
         }
         redraw();
     };
-    on('GENERATION_ENDED', () => { emptyReply(); done(); void import('./ui/relui.js').then(m => m.checkAsk()); void import('./ui/events.js').then(m => m.checkEventEnd()); afterReply = afterReply.then(storyPlaces).then(storyLooks).then(storyHarm).catch(() => {}); });
+    on('GENERATION_ENDED', () => { emptyReply(); done(); void import('./ui/relui.js').then(m => m.checkAsk()); void import('./ui/events.js').then(m => m.checkEventEnd()); afterReply = afterReply.then(storyPlaces).then(storyLooks).then(storyHarm).then(storyQuests).catch(() => {}); });
     on('GENERATION_STOPPED', done);
     on('GROUP_WRAPPER_FINISHED', done);
     on('STREAM_TOKEN_RECEIVED', () => { if (state.open && state.view === 'scene') patchLastLine(); });
