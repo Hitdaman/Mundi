@@ -76,7 +76,7 @@ export function storyListHtml(g: Save): string {
 
 export function peopleSettingsHtml(): string {
     const p = peoplePrefs();
-    const chk = (act: string, on: boolean, label: string, hint: string) => `<label class="mu-check"><input type="checkbox" data-input="${act}" ${on ? 'checked' : ''}><span>${esc(label)}<small>${esc(hint)}</small></span></label>`;
+    const chk = (act: string, on: boolean, label: string, hint: string) => `<label class="mu-check"><input type="checkbox" data-input="${esc(act)}" ${on ? 'checked' : ''}><span>${esc(label)}<small>${esc(hint)}</small></span></label>`;
     return `<section><h3>People from the story</h3>
         ${chk('np-on', p.on, 'Notice new people in the story', 'Someone the story brings in (a party\'s tank, a nurse, a stranger) is noted after each reply. In the same AI call as scene looks, or a short one of its own.')}
         ${p.on ? `${chk('np-recurring', p.recurring, 'Also offer people who keep coming up', `Besides a real moment with you (a life saved, an invitation to team up…), someone who comes up on ${3} different days.`)}

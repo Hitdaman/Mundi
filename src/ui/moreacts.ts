@@ -26,7 +26,7 @@ import {
 
 const S = () => { const g = game(); const w = g && getWorld(g.world); return g && w ? { g, w } : null; };
 const MO = { door: '', wait: false, look: false };
-const row = (act: string, ic: string, title: string, small: string, extra = '') => `<button class="mh-act mh-glass" data-act="${act}" ${extra}><i>${ic}</i><b>${title}</b><small>${small}</small></button>`;
+const row = (act: string, ic: string, title: string, small: string, extra = '') => `<button class="mh-act mh-glass" data-act="${esc(act)}" ${extra}><i>${ic}</i><b>${title}</b><small>${small}</small></button>`;
 
 /* ---------- rows ---------- */
 

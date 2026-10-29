@@ -3,12 +3,13 @@ import type { Save } from '../core/store.js';
 import { game, esc, notify, saveGame } from '../core/store.js';
 import { metersOf, meterWord, setMeter } from '../sim/meters.js';
 import { refreshPrompt } from '../sim/prompt.js';
+import { cssColor } from '../core/safe.js';
 import { icon } from './icons.js';
 import { ACT } from './reg.js';
 
 export const meterBars = (g: Save) => metersOf(g).map(m => {
     const v = m.max ? Math.round((m.value / m.max) * 100) : 100;
-    return `<button class="mh-bar mh-meter" data-act="mt-set" data-id="${esc(m.id)}" data-word="${esc(`${m.name}: ${meterWord(m)}${m.note ? ` · ${m.note}` : ''}`)}" title="${esc(`${m.name} ${meterWord(m)}. Click to change it.`)}" style="--c:${esc(m.color ?? '#f59e0b')};--v:${v}">
+    return `<button class="mh-bar mh-meter" data-act="mt-set" data-id="${esc(m.id)}" data-word="${esc(`${m.name}: ${meterWord(m)}${m.note ? ` · ${m.note}` : ''}`)}" title="${esc(`${m.name} ${meterWord(m)}. Click to change it.`)}" style="--c:${cssColor(m.color) || '#f59e0b'};--v:${v}">
                 <span class="mh-bar-ic">${icon('sparkles')}</span><span class="mh-bar-name">${esc(m.name)} <small>${esc(meterWord(m))}</small></span><span class="mh-bar-track"><i></i></span></button>`;
 }).join('');
 
