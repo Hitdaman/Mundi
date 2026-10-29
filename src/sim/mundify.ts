@@ -2,7 +2,7 @@
 // own scenario, rules, greetings and prompt overrides, which fight the world (the world sets the scene, the clock, the
 // first meeting). The copy keeps only who the character is: appearance, backstory, personality and other details about
 // them. The original card is never changed.
-import { characters, charOf, fullCharacter, duplicateCharacter, saveCharacter, tagCharacter, quiet } from '../st/bridge.js';
+import { characters, charOf, fullCharacter, duplicateCharacter, saveCharacter, tagCharacter, quiet, charLorebooks, setCharLorebooks } from '../st/bridge.js';
 
 export interface Mundified { from: string; name: string; at: number; ai: boolean }
 export const MUNDI_TAG = 'Mundified';
@@ -68,7 +68,8 @@ function parse(out: string): Parts | null {
 // Makes the mundified copy of a card and returns the copy's avatar file. With `ai`, the AI rewrites the description into
 // appearance, backstory, personality and details (and saves the facts hidden in the scenario, greetings or notes);
 // without it, the description and personality are kept word for word. Either way the copy loses its scenario,
-// greetings, example dialogue, main prompt override, post-history instructions, Character's note and linked lorebook.
+// greetings, example dialogue, main prompt override, post-history instructions and Character's note. Its lorebooks
+// stay linked (the card's own and the additional ones).
 export async function mundify(avatar: string, ai: boolean): Promise<string> {
     const c = await fullCharacter(avatar);
     if (!c) throw new Error('This character no longer exists.');
@@ -91,8 +92,11 @@ export async function mundify(avatar: string, ai: boolean): Promise<string> {
     await saveCharacter(copy, {
         description, personality, scenario: '', first_mes: '', alternate_greetings: [], mes_example: '',
         system_prompt: '', post_history_instructions: '', depth_prompt: { prompt: '', depth: 4, role: 'system' },
-        extensions: { world: '', mundified: mark },
+        extensions: { mundified: mark },
     });
+    // the additional lorebooks are kept by card file in SillyTavern's settings: the copy gets the same ones
+    const books = charLorebooks(avatar);
+    if (books.length > 1) await setCharLorebooks(copy, books);
     tagCharacter(copy, MUNDI_TAG);
     return copy;
 }
